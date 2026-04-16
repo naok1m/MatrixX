@@ -18,8 +18,19 @@
     <PackageReference Include="Serilog" Version="3.1.1" />
     <PackageReference Include="System.Text.Json" Version="9.0.1" />
     <PackageReference Include="System.Drawing.Common" Version="8.0.0" />
+    <!-- OCR: Tesseract wrapper (charlesw/tesseract) + System.Drawing interop -->
+    <PackageReference Include="Tesseract" Version="5.2.0" />
+    <PackageReference Include="Tesseract.Drawing" Version="5.2.0" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Data\weapon-library.json" />
+  </ItemGroup>
+  <!-- Copy tessdata language files to output directory -->
+  <ItemGroup>
+    <None Include="..\..\tessdata\**\*.traineddata" Condition="Exists('..\..\tessdata')">
+      <Link>tessdata\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
   </ItemGroup>
 </Project>
