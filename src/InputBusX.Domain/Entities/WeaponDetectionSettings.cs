@@ -16,5 +16,12 @@ public sealed class WeaponDetectionSettings
     /// <summary>How often to run OCR, in milliseconds.</summary>
     public int IntervalMs { get; set; } = 500;
 
+    /// <summary>
+    /// When true, every OCR frame writes the raw capture + all pre-processing
+    /// variants to <c>%TEMP%/matrixx-ocr-debug/</c> so you can inspect what
+    /// Tesseract actually sees. Leave this OFF in production — it's I/O-heavy.
+    /// </summary>
+    public bool DebugSaveImages { get; set; } = false;
+
     public List<WeaponProfile> Weapons { get; set; } = [];
 }
