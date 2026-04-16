@@ -133,9 +133,17 @@ public partial class DashboardViewModel : ViewModelBase
             {
                 await _pipeline.StartAsync(CancellationToken.None);
                 IsRunning = true;
-                ConnectionStatus = _pipeline.ViGEmAvailable
-                    ? "Connected"
-                    : "Monitor Only — install ViGEmBus for output";
+                if (_pipeline.ViGEmAvailable)
+                {
+                    var slot = _pipeline.VirtualXInputSlot;
+                    ConnectionStatus = slot.HasValue
+                        ? $"Connected — virtual controller on XInput slot {slot.Value}"
+                        : "Connected";
+                }
+                else
+                {
+                    ConnectionStatus = "Monitor Only — install ViGEmBus for output";
+                }
             }
         }
         catch (Exception ex)

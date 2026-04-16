@@ -16,6 +16,7 @@ public sealed class XInputProvider : IInputProvider
     private CancellationTokenSource? _cts;
     private Task? _pollTask;
     private int _pollingRateMs = 1;
+    private volatile int _excludedSlotMask = 0; // bitmask of XInput slots to skip (ViGEm virtual)
 
     public event Action<InputDevice>? DeviceConnected;
     public event Action<InputDevice>? DeviceDisconnected;
@@ -27,6 +28,18 @@ public sealed class XInputProvider : IInputProvider
     }
 
     public void SetPollingRate(int ms) => _pollingRateMs = Math.Max(1, ms);
+
+    public void ExcludeXInputSlots(int[] slots)
+    {
+        int mask = 0;
+        foreach (var s in slots)
+            if (s >= 0 && s < 4) mask |= (1 << s);
+        _excludedSlotMask = mask;
+        if (slots.Length > 0)
+            _logger.LogInformation("XInput: excluding virtual slot(s) {Slots} from polling", string.Join(",", slots));
+        else
+            _logger.LogInformation("XInput: slot exclusion cleared");
+    }
 
     public Task StartAsync(CancellationToken ct)
     {
@@ -71,6 +84,9 @@ public sealed class XInputProvider : IInputProvider
             {
                 for (int i = 0; i < 4; i++)
                 {
+                    // Skip this slot if it belongs to the ViGEm virtual controller
+                    if ((_excludedSlotMask & (1 << i)) != 0) continue;
+
                     uint result = XInputNative.XInputGetState((uint)i, ref state);
                     bool connected = result == 0;
 

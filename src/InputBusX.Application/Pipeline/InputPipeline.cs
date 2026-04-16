@@ -21,6 +21,7 @@ public sealed class InputPipeline : IInputPipeline
 
     public bool IsRunning => _cts is { IsCancellationRequested: false };
     public bool ViGEmAvailable => _vigemAvailable;
+    public int? VirtualXInputSlot => _outputController.VirtualXInputSlot;
 
     public InputPipeline(
         IInputProvider inputProvider,
@@ -49,6 +50,13 @@ public sealed class InputPipeline : IInputPipeline
         {
             _outputController.Connect();
             _vigemAvailable = true;
+
+            // Exclude the virtual controller's XInput slot from physical input polling.
+            // Without this, XInputProvider reads the virtual device back as input,
+            // creating a feedback loop and preventing Warzone from using the virtual slot.
+            if (_outputController.VirtualXInputSlot.HasValue)
+                _inputProvider.ExcludeXInputSlots(new[] { _outputController.VirtualXInputSlot.Value });
+
             _logger.LogInformation("Virtual controller connected");
         }
         catch (Exception ex)
@@ -72,6 +80,8 @@ public sealed class InputPipeline : IInputPipeline
             _cts = null;
         }
 
+        // Clear slot exclusion before disconnecting
+        _inputProvider.ExcludeXInputSlots(Array.Empty<int>());
         _outputController.Disconnect();
         _macroProcessor.Reset();
         _inputFilter.Reset();

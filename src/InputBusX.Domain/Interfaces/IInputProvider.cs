@@ -11,4 +11,11 @@ public interface IInputProvider : IDisposable
     Task StartAsync(CancellationToken ct);
     Task StopAsync();
     IReadOnlyList<InputDevice> GetConnectedDevices();
+
+    /// <summary>
+    /// Exclude specific XInput slot indices from polling.
+    /// Used to prevent reading back the ViGEm virtual controller as physical input.
+    /// Default: no-op (providers that don't use XInput can ignore this).
+    /// </summary>
+    void ExcludeXInputSlots(int[] slots) { }
 }

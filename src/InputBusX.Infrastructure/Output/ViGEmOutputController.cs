@@ -13,8 +13,10 @@ public sealed class ViGEmOutputController : IOutputController
     private readonly ILogger<ViGEmOutputController> _logger;
     private ViGEmClient? _client;
     private IXbox360Controller? _controller;
+    private int? _virtualSlot;
 
     public bool IsConnected => _controller is not null;
+    public int? VirtualXInputSlot => _virtualSlot;
 
     public ViGEmOutputController(ILogger<ViGEmOutputController> logger)
     {
@@ -30,7 +32,13 @@ public sealed class ViGEmOutputController : IOutputController
             _client = new ViGEmClient();
             _controller = _client.CreateXbox360Controller();
             _controller.Connect();
-            _logger.LogInformation("ViGEm virtual Xbox 360 controller connected");
+
+            // UserIndex is set by ViGEmBus after Connect() — tells us which XInput
+            // slot (0-3) the virtual controller was assigned so we can exclude it
+            // from physical input polling and prevent a feedback loop.
+            _virtualSlot = (int)_controller.UserIndex;
+            _logger.LogInformation(
+                "ViGEm virtual Xbox 360 controller connected on XInput slot {Slot}", _virtualSlot);
         }
         catch (Exception ex)
         {
@@ -49,6 +57,7 @@ public sealed class ViGEmOutputController : IOutputController
         catch { }
 
         _controller = null;
+        _virtualSlot = null;
         _client?.Dispose();
         _client = null;
         _logger.LogInformation("ViGEm controller disconnected");
