@@ -1,0 +1,137 @@
+{
+  "activeProfileId": "default1",
+  "profiles": [
+    {
+      "id": "default1",
+      "name": "Default",
+      "isDefault": true,
+      "associatedProcesses": [],
+      "macros": [],
+      "filters": {
+        "leftStickDeadzone": 0.05,
+        "rightStickDeadzone": 0.05,
+        "leftStickAntiDeadzone": 0.0,
+        "rightStickAntiDeadzone": 0.0,
+        "triggerDeadzone": 0.02,
+        "responseCurveExponent": 1.0,
+        "smoothingFactor": 0.0,
+        "smoothingEnabled": false
+      },
+      "createdAt": "2026-04-12T00:00:00Z",
+      "modifiedAt": "2026-04-12T00:00:00Z"
+    },
+    {
+      "id": "fps1",
+      "name": "FPS - No Recoil",
+      "isDefault": false,
+      "associatedProcesses": [
+        "cod",
+        "valorant",
+        "apex_legends"
+      ],
+      "macros": [
+        {
+          "id": "macro001",
+          "name": "Anti-Recoil",
+          "type": "noRecoil",
+          "enabled": true,
+          "priority": 10,
+          "delayMs": 0,
+          "intervalMs": 16,
+          "durationMs": 0,
+          "loop": false,
+          "intensity": 0.8,
+          "randomizationFactor": 0.15,
+          "recoilCompensationX": 0,
+          "recoilCompensationY": -350,
+          "steps": []
+        },
+        {
+          "id": "macro002",
+          "name": "Rapid Fire",
+          "type": "autoFire",
+          "enabled": true,
+          "priority": 5,
+          "activationButton": "rightShoulder",
+          "delayMs": 0,
+          "intervalMs": 40,
+          "durationMs": 0,
+          "loop": true,
+          "intensity": 1.0,
+          "randomizationFactor": 0.0,
+          "steps": []
+        },
+        {
+          "id": "macro003",
+          "name": "Auto Ping",
+          "type": "autoPing",
+          "enabled": false,
+          "priority": 3,
+          "activationButton": "dPadUp",
+          "delayMs": 0,
+          "intervalMs": 200,
+          "durationMs": 0,
+          "loop": true,
+          "intensity": 1.0,
+          "randomizationFactor": 0.0,
+          "steps": []
+        }
+      ],
+      "filters": {
+        "leftStickDeadzone": 0.08,
+        "rightStickDeadzone": 0.03,
+        "leftStickAntiDeadzone": 0.0,
+        "rightStickAntiDeadzone": 0.15,
+        "triggerDeadzone": 0.02,
+        "responseCurveExponent": 0.8,
+        "smoothingFactor": 0.1,
+        "smoothingEnabled": true
+      },
+      "createdAt": "2026-04-12T00:00:00Z",
+      "modifiedAt": "2026-04-12T00:00:00Z"
+    },
+    {
+      "id": "remap1",
+      "name": "Remap Example",
+      "isDefault": false,
+      "associatedProcesses": [],
+      "macros": [
+        {
+          "id": "macro004",
+          "name": "Swap A and B",
+          "type": "remap",
+          "enabled": true,
+          "priority": 10,
+          "sourceButton": "a",
+          "targetButton": "b",
+          "delayMs": 0,
+          "intervalMs": 16,
+          "loop": false,
+          "intensity": 1.0,
+          "randomizationFactor": 0.0,
+          "steps": []
+        }
+      ],
+      "filters": {
+        "leftStickDeadzone": 0.05,
+        "rightStickDeadzone": 0.05,
+        "leftStickAntiDeadzone": 0.0,
+        "rightStickAntiDeadzone": 0.0,
+        "triggerDeadzone": 0.02,
+        "responseCurveExponent": 1.0,
+        "smoothingFactor": 0.0,
+        "smoothingEnabled": false
+      },
+      "createdAt": "2026-04-12T00:00:00Z",
+      "modifiedAt": "2026-04-12T00:00:00Z"
+    }
+  ],
+  "general": {
+    "pollingRateMs": 1,
+    "minimizeToTray": true,
+    "startMinimized": false,
+    "autoConnect": true,
+    "showNotifications": true,
+    "logLevel": "Information"
+  }
+}

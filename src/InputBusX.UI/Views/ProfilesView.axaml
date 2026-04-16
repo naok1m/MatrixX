@@ -1,0 +1,134 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:InputBusX.UI.ViewModels"
+             x:Class="InputBusX.UI.Views.ProfilesView"
+             x:DataType="vm:ProfilesViewModel"
+             x:Name="ProfilesViewRoot">
+
+    <Grid ColumnDefinitions="300,*" Margin="4">
+        <!-- Profile List -->
+        <Border Classes="card" Grid.Column="0" Margin="0,0,8,0">
+            <DockPanel>
+                <TextBlock Text="Profiles" Classes="section-header" DockPanel.Dock="Top" />
+
+                <StackPanel DockPanel.Dock="Bottom" Spacing="8" Margin="0,8,0,0">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBox Text="{Binding NewProfileName}" Watermark="New profile name..."
+                                 AutomationProperties.Name="New profile name" />
+                        <Button Grid.Column="1" Content="Create"
+                                Command="{Binding CreateProfileCommand}" Classes="accent" Margin="8,0,0,0"
+                                AutomationProperties.Name="Create new profile" />
+                    </Grid>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Content="Duplicate" Command="{Binding DuplicateProfileCommand}"
+                                AutomationProperties.Name="Duplicate selected profile" />
+                        <Button Content="Delete" Command="{Binding DeleteProfileCommand}" Classes="danger"
+                                AutomationProperties.Name="Delete selected profile" />
+                        <Button Content="Activate" Command="{Binding ActivateProfileCommand}" Classes="accent"
+                                AutomationProperties.Name="Activate selected profile" />
+                    </StackPanel>
+                    <!-- Import / Export -->
+                    <Border Height="1" Background="#1A1D22" />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Content="⬆ Export"
+                                Command="{Binding ExportProfileCommand}"
+                                Background="#1A1A2A"
+                                Foreground="#B388FF"
+                                BorderBrush="#B388FF"
+                                BorderThickness="1"
+                                CornerRadius="6"
+                                Padding="12,6"
+                                ToolTip.Tip="Save the selected profile as a .json file to share or back up."
+                                AutomationProperties.Name="Export selected profile" />
+                        <Button Content="⬇ Import"
+                                Command="{Binding ImportProfileCommand}"
+                                Background="#1A1A2A"
+                                Foreground="#B388FF"
+                                BorderBrush="#B388FF"
+                                BorderThickness="1"
+                                CornerRadius="6"
+                                Padding="12,6"
+                                ToolTip.Tip="Load a profile from a .json file. A new copy is created — existing profiles are not overwritten."
+                                AutomationProperties.Name="Import profile from file" />
+                    </StackPanel>
+                </StackPanel>
+
+                <ListBox ItemsSource="{Binding Profiles}"
+                         SelectedItem="{Binding SelectedProfile}"
+                         Background="Transparent"
+                         AutomationProperties.Name="Profile list">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                                    <TextBlock Text="(Default)" FontSize="10" Foreground="#00FF9C"
+                                               IsVisible="{Binding IsDefault}" VerticalAlignment="Center" />
+                                </StackPanel>
+                                <TextBlock FontSize="10" Foreground="#4A4F5A">
+                                    <TextBlock.Text>
+                                        <MultiBinding StringFormat="{}{0} macros">
+                                            <Binding Path="Macros.Count" />
+                                        </MultiBinding>
+                                    </TextBlock.Text>
+                                </TextBlock>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </DockPanel>
+        </Border>
+
+        <!-- Profile Details -->
+        <Border Classes="card" Grid.Column="1">
+            <ScrollViewer>
+                <StackPanel Spacing="16" IsEnabled="{Binding SelectedProfile, Converter={x:Static ObjectConverters.IsNotNull}}">
+                    <TextBlock Text="Profile Details" Classes="section-header" />
+
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Name" Classes="label" />
+                        <TextBlock Text="{Binding SelectedProfile.Name}" FontSize="18" FontWeight="Bold"
+                                   Foreground="#EAEAEA" />
+                    </StackPanel>
+
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Created" Classes="label" />
+                        <TextBlock Text="{Binding SelectedProfile.CreatedAt, StringFormat={}{0:yyyy-MM-dd HH:mm}}"
+                                   Foreground="#8A8F9A" />
+                    </StackPanel>
+
+                    <Separator />
+
+                    <!-- Associated Processes -->
+                    <TextBlock Text="Associated Processes" FontWeight="SemiBold" FontSize="14" Foreground="#EAEAEA" />
+                    <TextBlock Text="Auto-switch to this profile when these processes are in foreground"
+                               Classes="label" TextWrapping="Wrap" />
+
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBox Text="{Binding AssociatedProcess}" Watermark="Process name (e.g. game.exe)"
+                                 AutomationProperties.Name="Associated process name" />
+                        <Button Grid.Column="1" Content="Add" Command="{Binding AddProcessCommand}"
+                                Margin="8,0,0,0"
+                                AutomationProperties.Name="Add process association" />
+                    </Grid>
+
+                    <ItemsControl ItemsSource="{Binding SelectedProfile.AssociatedProcesses}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Classes="tag">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Text="{Binding}" VerticalAlignment="Center" />
+                                        <Button Grid.Column="1" Content="X" FontSize="10"
+                                                Command="{Binding DataContext.RemoveProcessCommand, ElementName=ProfilesViewRoot}"
+                                                CommandParameter="{Binding}"
+                                                AutomationProperties.Name="Remove process" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+    </Grid>
+</UserControl>

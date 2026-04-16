@@ -1,0 +1,275 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ─── Global ─── -->
+    <Style Selector="TextBlock">
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Foreground" Value="#EAEAEA" />
+    </Style>
+
+    <!-- ═══ Cards ═══ -->
+    <Style Selector="Border.card">
+        <Setter Property="Background" Value="#15181D" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="Padding" Value="16" />
+        <Setter Property="Margin" Value="4" />
+        <Setter Property="BorderBrush" Value="#1E2228" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="BoxShadow" Value="0 4 24 0 #60000000" />
+    </Style>
+
+    <!-- Inner section panels -->
+    <Style Selector="Border.section-panel">
+        <Setter Property="Background" Value="#0D0F13" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Padding" Value="14" />
+        <Setter Property="Margin" Value="0,4" />
+        <Setter Property="BorderBrush" Value="#1A1D22" />
+        <Setter Property="BorderThickness" Value="1" />
+    </Style>
+
+    <!-- ═══ Typography ═══ -->
+    <Style Selector="TextBlock.section-header">
+        <Setter Property="FontSize" Value="15" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Margin" Value="0,0,0,10" />
+        <Setter Property="Foreground" Value="#EAEAEA" />
+    </Style>
+
+    <Style Selector="TextBlock.label">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Foreground" Value="#8A8F9A" />
+        <Setter Property="Margin" Value="0,0,0,4" />
+    </Style>
+
+    <Style Selector="TextBlock.muted">
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="Foreground" Value="#4A4F5A" />
+    </Style>
+
+    <!-- ═══ Buttons ═══ -->
+    <Style Selector="Button.accent">
+        <Setter Property="Background" Value="#00FF9C" />
+        <Setter Property="Foreground" Value="#0A0A0A" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="Padding" Value="16,8" />
+        <Setter Property="Cursor" Value="Hand" />
+    </Style>
+    <Style Selector="Button.accent:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="#33FFB3" />
+    </Style>
+    <Style Selector="Button.accent:pressed /template/ ContentPresenter">
+        <Setter Property="Background" Value="#00C97A" />
+    </Style>
+
+    <Style Selector="Button.danger">
+        <Setter Property="Background" Value="#FF6B6B" />
+        <Setter Property="Foreground" Value="#0A0A0A" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="Padding" Value="16,8" />
+        <Setter Property="Cursor" Value="Hand" />
+    </Style>
+    <Style Selector="Button.danger:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="#FF9090" />
+    </Style>
+    <Style Selector="Button.danger:pressed /template/ ContentPresenter">
+        <Setter Property="Background" Value="#E05050" />
+    </Style>
+
+    <Style Selector="Button.secondary">
+        <Setter Property="Background" Value="#1A1D24" />
+        <Setter Property="Foreground" Value="#EAEAEA" />
+        <Setter Property="BorderBrush" Value="#2A2D34" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="Padding" Value="16,8" />
+        <Setter Property="Cursor" Value="Hand" />
+    </Style>
+    <Style Selector="Button.secondary:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="#1E2228" />
+    </Style>
+
+    <!-- ═══ Navigation ═══ -->
+    <Style Selector="ListBoxItem">
+        <Setter Property="Padding" Value="14,11" />
+        <Setter Property="Margin" Value="2,1" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Foreground" Value="#8A8F9A" />
+        <Setter Property="Cursor" Value="Hand" />
+    </Style>
+    <Style Selector="ListBoxItem:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="#1A1D24" />
+    </Style>
+    <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
+        <Setter Property="Background" Value="#0D1A12" />
+    </Style>
+    <Style Selector="ListBoxItem:selected">
+        <Setter Property="Foreground" Value="#00FF9C" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+
+    <!-- ═══ Status / Indicators ═══ -->
+    <Style Selector="Ellipse.status-dot">
+        <Setter Property="Width" Value="10" />
+        <Setter Property="Height" Value="10" />
+        <Setter Property="Margin" Value="0,0,6,0" />
+    </Style>
+
+    <Style Selector="Ellipse.btn-indicator">
+        <Setter Property="Width" Value="26" />
+        <Setter Property="Height" Value="26" />
+        <Setter Property="StrokeThickness" Value="2" />
+        <Setter Property="Stroke" Value="#2A2D34" />
+    </Style>
+
+    <!-- ═══ Tags / Chips ═══ -->
+    <Style Selector="Border.tag">
+        <Setter Property="Background" Value="#1A1D24" />
+        <Setter Property="CornerRadius" Value="5" />
+        <Setter Property="Padding" Value="10,4" />
+        <Setter Property="Margin" Value="0,2" />
+        <Setter Property="BorderBrush" Value="#2A2D34" />
+        <Setter Property="BorderThickness" Value="1" />
+    </Style>
+
+    <!-- ═══ Separators ═══ -->
+    <Style Selector="Separator">
+        <Setter Property="Margin" Value="0,6" />
+        <Setter Property="Background" Value="#1A1D22" />
+        <Setter Property="Height" Value="1" />
+    </Style>
+
+    <!-- High contrast -->
+    <Style Selector="Border.card:is-high-contrast">
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="BorderBrush" Value="White" />
+    </Style>
+
+    <!-- ═══ ListBox inside cards — transparent bg, no border ═══ -->
+    <!-- Prevents the default gray Fluent rectangle inside card panels -->
+    <Style Selector="ListBox">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+    </Style>
+
+    <!-- ═══ Sliders — Matrix green theme ═══ -->
+    <!-- Thumb circle -->
+    <Style Selector="Slider /template/ Thumb">
+        <Setter Property="Background" Value="#00FF9C" />
+        <Setter Property="Foreground" Value="#00FF9C" />
+    </Style>
+    <Style Selector="Slider /template/ Thumb /template/ Border">
+        <Setter Property="Background" Value="#00FF9C" />
+        <Setter Property="CornerRadius" Value="100" />
+    </Style>
+    <Style Selector="Slider /template/ Thumb:pointerover /template/ Border">
+        <Setter Property="Background" Value="#33FFB3" />
+    </Style>
+    <Style Selector="Slider /template/ Thumb:pressed /template/ Border">
+        <Setter Property="Background" Value="#00C97A" />
+    </Style>
+    <!-- Active track (filled portion before thumb) -->
+    <Style Selector="Slider /template/ Track > Border">
+        <Setter Property="Background" Value="#00FF9C" />
+    </Style>
+    <!-- Inactive track -->
+    <Style Selector="Slider">
+        <Setter Property="Background" Value="#1E2228" />
+        <Setter Property="Foreground" Value="#00FF9C" />
+    </Style>
+
+    <!-- ═══ NumericUpDown — Matrix theme ═══ -->
+    <Style Selector="NumericUpDown /template/ ButtonSpinner /template/ Border">
+        <Setter Property="Background" Value="#15181D" />
+        <Setter Property="BorderBrush" Value="#1E2228" />
+    </Style>
+
+    <!-- ═══ ComboBox — Matrix theme ═══ -->
+    <Style Selector="ComboBox">
+        <Setter Property="Background" Value="#15181D" />
+        <Setter Property="BorderBrush" Value="#1E2228" />
+        <Setter Property="Foreground" Value="#EAEAEA" />
+    </Style>
+    <Style Selector="ComboBox:pointerover /template/ Border#Background">
+        <Setter Property="Background" Value="#1E2228" />
+        <Setter Property="BorderBrush" Value="#00FF9C" />
+    </Style>
+    <Style Selector="ComboBox:focus /template/ Border#Background">
+        <Setter Property="BorderBrush" Value="#00FF9C" />
+    </Style>
+    <Style Selector="ComboBoxItem:selected /template/ ContentPresenter">
+        <Setter Property="Background" Value="#0D1A12" />
+    </Style>
+    <Style Selector="ComboBoxItem:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="#1A1D24" />
+    </Style>
+
+    <!-- ═══ TextBox — Matrix theme ═══ -->
+    <Style Selector="TextBox">
+        <Setter Property="Background" Value="#15181D" />
+        <Setter Property="BorderBrush" Value="#1E2228" />
+        <Setter Property="Foreground" Value="#EAEAEA" />
+        <Setter Property="CaretBrush" Value="#00FF9C" />
+        <Setter Property="SelectionBrush" Value="#1A3D28" />
+    </Style>
+    <Style Selector="TextBox:focus /template/ Border">
+        <Setter Property="BorderBrush" Value="#00FF9C" />
+    </Style>
+    <Style Selector="TextBox:pointerover /template/ Border">
+        <Setter Property="BorderBrush" Value="#2A3A30" />
+    </Style>
+
+    <!-- ═══ CheckBox — Matrix green tick ═══ -->
+    <Style Selector="CheckBox /template/ Border#NormalRectangle">
+        <Setter Property="BorderBrush" Value="#2A3A30" />
+        <Setter Property="Background" Value="#15181D" />
+    </Style>
+    <Style Selector="CheckBox:checked /template/ Border#NormalRectangle">
+        <Setter Property="Background" Value="#00FF9C" />
+        <Setter Property="BorderBrush" Value="#00FF9C" />
+    </Style>
+    <Style Selector="CheckBox:checked /template/ Path">
+        <Setter Property="Stroke" Value="#0A0A0A" />
+    </Style>
+
+    <!-- ═══ ScrollViewer — scrollbar always in layout (never overlays content) ═══ -->
+    <!-- AllowAutoHide=False means the scrollbar reserves its own column/row so it   -->
+    <!-- never renders on top of NumericUpDown spinners, TextBoxes, etc.             -->
+    <Style Selector="ScrollViewer">
+        <Setter Property="AllowAutoHide" Value="False" />
+    </Style>
+
+    <!-- ═══ ScrollBar — compact Matrix style ═══ -->
+    <Style Selector="ScrollBar">
+        <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <!-- Vertical scrollbar width -->
+    <Style Selector="ScrollBar:vertical">
+        <Setter Property="Width" Value="8" />
+        <Setter Property="Margin" Value="2,0,0,0" />
+    </Style>
+    <!-- Horizontal scrollbar height -->
+    <Style Selector="ScrollBar:horizontal">
+        <Setter Property="Height" Value="8" />
+        <Setter Property="Margin" Value="0,2,0,0" />
+    </Style>
+    <Style Selector="ScrollBar /template/ Border#VerticalRoot">
+        <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="ScrollBar /template/ Thumb">
+        <Setter Property="Background" Value="#252830" />
+        <Setter Property="CornerRadius" Value="4" />
+    </Style>
+    <Style Selector="ScrollBar /template/ Thumb:pointerover">
+        <Setter Property="Background" Value="#00FF9C" />
+    </Style>
+    <Style Selector="ScrollBar /template/ Thumb:pressed">
+        <Setter Property="Background" Value="#00C97A" />
+    </Style>
+
+</Styles>

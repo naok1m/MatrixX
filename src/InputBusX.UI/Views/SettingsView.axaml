@@ -1,0 +1,164 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:InputBusX.UI.ViewModels"
+             x:Class="InputBusX.UI.Views.SettingsView"
+             x:DataType="vm:SettingsViewModel">
+
+    <ScrollViewer>
+        <StackPanel Margin="0,0,8,0" Spacing="12">
+
+            <!-- ── Header ──────────────────────────────────────────────────── -->
+            <Border Classes="card" Padding="18,14">
+                <TextBlock Text="General Settings"
+                           FontSize="18" FontWeight="SemiBold"
+                           Foreground="#EAEAEA" />
+            </Border>
+
+            <!-- ── Performance ─────────────────────────────────────────────── -->
+            <Border Classes="card section-panel"
+                    BorderThickness="3,0,0,0"
+                    BorderBrush="#00DDFF"
+                    Padding="18,16">
+                <StackPanel Spacing="14">
+
+                    <TextBlock Text="PERFORMANCE"
+                               FontSize="11" FontWeight="Bold"
+                               Foreground="#00DDFF" LetterSpacing="2" />
+
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" Spacing="4">
+                            <TextBlock Text="Polling Rate (ms)"
+                                       Classes="label" />
+                            <TextBlock Text="Lower = more responsive (1ms = ~1000Hz). Requires ≥1ms Windows timer resolution."
+                                       FontSize="11" Foreground="#4A4F5A" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <NumericUpDown Grid.Column="1"
+                                       Value="{Binding PollingRateMs}"
+                                       Minimum="1" Maximum="100"
+                                       FormatString="0"
+                                       Width="110"
+                                       VerticalAlignment="Top"
+                                       Margin="16,0,0,0" />
+                    </Grid>
+
+                </StackPanel>
+            </Border>
+
+            <!-- ── Startup ─────────────────────────────────────────────────── -->
+            <Border Classes="card section-panel"
+                    BorderThickness="3,0,0,0"
+                    BorderBrush="#00FF9C"
+                    Padding="18,16">
+                <StackPanel Spacing="14">
+
+                    <TextBlock Text="STARTUP"
+                               FontSize="11" FontWeight="Bold"
+                               Foreground="#00FF9C" LetterSpacing="2" />
+
+                    <CheckBox IsChecked="{Binding AutoConnect}">
+                        <StackPanel Spacing="2">
+                            <TextBlock Text="Auto-connect on startup"
+                                       FontSize="13" Foreground="#EAEAEA" />
+                            <TextBlock Text="Automatically start the input pipeline when the app opens."
+                                       FontSize="11" Foreground="#4A4F5A" />
+                        </StackPanel>
+                    </CheckBox>
+
+                    <CheckBox IsChecked="{Binding StartMinimized}">
+                        <StackPanel Spacing="2">
+                            <TextBlock Text="Start minimized"
+                                       FontSize="13" Foreground="#EAEAEA" />
+                            <TextBlock Text="Open the app in the background without showing the window."
+                                       FontSize="11" Foreground="#4A4F5A" />
+                        </StackPanel>
+                    </CheckBox>
+
+                </StackPanel>
+            </Border>
+
+            <!-- ── System tray ─────────────────────────────────────────────── -->
+            <Border Classes="card section-panel"
+                    BorderThickness="3,0,0,0"
+                    BorderBrush="#B388FF"
+                    Padding="18,16">
+                <StackPanel Spacing="14">
+
+                    <TextBlock Text="SYSTEM TRAY"
+                               FontSize="11" FontWeight="Bold"
+                               Foreground="#B388FF" LetterSpacing="2" />
+
+                    <CheckBox IsChecked="{Binding MinimizeToTray}">
+                        <StackPanel Spacing="2">
+                            <TextBlock Text="Minimize to system tray"
+                                       FontSize="13" Foreground="#EAEAEA" />
+                            <TextBlock Text="Closing the window sends it to the tray instead of exiting."
+                                       FontSize="11" Foreground="#4A4F5A" />
+                        </StackPanel>
+                    </CheckBox>
+
+                    <CheckBox IsChecked="{Binding ShowNotifications}">
+                        <StackPanel Spacing="2">
+                            <TextBlock Text="Show tray notifications"
+                                       FontSize="13" Foreground="#EAEAEA" />
+                            <TextBlock Text="Display Windows notifications for connection events and weapon detection."
+                                       FontSize="11" Foreground="#4A4F5A" />
+                        </StackPanel>
+                    </CheckBox>
+
+                </StackPanel>
+            </Border>
+
+            <!-- ── Logging ─────────────────────────────────────────────────── -->
+            <Border Classes="card section-panel"
+                    BorderThickness="3,0,0,0"
+                    BorderBrush="#FFD93D"
+                    Padding="18,16">
+                <StackPanel Spacing="14">
+
+                    <TextBlock Text="LOGGING"
+                               FontSize="11" FontWeight="Bold"
+                               Foreground="#FFD93D" LetterSpacing="2" />
+
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" Spacing="4">
+                            <TextBlock Text="Log Level"
+                                       Classes="label" />
+                            <TextBlock Text="Controls how much detail is written to the log file."
+                                       FontSize="11" Foreground="#4A4F5A" />
+                        </StackPanel>
+                        <ComboBox Grid.Column="1"
+                                  ItemsSource="{Binding LogLevels}"
+                                  SelectedItem="{Binding LogLevel}"
+                                  Width="150"
+                                  VerticalAlignment="Top"
+                                  Margin="16,0,0,0" />
+                    </Grid>
+
+                </StackPanel>
+            </Border>
+
+            <!-- ── Save ────────────────────────────────────────────────────── -->
+            <Border Classes="card" Padding="18,14">
+                <Grid ColumnDefinitions="*,Auto,Auto">
+
+                    <TextBlock Grid.Column="0"
+                               Text="{Binding SaveStatus}"
+                               FontSize="13"
+                               Foreground="#00FF9C"
+                               VerticalAlignment="Center"
+                               IsVisible="{Binding SaveStatus,
+                                           Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+                    <Button Grid.Column="2"
+                            Content="Save Settings"
+                            Command="{Binding SaveCommand}"
+                            Classes="accent"
+                            Padding="20,8" />
+
+                </Grid>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+
+</UserControl>

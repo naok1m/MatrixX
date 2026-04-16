@@ -1,0 +1,167 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:InputBusX.UI.ViewModels"
+        xmlns:domain="using:InputBusX.Domain.Entities"
+        x:Class="InputBusX.UI.Views.WeaponLibraryWindow"
+        x:DataType="vm:WeaponLibraryViewModel"
+        Title="Banco de Armas"
+        Width="700" Height="560"
+        MinWidth="560" MinHeight="400"
+        WindowStartupLocation="CenterOwner"
+        Background="#0A0A0A"
+        SystemDecorations="BorderOnly">
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto" Margin="20">
+
+        <!-- ── Header ─────────────────────────────────────────────── -->
+        <StackPanel Grid.Row="0" Spacing="2" Margin="0,0,0,16">
+            <TextBlock Text="Banco de Armas"
+                       FontSize="18" FontWeight="Bold"
+                       Foreground="#EAEAEA" />
+            <TextBlock Text="Selecione uma arma para adicionar ao seu perfil de detecção"
+                       FontSize="12" Foreground="#4A4F5A" />
+        </StackPanel>
+
+        <!-- ── Filters ────────────────────────────────────────────── -->
+        <Grid Grid.Row="1" ColumnDefinitions="*,160,160" Margin="0,0,0,12">
+
+            <!-- Search -->
+            <TextBox Grid.Column="0"
+                     Text="{Binding SearchText}"
+                     Watermark="🔍  Buscar arma..."
+                     Margin="0,0,8,0"
+                     Background="#0F1115"
+                     Foreground="#EAEAEA"
+                     BorderBrush="#1E2228"
+                     CornerRadius="6"
+                     Padding="10,8" />
+
+            <!-- Game filter -->
+            <ComboBox Grid.Column="1"
+                      ItemsSource="{Binding Games}"
+                      SelectedItem="{Binding SelectedGame}"
+                      Margin="0,0,8,0"
+                      Background="#0F1115"
+                      Foreground="#EAEAEA"
+                      BorderBrush="#1E2228"
+                      HorizontalAlignment="Stretch" />
+
+            <!-- Category filter -->
+            <ComboBox Grid.Column="2"
+                      ItemsSource="{Binding Categories}"
+                      SelectedItem="{Binding SelectedCategory}"
+                      Background="#0F1115"
+                      Foreground="#EAEAEA"
+                      BorderBrush="#1E2228"
+                      HorizontalAlignment="Stretch" />
+
+        </Grid>
+
+        <!-- ── Results list ───────────────────────────────────────── -->
+        <Border Grid.Row="2"
+                Background="#0F1115"
+                BorderBrush="#1E2228"
+                BorderThickness="1"
+                CornerRadius="8">
+
+            <ScrollViewer>
+                <ItemsControl ItemsSource="{Binding Results}" Margin="6">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="domain:WeaponLibraryEntry">
+                            <Button Background="Transparent"
+                                    BorderThickness="0"
+                                    HorizontalAlignment="Stretch"
+                                    HorizontalContentAlignment="Stretch"
+                                    Padding="0"
+                                    Margin="0,0,0,4"
+                                    Command="{Binding DataContext.SelectEntryCommand,
+                                              RelativeSource={RelativeSource AncestorType=Window}}"
+                                    CommandParameter="{Binding}">
+                                <Border Background="#15181D"
+                                        CornerRadius="6"
+                                        Padding="14,10"
+                                        BorderBrush="#1E2228"
+                                        BorderThickness="1">
+                                    <Border.Styles>
+                                        <Style Selector="Border:pointerover">
+                                            <Setter Property="Background" Value="#0D1A12" />
+                                            <Setter Property="BorderBrush" Value="#00FF9C" />
+                                        </Style>
+                                    </Border.Styles>
+
+                                    <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+
+                                        <!-- Category badge -->
+                                        <Border Grid.Column="0"
+                                                Background="#1E2228"
+                                                CornerRadius="4"
+                                                Padding="8,3"
+                                                Margin="0,0,12,0"
+                                                VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Category}"
+                                                       FontSize="10"
+                                                       Foreground="#8A8F9A"
+                                                       FontWeight="SemiBold" />
+                                        </Border>
+
+                                        <!-- Name + game -->
+                                        <StackPanel Grid.Column="1" Spacing="2"
+                                                    VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Name}"
+                                                       FontSize="14" FontWeight="SemiBold"
+                                                       Foreground="#EAEAEA" />
+                                            <TextBlock Text="{Binding Game}"
+                                                       FontSize="11" Foreground="#4A4F5A" />
+                                        </StackPanel>
+
+                                        <!-- Recoil Y value -->
+                                        <StackPanel Grid.Column="2"
+                                                    VerticalAlignment="Center"
+                                                    Margin="12,0"
+                                                    HorizontalAlignment="Right">
+                                            <TextBlock Text="RECOIL Y"
+                                                       FontSize="9" Foreground="#4A4F5A"
+                                                       HorizontalAlignment="Right" />
+                                            <TextBlock Text="{Binding RecoilCompensationY}"
+                                                       FontSize="13" FontWeight="SemiBold"
+                                                       Foreground="#FFD93D"
+                                                       HorizontalAlignment="Right" />
+                                        </StackPanel>
+
+                                        <!-- Add icon -->
+                                        <TextBlock Grid.Column="3"
+                                                   Text="+"
+                                                   FontSize="22" FontWeight="Bold"
+                                                   Foreground="#00FF9C"
+                                                   VerticalAlignment="Center"
+                                                   Margin="8,0,0,0" />
+
+                                    </Grid>
+                                </Border>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+
+        </Border>
+
+        <!-- ── Footer ─────────────────────────────────────────────── -->
+        <Grid Grid.Row="3" ColumnDefinitions="*,Auto" Margin="0,12,0,0">
+            <TextBlock Grid.Column="0"
+                       Text="{Binding Results.Count, StringFormat='{}{0} armas encontradas'}"
+                       FontSize="11" Foreground="#4A4F5A"
+                       VerticalAlignment="Center" />
+            <Button Grid.Column="1"
+                    Content="Fechar"
+                    Background="#1E2228"
+                    Foreground="#8A8F9A"
+                    BorderThickness="0"
+                    CornerRadius="6"
+                    Padding="20,8"
+                    Click="OnCloseClick" />
+        </Grid>
+
+    </Grid>
+
+</Window>

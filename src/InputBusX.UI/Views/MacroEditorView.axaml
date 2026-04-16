@@ -1,0 +1,397 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:InputBusX.UI.ViewModels"
+             x:Class="InputBusX.UI.Views.MacroEditorView"
+             x:DataType="vm:MacroEditorViewModel">
+
+    <Grid ColumnDefinitions="260,*" Margin="4">
+        <!-- Macro List -->
+        <Border Classes="card" Grid.Column="0" Margin="0,0,8,0">
+            <DockPanel>
+                <TextBlock Text="Macros" Classes="section-header" DockPanel.Dock="Top" />
+
+                <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
+                    <Button Content="+ Add" Command="{Binding AddMacroCommand}" Classes="accent"
+                            ToolTip.Tip="Criar novo macro  (Ctrl+N)"
+                            AutomationProperties.Name="Add new macro" />
+                    <Button Content="Delete" Command="{Binding DeleteMacroCommand}" Classes="danger"
+                            ToolTip.Tip="Deletar macro selecionado  (Del)"
+                            AutomationProperties.Name="Delete selected macro" />
+                </StackPanel>
+
+                <!-- Empty state -->
+                <TextBlock Text="No macros yet.&#x0A;Click + Add to create one."
+                           Foreground="#4A4F5A" FontStyle="Italic" TextAlignment="Center"
+                           HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,24"
+                           IsVisible="{Binding !Macros.Count}" />
+
+                <ListBox ItemsSource="{Binding Macros}"
+                         SelectedItem="{Binding SelectedMacro}"
+                         Background="Transparent"
+                         AutomationProperties.Name="Macro list">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Ellipse Width="8" Height="8" VerticalAlignment="Center"
+                                         Fill="#00FF9C" IsVisible="{Binding Enabled}" />
+                                <Ellipse Width="8" Height="8" VerticalAlignment="Center"
+                                         Fill="#3A3F4A" IsVisible="{Binding !Enabled}" />
+                                <StackPanel>
+                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                                    <TextBlock Text="{Binding Type}" FontSize="10" Foreground="#4A4F5A" />
+                                </StackPanel>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </DockPanel>
+        </Border>
+
+        <!-- Macro Editor Panel -->
+        <Border Classes="card" Grid.Column="1">
+            <Panel>
+
+            <!-- Empty state when no macro selected -->
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="10"
+                        IsVisible="{Binding SelectedMacro, Converter={x:Static ObjectConverters.IsNull}}">
+                <TextBlock Text="✦  Nenhum macro selecionado"
+                           FontSize="14" FontWeight="SemiBold"
+                           Foreground="#3A3F4A" HorizontalAlignment="Center" />
+                <TextBlock Text="Selecione um macro da lista ou clique em + Add para criar um novo."
+                           Foreground="#2A2D34" FontSize="11"
+                           TextAlignment="Center" TextWrapping="Wrap"
+                           MaxWidth="220" HorizontalAlignment="Center" />
+                <TextBlock Text="Ctrl+N  →  novo macro"
+                           Foreground="#1E2228" FontSize="10"
+                           FontFamily="Cascadia Code,Consolas,Courier New"
+                           HorizontalAlignment="Center" Margin="0,4,0,0" />
+            </StackPanel>
+
+            <!-- Editor with sticky save footer (DockPanel keeps footer always visible) -->
+            <DockPanel IsVisible="{Binding SelectedMacro, Converter={x:Static ObjectConverters.IsNotNull}}">
+
+                <!-- ── Sticky save footer — always in view regardless of scroll ── -->
+                <Border DockPanel.Dock="Bottom"
+                        Background="#0A0C10"
+                        BorderBrush="#1A1D22"
+                        BorderThickness="0,1,0,0"
+                        Padding="4,10,4,0"
+                        Margin="0,10,0,0">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8"
+                                    VerticalAlignment="Center">
+                            <Border Background="#1A1D22" CornerRadius="4" Padding="6,3">
+                                <TextBlock Text="Ctrl+S"
+                                           FontSize="10"
+                                           Foreground="#4A4F5A"
+                                           FontFamily="Cascadia Code,Consolas,Courier New" />
+                            </Border>
+                            <TextBlock Text="para salvar alterações"
+                                       FontSize="11" Foreground="#3A3F4A"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="{Binding SaveStatus}"
+                                       Foreground="#00FF9C" FontWeight="SemiBold"
+                                       VerticalAlignment="Center" />
+                            <Button Content="Save Macro"
+                                    Command="{Binding SaveMacroCommand}"
+                                    Classes="accent"
+                                    ToolTip.Tip="Salva as alterações deste macro  (Ctrl+S)"
+                                    AutomationProperties.Name="Save macro settings" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- ── Scrollable settings ── -->
+                <ScrollViewer>
+                <StackPanel Spacing="14" Margin="0,0,4,0">
+                    <TextBlock Text="Macro Settings" Classes="section-header" />
+
+                    <!-- ============ GENERAL ============ -->
+                    <!-- Name -->
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Name" Classes="label" />
+                        <TextBox Text="{Binding MacroName}" Watermark="Macro name..."
+                                 AutomationProperties.Name="Macro name" />
+                    </StackPanel>
+
+                    <!-- Type + Enabled -->
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Type" Classes="label" />
+                            <ComboBox ItemsSource="{Binding MacroTypes}"
+                                      SelectedItem="{Binding SelectedMacroType}"
+                                      MinWidth="200"
+                                      AutomationProperties.Name="Macro type" />
+                        </StackPanel>
+                        <CheckBox Grid.Column="1" Content="Enabled" IsChecked="{Binding MacroEnabled}"
+                                  VerticalAlignment="Bottom" Margin="12,0,0,0"
+                                  AutomationProperties.Name="Macro enabled" />
+                    </Grid>
+
+                    <!-- Activation Button (all types) -->
+                    <Border Classes="section-panel" BorderBrush="#00FF9C" BorderThickness="3,0,0,0">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Activation" FontWeight="SemiBold" FontSize="14" Foreground="#00FF9C" />
+                            <TextBlock Text="Button that triggers this macro (hold or press)"
+                                       Classes="label" TextWrapping="Wrap" />
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Trigger Button" Classes="label" />
+                                <ComboBox ItemsSource="{Binding ButtonList}"
+                                          SelectedItem="{Binding ActivationButton}"
+                                          MinWidth="200"
+                                          AutomationProperties.Name="Activation button" />
+                            </StackPanel>
+                            <CheckBox Content="Toggle mode (press once to activate, again to deactivate)"
+                                      IsChecked="{Binding ToggleMode}"
+                                      AutomationProperties.Name="Toggle mode" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Priority -->
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Priority (higher = runs first)" Classes="label" />
+                        <NumericUpDown Value="{Binding MacroPriority}" Minimum="0" Maximum="100"
+                                       AutomationProperties.Name="Macro priority"
+                                       ToolTip.Tip="When multiple macros are active at once, they run in descending priority order. Use this to control which macro's output wins." />
+                    </StackPanel>
+
+                    <Separator />
+
+                    <!-- ============ AUTO PING ============ -->
+                    <Border Classes="section-panel" BorderBrush="#FFD93D" BorderThickness="3,0,0,0"
+                            IsVisible="{Binding ShowAutoPingSettings}">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="Auto Ping Settings" FontWeight="SemiBold" FontSize="14" Foreground="#FFD93D" />
+                            <TextBlock Text="Automatically pings while you hold RT. Choose which button gets pressed and how often it repeats."
+                                       Classes="label" TextWrapping="Wrap" Foreground="#8A8F9A" />
+
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Ping Button" Classes="label" />
+                                <ComboBox ItemsSource="{Binding ButtonList}"
+                                          SelectedItem="{Binding PingButton}"
+                                          MinWidth="200"
+                                          AutomationProperties.Name="Ping button" />
+                            </StackPanel>
+
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Ping Interval (ms)" Classes="label" />
+                                <NumericUpDown Value="{Binding MacroIntervalMs}" Minimum="50" Maximum="5000"
+                                               Increment="50"
+                                               AutomationProperties.Name="Ping interval in ms" />
+                                <TextBlock Text="How often the ping button is pressed (200ms = 5x per second)"
+                                           FontSize="10" Foreground="#4A4F5A" />
+                            </StackPanel>
+
+                            <CheckBox Content="Loop continuously while held"
+                                      IsChecked="{Binding MacroLoop}"
+                                      AutomationProperties.Name="Loop ping" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ============ AUTO FIRE ============ -->
+                    <Border Classes="section-panel" BorderBrush="#FF8C42" BorderThickness="3,0,0,0"
+                            IsVisible="{Binding ShowAutoFireSettings}">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="Auto Fire Settings" FontWeight="SemiBold" FontSize="14" Foreground="#FF8C42" />
+                            <TextBlock Text="Rapidamente pressiona e solta o trigger enquanto você segura. Use RT para pistolas semi-auto."
+                                       Classes="label" TextWrapping="Wrap" Foreground="#8A8F9A" />
+
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Trigger de Ativação" Classes="label" />
+                                <ComboBox ItemsSource="{Binding TriggerSources}"
+                                          SelectedItem="{Binding TriggerSource}"
+                                          MinWidth="200"
+                                          AutomationProperties.Name="Auto fire trigger source" />
+                                <TextBlock Text="RT = gatilho direito (atirar). LT = gatilho esquerdo (mirar)."
+                                           FontSize="10" Foreground="#4A4F5A" />
+                            </StackPanel>
+
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Fire Interval (ms)" Classes="label" />
+                                <NumericUpDown Value="{Binding MacroIntervalMs}" Minimum="10" Maximum="1000"
+                                               Increment="10"
+                                               AutomationProperties.Name="Fire interval in ms"
+                                               ToolTip.Tip="Time between each simulated trigger press/release cycle (milliseconds). Lower = faster fire rate. 40ms = very fast (~25 shots/s), 80ms = moderate (~12 shots/s). Stay above the weapon's actual fire rate for best results." />
+                                <TextBlock Text="Menor = mais rápido (40ms = muito rápido, 80ms = moderado)"
+                                           FontSize="10" Foreground="#4A4F5A" />
+                            </StackPanel>
+
+                            <CheckBox Content="Loop" IsChecked="{Binding MacroLoop}"
+                                      AutomationProperties.Name="Loop auto fire" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ============ NO RECOIL ============ -->
+                    <Border Classes="section-panel" BorderBrush="#FF6B6B" BorderThickness="3,0,0,0"
+                            IsVisible="{Binding ShowNoRecoilSettings}">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="No Recoil Settings" FontWeight="SemiBold" FontSize="14" Foreground="#FF6B6B" />
+                            <TextBlock Text="Compensates weapon recoil by pulling the right stick down while RT is held."
+                                       Classes="label" TextWrapping="Wrap" Foreground="#8A8F9A" />
+                            <TextBlock Text="If you want an extra modifier, pick an activation button above."
+                                       Classes="label" TextWrapping="Wrap" Foreground="#8A8F9A" />
+
+                            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto">
+                                <StackPanel Spacing="4" Margin="0,0,8,0">
+                                    <TextBlock Text="Compensation X" Classes="label" />
+                                    <NumericUpDown Value="{Binding RecoilCompensationX}"
+                                                   Minimum="-32767" Maximum="32767" Increment="500"
+                                                   AutomationProperties.Name="Recoil X"
+                                                   ToolTip.Tip="Horizontal correction added to the right stick each frame while firing. Positive = push right, Negative = push left. Most weapons need 0 here." />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Spacing="4">
+                                    <TextBlock Text="Compensation Y (negativo = baixo)" Classes="label" />
+                                    <NumericUpDown Value="{Binding RecoilCompensationY}"
+                                                   Minimum="-32767" Maximum="32767" Increment="500"
+                                                   AutomationProperties.Name="Recoil Y"
+                                                   ToolTip.Tip="Vertical correction added to the right stick each frame while firing. Negative pulls the stick DOWN to counteract upward recoil. Start at -5000 and tune until crosshair stays flat. Range: ±32767 (full stick deflection)." />
+                                </StackPanel>
+                            </Grid>
+                            <TextBlock Text="Range do analógico: -32767 (máximo baixo) a 32767 (máximo cima). Comece com Y=-5000 e ajuste."
+                                       FontSize="10" Foreground="#4A4F5A" TextWrapping="Wrap" />
+
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Trigger Source" Classes="label" />
+                                <ComboBox ItemsSource="{Binding TriggerSources}"
+                                          SelectedItem="{Binding TriggerSource}"
+                                          MinWidth="200"
+                                          AutomationProperties.Name="No recoil trigger source" />
+                            </StackPanel>
+
+                            <StackPanel Spacing="4">
+                                <TextBlock Classes="label"
+                                           ToolTip.Tip="Scales the compensation values. 100% = full strength. 50% = half the recoil correction. Values above 100% amplify the correction beyond the configured values. Use this to fine-tune without changing the raw numbers.">
+                                    <TextBlock.Text>
+                                        <MultiBinding StringFormat="Intensity: {0:P0}">
+                                            <Binding Path="MacroIntensity" />
+                                        </MultiBinding>
+                                    </TextBlock.Text>
+                                </TextBlock>
+                                <Slider Value="{Binding MacroIntensity}" Minimum="0" Maximum="2" TickFrequency="0.05"
+                                        AutomationProperties.Name="Recoil intensity"
+                                        ToolTip.Tip="Scales the compensation values. 100% = full strength. 50% = half the recoil correction. Values above 100% amplify the correction beyond the configured values." />
+                            </StackPanel>
+
+                            <StackPanel Spacing="4">
+                                <TextBlock Classes="label"
+                                           ToolTip.Tip="Adds a small random offset to each frame's compensation so the pattern is never perfectly identical. Higher values = more variation. Recommended: 10–20% to avoid detection patterns while keeping recoil controlled.">
+                                    <TextBlock.Text>
+                                        <MultiBinding StringFormat="Randomization: {0:P0}">
+                                            <Binding Path="MacroRandomization" />
+                                        </MultiBinding>
+                                    </TextBlock.Text>
+                                </TextBlock>
+                                <Slider Value="{Binding MacroRandomization}" Minimum="0" Maximum="1"
+                                        AutomationProperties.Name="Recoil randomization"
+                                        ToolTip.Tip="Adds a small random offset to each frame's compensation so the pattern is never perfectly identical. Recommended: 10–20%." />
+                                <TextBlock Text="Adds random variation to avoid detection patterns"
+                                           FontSize="10" Foreground="#4A4F5A" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ============ AIM ASSIST BUFF ============ -->
+                    <Border Classes="section-panel" BorderBrush="#00DDFF" BorderThickness="3,0,0,0"
+                            IsVisible="{Binding ShowAimAssistBuffSettings}">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="Aim Assist Buff" FontWeight="SemiBold" FontSize="14" Foreground="#00DDFF" />
+                            <TextBlock Classes="label" TextWrapping="Wrap" Foreground="#8A8F9A"
+                                       Text="Quando LT for pressionado (mirando), o analógico ESQUERDO faz flicks rápidos de um lado pro outro para maximizar o aim assist do jogo. Sem LT = analógico normal." />
+
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Trigger de Ativação" Classes="label" />
+                                <ComboBox ItemsSource="{Binding TriggerSources}"
+                                          SelectedItem="{Binding TriggerSource}"
+                                          MinWidth="200"
+                                          AutomationProperties.Name="Aim assist trigger source" />
+                                <TextBlock Text="LT = apertar para mirar (ADS). RT = apertar para atirar."
+                                           FontSize="10" Foreground="#4A4F5A" />
+                            </StackPanel>
+
+                            <StackPanel Spacing="4">
+                                <TextBlock Classes="label"
+                                           ToolTip.Tip="How far the left stick flicks to each side (in raw axis units, range 0–32767). Maximum deflection (32767) gives the strongest possible aim-assist bubble trigger. Recommended: 32767 for Warzone/Apex, 20000 for more subtle assist.">
+                                    <TextBlock.Text>
+                                        <MultiBinding StringFormat="Força do Flick: {0} / 32767">
+                                            <Binding Path="FlickStrength" />
+                                        </MultiBinding>
+                                    </TextBlock.Text>
+                                </TextBlock>
+                                <Slider Value="{Binding FlickStrength}"
+                                        Minimum="5000" Maximum="32767" TickFrequency="1000"
+                                        AutomationProperties.Name="Flick strength"
+                                        ToolTip.Tip="Raw stick axis units for each flick. 32767 = full deflection left/right. Higher = stronger aim assist bubble interaction." />
+                                <TextBlock Text="32767 = deflexão máxima (recomendado para Warzone)"
+                                           FontSize="10" Foreground="#4A4F5A" />
+                            </StackPanel>
+
+                            <StackPanel Spacing="4">
+                                <TextBlock Classes="label"
+                                           ToolTip.Tip="Time in milliseconds spent at each extreme (left and right) per flick cycle. Lower = faster oscillation = more aim assist hits per second. 6–12ms is ideal for most Battle Royale games. Below 4ms may not register on all games.">
+                                    <TextBlock.Text>
+                                        <MultiBinding StringFormat="Velocidade do Flick: {0}ms por lado">
+                                            <Binding Path="FlickIntervalMs" />
+                                        </MultiBinding>
+                                    </TextBlock.Text>
+                                </TextBlock>
+                                <NumericUpDown Value="{Binding FlickIntervalMs}"
+                                               Minimum="4" Maximum="100" Increment="2"
+                                               AutomationProperties.Name="Flick interval ms"
+                                               ToolTip.Tip="Time each flick position is held (ms). 8ms ≈ 125 flicks/s. Lower = faster oscillation, stronger effect. Recommended: 6–12ms." />
+                                <TextBlock FontSize="10" Foreground="#4A4F5A"
+                                           Text="Menor = flick mais rápido. 8ms ≈ 125 flicks/s. Warzone: 6–12ms." />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ============ REMAP ============ -->
+                    <Border Classes="section-panel" BorderBrush="#B388FF" BorderThickness="3,0,0,0"
+                            IsVisible="{Binding ShowRemapSettings}">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="Remap Settings" FontWeight="SemiBold" FontSize="14" Foreground="#B388FF" />
+                            <TextBlock Text="Remap one button to another. When you press Source, it sends Target instead."
+                                       Classes="label" TextWrapping="Wrap" Foreground="#8A8F9A" />
+
+                            <Grid ColumnDefinitions="*,Auto,*">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Source Button" Classes="label" />
+                                    <ComboBox ItemsSource="{Binding ButtonList}"
+                                              SelectedItem="{Binding SourceButton}"
+                                              AutomationProperties.Name="Source button for remap" />
+                                </StackPanel>
+                                <TextBlock Grid.Column="1" Text="-->" VerticalAlignment="Center"
+                                           Margin="12,16,12,0" FontSize="16" Foreground="#4A4F5A" />
+                                <StackPanel Grid.Column="2" Spacing="4">
+                                    <TextBlock Text="Target Button" Classes="label" />
+                                    <ComboBox ItemsSource="{Binding ButtonList}"
+                                              SelectedItem="{Binding TargetButton}"
+                                              AutomationProperties.Name="Target button for remap" />
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ============ TIMING (shared) ============ -->
+                    <Border Classes="section-panel" BorderBrush="#4A4F5A" BorderThickness="3,0,0,0"
+                            IsVisible="{Binding ShowTimingSettings}">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Timing" FontWeight="SemiBold" FontSize="14" Foreground="#EAEAEA" />
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Initial Delay (ms)" Classes="label" />
+                                <NumericUpDown Value="{Binding MacroDelayMs}" Minimum="0" Maximum="5000"
+                                               Increment="50"
+                                               AutomationProperties.Name="Initial delay"
+                                               ToolTip.Tip="How long to wait (in ms) after the activation button is pressed before the macro starts executing. Use this when a game has a small activation animation that must complete first (e.g. ADS delay)." />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                </StackPanel>
+                </ScrollViewer>
+            </DockPanel>
+            </Panel>
+        </Border>
+    </Grid>
+</UserControl>

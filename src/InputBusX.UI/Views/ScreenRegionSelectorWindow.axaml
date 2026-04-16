@@ -1,0 +1,97 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="InputBusX.UI.Views.ScreenRegionSelectorWindow"
+        SystemDecorations="None"
+        WindowStartupLocation="Manual"
+        TransparencyLevelHint="Transparent"
+        Background="Transparent"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaChromeHints="NoChrome"
+        Topmost="True"
+        Cursor="Cross"
+        Title="Select Region">
+
+    <!-- Full-screen dark overlay -->
+    <Grid x:Name="RootGrid" Background="#AA000000">
+
+        <Canvas x:Name="RootCanvas" Background="Transparent">
+
+            <!-- Selection rectangle (shows while dragging) -->
+            <Rectangle x:Name="SelectionRect"
+                       Stroke="#00FF9C"
+                       StrokeThickness="2"
+                       Fill="#2200FF9C"
+                       IsVisible="False" />
+
+            <!-- Animated corner markers -->
+            <!-- Top-left -->
+            <Rectangle x:Name="CornerTL"
+                       Width="12" Height="2"
+                       Fill="#00FF9C" IsVisible="False" />
+            <Rectangle x:Name="CornerTLv"
+                       Width="2" Height="12"
+                       Fill="#00FF9C" IsVisible="False" />
+            <!-- Top-right -->
+            <Rectangle x:Name="CornerTR"
+                       Width="12" Height="2"
+                       Fill="#00FF9C" IsVisible="False" />
+            <Rectangle x:Name="CornerTRv"
+                       Width="2" Height="12"
+                       Fill="#00FF9C" IsVisible="False" />
+            <!-- Bottom-left -->
+            <Rectangle x:Name="CornerBL"
+                       Width="12" Height="2"
+                       Fill="#00FF9C" IsVisible="False" />
+            <Rectangle x:Name="CornerBLv"
+                       Width="2" Height="12"
+                       Fill="#00FF9C" IsVisible="False" />
+            <!-- Bottom-right -->
+            <Rectangle x:Name="CornerBR"
+                       Width="12" Height="2"
+                       Fill="#00FF9C" IsVisible="False" />
+            <Rectangle x:Name="CornerBRv"
+                       Width="2" Height="12"
+                       Fill="#00FF9C" IsVisible="False" />
+
+            <!-- Size info label (appears near cursor while dragging) -->
+            <Border x:Name="SizeBadge"
+                    Background="#0F1115"
+                    BorderBrush="#1E2228"
+                    BorderThickness="1"
+                    CornerRadius="4"
+                    Padding="8,4"
+                    IsVisible="False">
+                <TextBlock x:Name="SizeText"
+                           Foreground="#00FF9C"
+                           FontSize="11"
+                           FontFamily="Cascadia Code,Consolas,Courier New" />
+            </Border>
+
+        </Canvas>
+
+        <!-- Instructions banner (top center) -->
+        <Border HorizontalAlignment="Center"
+                VerticalAlignment="Top"
+                Margin="0,24,0,0"
+                Background="#0F1115"
+                BorderBrush="#1E2228"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="20,10">
+            <StackPanel Orientation="Horizontal" Spacing="16">
+                <TextBlock Text="⊕" Foreground="#00FF9C" FontSize="16"
+                           VerticalAlignment="Center" />
+                <TextBlock Text="Arraste para selecionar a área do nome da arma"
+                           Foreground="#EAEAEA" FontSize="13"
+                           VerticalAlignment="Center" />
+                <TextBlock Text="·" Foreground="#3A3F4A" FontSize="13"
+                           VerticalAlignment="Center" />
+                <TextBlock Text="ESC para cancelar"
+                           Foreground="#4A4F5A" FontSize="13"
+                           VerticalAlignment="Center" />
+            </StackPanel>
+        </Border>
+
+    </Grid>
+
+</Window>

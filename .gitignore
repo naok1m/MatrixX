@@ -1,0 +1,26 @@
+# Build outputs
+bin/
+obj/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.DotSettings.user
+
+# Logs
+logs/
+
+# Published output and release ZIPs
+publish/
+*.zip
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Claude Code session files
+.claude/
+
+# ML models
+*.onnx

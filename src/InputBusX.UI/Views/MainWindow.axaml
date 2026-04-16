@@ -1,0 +1,221 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:InputBusX.UI.ViewModels"
+        xmlns:views="using:InputBusX.UI.Views"
+        x:Class="InputBusX.UI.Views.MainWindow"
+        x:DataType="vm:MainViewModel"
+        Title="MatrixX"
+        Width="1100" Height="720"
+        MinWidth="900" MinHeight="600"
+        WindowStartupLocation="CenterScreen"
+        Background="#0A0A0A">
+
+    <!-- ── Global keyboard shortcuts ───────────────────────────────────── -->
+    <Window.KeyBindings>
+        <KeyBinding Gesture="Ctrl+S" Command="{Binding SaveCurrentCommand}" />
+        <KeyBinding Gesture="Ctrl+N" Command="{Binding NewItemCommand}" />
+        <KeyBinding Gesture="Delete" Command="{Binding DeleteCurrentCommand}" />
+    </Window.KeyBindings>
+
+    <Panel>
+    <Grid ColumnDefinitions="244,*">
+
+        <!-- ── Sidebar ─────────────────────────────────────────────────── -->
+        <Border Grid.Column="0"
+                Background="#0F1115"
+                BorderBrush="#1A1D22"
+                BorderThickness="0,0,1,0"
+                Padding="12,12,12,8">
+            <DockPanel>
+
+                <!-- Brand / Logo -->
+                <StackPanel DockPanel.Dock="Top" Margin="0,8,0,22" Spacing="6">
+                    <Border CornerRadius="14"
+                            Width="56" Height="56"
+                            HorizontalAlignment="Center"
+                            ClipToBounds="True"
+                            BoxShadow="0 4 28 0 #5000FF9C">
+                        <Image Source="avares://InputBusX.UI/Assets/matrixx-icon.png"
+                               Width="56" Height="56"
+                               Stretch="UniformToFill" />
+                    </Border>
+                    <TextBlock Text="MatrixX"
+                               FontSize="18" FontWeight="Bold"
+                               Foreground="#EAEAEA"
+                               HorizontalAlignment="Center" />
+                    <TextBlock Text="Controller System"
+                               FontSize="10"
+                               Foreground="#3A3F4A"
+                               HorizontalAlignment="Center" />
+                </StackPanel>
+
+                <!-- Navigation -->
+                <ListBox DockPanel.Dock="Top"
+                         SelectedIndex="{Binding SelectedTabIndex}"
+                         Background="Transparent"
+                         AutomationProperties.Name="Navigation">
+                    <ListBoxItem AutomationProperties.Name="Dashboard">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="◈" FontSize="15" VerticalAlignment="Center"
+                                       Width="20" TextAlignment="Center" />
+                            <TextBlock Text="Dashboard" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </ListBoxItem>
+                    <ListBoxItem AutomationProperties.Name="Macro Editor">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="⚡" FontSize="15" VerticalAlignment="Center"
+                                       Width="20" TextAlignment="Center" />
+                            <TextBlock Text="Macros" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </ListBoxItem>
+                    <ListBoxItem AutomationProperties.Name="Profiles">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="◉" FontSize="15" VerticalAlignment="Center"
+                                       Width="20" TextAlignment="Center" />
+                            <TextBlock Text="Profiles" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </ListBoxItem>
+                    <ListBoxItem AutomationProperties.Name="Filters">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="◎" FontSize="15" VerticalAlignment="Center"
+                                       Width="20" TextAlignment="Center" />
+                            <TextBlock Text="Filters" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </ListBoxItem>
+                    <ListBoxItem AutomationProperties.Name="Weapons">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="⊕" FontSize="15" VerticalAlignment="Center"
+                                       Width="20" TextAlignment="Center" />
+                            <TextBlock Text="Weapons" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </ListBoxItem>
+                    <ListBoxItem AutomationProperties.Name="Logs">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="≡" FontSize="16" VerticalAlignment="Center"
+                                       Width="20" TextAlignment="Center" />
+                            <TextBlock Text="Logs" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </ListBoxItem>
+                    <ListBoxItem AutomationProperties.Name="Settings">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="⚙" FontSize="15" VerticalAlignment="Center"
+                                       Width="20" TextAlignment="Center" />
+                            <TextBlock Text="Settings" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </ListBoxItem>
+                </ListBox>
+
+                <!-- Status bar + version (bottom of sidebar) -->
+                <StackPanel DockPanel.Dock="Bottom" Margin="0,0,0,2" Spacing="0">
+
+                    <!-- Update banner — shown only when a new release is available -->
+                    <Border Background="#1A2010"
+                            BorderBrush="#00FF9C"
+                            BorderThickness="1"
+                            CornerRadius="6"
+                            Padding="10,7"
+                            Margin="0,0,0,8"
+                            IsVisible="{Binding UpdateAvailable}">
+                        <StackPanel Spacing="2">
+                            <TextBlock Text="⬆ Update available"
+                                       FontSize="11" FontWeight="SemiBold"
+                                       Foreground="#00FF9C" />
+                            <TextBlock FontSize="10" Foreground="#6A9F6A">
+                                <TextBlock.Text>
+                                    <MultiBinding StringFormat="v{0} is ready">
+                                        <Binding Path="LatestVersion" />
+                                    </MultiBinding>
+                                </TextBlock.Text>
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Height="1" Background="#1A1D22" Margin="0,0,0,8" />
+
+                    <TextBlock Text="{Binding StatusText}"
+                               FontSize="11"
+                               Foreground="#4A4F5A"
+                               HorizontalAlignment="Center"
+                               TextWrapping="Wrap" />
+
+                    <!-- App version -->
+                    <TextBlock FontSize="10"
+                               Foreground="#2A2D34"
+                               HorizontalAlignment="Center"
+                               Margin="0,4,0,0">
+                        <TextBlock.Text>
+                            <MultiBinding StringFormat="MatrixX v{0}">
+                                <Binding Path="AppVersion" />
+                            </MultiBinding>
+                        </TextBlock.Text>
+                    </TextBlock>
+                </StackPanel>
+
+            </DockPanel>
+        </Border>
+
+        <!-- ── Content area with fade transition ───────────────────────── -->
+        <Border Grid.Column="1" Padding="16">
+            <ContentControl Content="{Binding CurrentView}"
+                            Opacity="{Binding ContentOpacity}">
+                <ContentControl.Transitions>
+                    <Transitions>
+                        <DoubleTransition Property="Opacity"
+                                          Duration="0:0:0.12"
+                                          Easing="SineEaseInOut" />
+                    </Transitions>
+                </ContentControl.Transitions>
+                <ContentControl.DataTemplates>
+                    <DataTemplate DataType="vm:DashboardViewModel">
+                        <views:DashboardView />
+                    </DataTemplate>
+                    <DataTemplate DataType="vm:MacroEditorViewModel">
+                        <views:MacroEditorView />
+                    </DataTemplate>
+                    <DataTemplate DataType="vm:ProfilesViewModel">
+                        <views:ProfilesView />
+                    </DataTemplate>
+                    <DataTemplate DataType="vm:FiltersViewModel">
+                        <views:FiltersView />
+                    </DataTemplate>
+                    <DataTemplate DataType="vm:LogsViewModel">
+                        <views:LogsView />
+                    </DataTemplate>
+                    <DataTemplate DataType="vm:WeaponDetectionViewModel">
+                        <views:WeaponDetectionView />
+                    </DataTemplate>
+                    <DataTemplate DataType="vm:SettingsViewModel">
+                        <views:SettingsView />
+                    </DataTemplate>
+                </ContentControl.DataTemplates>
+            </ContentControl>
+        </Border>
+
+    </Grid>
+
+    <!-- ── Toast notification overlay ─────────────────────────────────── -->
+    <Border HorizontalAlignment="Right"
+            VerticalAlignment="Bottom"
+            Margin="0,0,24,24"
+            CornerRadius="8"
+            Padding="16,12"
+            MaxWidth="380"
+            IsVisible="{Binding Toast.IsVisible}"
+            Background="{Binding Toast.Background}"
+            BoxShadow="0 4 20 0 #AA000000"
+            ZIndex="100">
+        <StackPanel Orientation="Horizontal" Spacing="10">
+            <TextBlock Text="{Binding Toast.Icon}"
+                       FontSize="16"
+                       Foreground="{Binding Toast.Foreground}"
+                       VerticalAlignment="Center" />
+            <TextBlock Text="{Binding Toast.Message}"
+                       FontSize="13"
+                       Foreground="{Binding Toast.Foreground}"
+                       TextWrapping="Wrap"
+                       VerticalAlignment="Center" />
+        </StackPanel>
+    </Border>
+
+    </Panel>
+</Window>

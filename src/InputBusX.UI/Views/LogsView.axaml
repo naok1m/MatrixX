@@ -1,0 +1,64 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:InputBusX.UI.ViewModels"
+             xmlns:conv="using:InputBusX.UI.Converters"
+             x:Class="InputBusX.UI.Views.LogsView"
+             x:DataType="vm:LogsViewModel">
+
+    <UserControl.Resources>
+        <conv:LogLevelBrushConverter x:Key="LevelBrush" />
+    </UserControl.Resources>
+
+    <DockPanel Margin="4">
+        <StackPanel DockPanel.Dock="Top" Spacing="8" Margin="0,0,0,12">
+            <TextBlock Text="System Logs" Classes="section-header" FontSize="20" />
+
+            <Grid ColumnDefinitions="*,Auto,Auto">
+                <TextBox Text="{Binding FilterText}" Watermark="Filter by message, category or level..."
+                         AutomationProperties.Name="Log filter text" />
+                <CheckBox Grid.Column="1" Content="Auto-scroll" IsChecked="{Binding AutoScroll}"
+                          Margin="12,0"
+                          AutomationProperties.Name="Auto-scroll logs" />
+                <Button Grid.Column="2" Content="Clear" Command="{Binding ClearLogsCommand}"
+                        AutomationProperties.Name="Clear all logs" />
+            </Grid>
+        </StackPanel>
+
+        <!-- Empty state -->
+        <TextBlock DockPanel.Dock="Top"
+                   Text="No log entries yet. Start a connection to see activity."
+                   Foreground="#4A4F5A" FontStyle="Italic" HorizontalAlignment="Center"
+                   Margin="0,40,0,0"
+                   IsVisible="{Binding !LogEntries.Count}" />
+
+        <Border Classes="card" Background="#0A0A0A">
+            <ListBox x:Name="LogListBox"
+                     ItemsSource="{Binding LogEntries}"
+                     AutomationProperties.Name="Log entries list">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <Grid ColumnDefinitions="140,60,100,*" Margin="0,1">
+                            <TextBlock Grid.Column="0"
+                                       Text="{Binding Timestamp, StringFormat={}{0:HH:mm:ss.fff}}"
+                                       FontFamily="Consolas,Courier New" FontSize="11"
+                                       Foreground="#4A4F5A" />
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding Level}"
+                                       FontFamily="Consolas,Courier New" FontSize="11" FontWeight="Bold"
+                                       Foreground="{Binding Level, Converter={StaticResource LevelBrush}}" />
+                            <TextBlock Grid.Column="2"
+                                       Text="{Binding Category}"
+                                       FontFamily="Consolas,Courier New" FontSize="11"
+                                       Foreground="#00FF9C" />
+                            <TextBlock Grid.Column="3"
+                                       Text="{Binding Message}"
+                                       FontFamily="Consolas,Courier New" FontSize="11"
+                                       Foreground="#EAEAEA"
+                                       TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Border>
+    </DockPanel>
+</UserControl>

@@ -1,0 +1,141 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:InputBusX.UI.ViewModels"
+             x:Class="InputBusX.UI.Views.FiltersView"
+             x:DataType="vm:FiltersViewModel">
+
+    <ScrollViewer>
+        <StackPanel Spacing="12" Margin="4" MaxWidth="700">
+            <TextBlock Text="Input Filters" Classes="section-header" FontSize="20" />
+
+            <!-- Deadzone -->
+            <Border Classes="card">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Deadzone" Classes="section-header" />
+
+                    <StackPanel Spacing="4">
+                        <TextBlock Classes="label">
+                            <TextBlock.Text>
+                                <MultiBinding StringFormat="Left Stick Deadzone: {0:P0}">
+                                    <Binding Path="LeftStickDeadzone" />
+                                </MultiBinding>
+                            </TextBlock.Text>
+                        </TextBlock>
+                        <Slider Value="{Binding LeftStickDeadzone}"
+                                AutomationProperties.Name="Left stick deadzone" />
+                    </StackPanel>
+
+                    <StackPanel Spacing="4">
+                        <TextBlock Classes="label">
+                            <TextBlock.Text>
+                                <MultiBinding StringFormat="Right Stick Deadzone: {0:P0}">
+                                    <Binding Path="RightStickDeadzone" />
+                                </MultiBinding>
+                            </TextBlock.Text>
+                        </TextBlock>
+                        <Slider Value="{Binding RightStickDeadzone}"
+                                AutomationProperties.Name="Right stick deadzone" />
+                    </StackPanel>
+
+                    <StackPanel Spacing="4">
+                        <TextBlock Classes="label">
+                            <TextBlock.Text>
+                                <MultiBinding StringFormat="Trigger Deadzone: {0:P0}">
+                                    <Binding Path="TriggerDeadzone" />
+                                </MultiBinding>
+                            </TextBlock.Text>
+                        </TextBlock>
+                        <Slider Value="{Binding TriggerDeadzone}"
+                                AutomationProperties.Name="Trigger deadzone" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Anti-Deadzone -->
+            <Border Classes="card">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Anti-Deadzone" Classes="section-header" />
+                    <TextBlock Text="Adds output at the start of the range to compensate for in-game deadzones"
+                               Classes="label" TextWrapping="Wrap" />
+
+                    <StackPanel Spacing="4">
+                        <TextBlock Classes="label">
+                            <TextBlock.Text>
+                                <MultiBinding StringFormat="Left Stick Anti-Deadzone: {0:P0}">
+                                    <Binding Path="LeftStickAntiDeadzone" />
+                                </MultiBinding>
+                            </TextBlock.Text>
+                        </TextBlock>
+                        <Slider Value="{Binding LeftStickAntiDeadzone}"
+                                AutomationProperties.Name="Left stick anti-deadzone" />
+                    </StackPanel>
+
+                    <StackPanel Spacing="4">
+                        <TextBlock Classes="label">
+                            <TextBlock.Text>
+                                <MultiBinding StringFormat="Right Stick Anti-Deadzone: {0:P0}">
+                                    <Binding Path="RightStickAntiDeadzone" />
+                                </MultiBinding>
+                            </TextBlock.Text>
+                        </TextBlock>
+                        <Slider Value="{Binding RightStickAntiDeadzone}"
+                                AutomationProperties.Name="Right stick anti-deadzone" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Response Curve -->
+            <Border Classes="card">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Response Curve" Classes="section-header" />
+                    <TextBlock Text="Exponent: 1.0 = linear, &lt;1.0 = more sensitive near center, &gt;1.0 = less sensitive near center"
+                               Classes="label" TextWrapping="Wrap" />
+
+                    <StackPanel Spacing="4">
+                        <TextBlock Classes="label">
+                            <TextBlock.Text>
+                                <MultiBinding StringFormat="Exponent: {0:F2}">
+                                    <Binding Path="ResponseCurveExponent" />
+                                </MultiBinding>
+                            </TextBlock.Text>
+                        </TextBlock>
+                        <Slider Value="{Binding ResponseCurveExponent}" Minimum="0.1" Maximum="4.0"
+                                TickFrequency="0.05" IsSnapToTickEnabled="True"
+                                AutomationProperties.Name="Response curve exponent" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Smoothing -->
+            <Border Classes="card">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Smoothing" Classes="section-header" />
+
+                    <CheckBox Content="Enable Smoothing" IsChecked="{Binding SmoothingEnabled}"
+                              AutomationProperties.Name="Enable input smoothing" />
+
+                    <StackPanel Spacing="4" IsEnabled="{Binding SmoothingEnabled}">
+                        <TextBlock Classes="label">
+                            <TextBlock.Text>
+                                <MultiBinding StringFormat="Smoothing Factor: {0:P0}">
+                                    <Binding Path="SmoothingFactor" />
+                                </MultiBinding>
+                            </TextBlock.Text>
+                        </TextBlock>
+                        <Slider Value="{Binding SmoothingFactor}"
+                                AutomationProperties.Name="Smoothing factor" />
+                        <TextBlock Text="Higher values = smoother but more latency" Classes="label" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Action buttons -->
+            <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Right">
+                <Button Content="Reset Defaults" Command="{Binding ResetDefaultsCommand}"
+                        AutomationProperties.Name="Reset filter settings to defaults" />
+                <Button Content="Apply" Command="{Binding ApplyCommand}" Classes="accent"
+                        AutomationProperties.Name="Apply filter settings" />
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

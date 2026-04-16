@@ -1,0 +1,324 @@
+using InputBusX.Domain.Entities;
+using InputBusX.Domain.Enums;
+using InputBusX.Domain.Interfaces;
+using InputBusX.Domain.ValueObjects;
+using Microsoft.Extensions.Logging;
+
+namespace InputBusX.Application.MacroEngine;
+
+public sealed class MacroProcessor : IMacroProcessor
+{
+    private readonly ILogger<MacroProcessor> _logger;
+    private readonly Dictionary<string, MacroRuntime> _runtimes = new();
+    private readonly Random _random = new();
+
+    // When non-null, all NoRecoil macros use this weapon's compensation values
+    private WeaponProfile? _weaponProfile;
+
+    public MacroProcessor(ILogger<MacroProcessor> logger)
+    {
+        _logger = logger;
+    }
+
+    public void SetWeaponProfile(WeaponProfile? profile)
+    {
+        _weaponProfile = profile;
+        _logger.LogDebug("Weapon profile set to: {Name}", profile?.Name ?? "none");
+    }
+
+    public GamepadState Process(GamepadState input, IReadOnlyList<MacroDefinition> activeMacros)
+    {
+        var state = input.Clone();
+
+        foreach (var macro in activeMacros)
+        {
+            state = macro.Type switch
+            {
+                MacroType.NoRecoil => ProcessNoRecoil(state, macro),
+                MacroType.AutoFire => ProcessAutoFire(state, macro),
+                MacroType.AutoPing => ProcessAutoPing(state, macro),
+                MacroType.Remap => ProcessRemap(state, macro),
+                MacroType.Sequence => ProcessSequence(state, macro),
+                MacroType.Toggle => ProcessToggle(state, macro),
+                MacroType.AimAssistBuff => ProcessAimAssistBuff(state, macro),
+                _ => state
+            };
+        }
+
+        return state;
+    }
+
+    public void Reset()
+    {
+        _runtimes.Clear();
+    }
+
+    private MacroRuntime GetRuntime(MacroDefinition macro)
+    {
+        if (!_runtimes.TryGetValue(macro.Id, out var runtime))
+        {
+            runtime = new MacroRuntime();
+            _runtimes[macro.Id] = runtime;
+        }
+        return runtime;
+    }
+
+    private GamepadState ProcessNoRecoil(GamepadState state, MacroDefinition macro)
+    {
+        bool isShooting = macro.TriggerSource == TriggerSource.LeftTrigger
+            ? state.LeftTrigger.IsPressed()
+            : state.RightTrigger.IsPressed();
+
+        bool isActive;
+        if (macro.ToggleMode && macro.ActivationButton.HasValue)
+        {
+            // Toggle: press activation button once to enable/disable
+            var runtime = GetRuntime(macro);
+            bool pressed = state.IsButtonPressed(macro.ActivationButton.Value);
+            if (pressed && !runtime.WasPressed)
+                runtime.ToggleState = !runtime.ToggleState;
+            runtime.WasPressed = pressed;
+            isActive = runtime.ToggleState;
+        }
+        else
+        {
+            // Hold: active while activation button is held (or always if none set)
+            isActive = !macro.ActivationButton.HasValue || state.IsButtonPressed(macro.ActivationButton.Value);
+        }
+
+        if (isActive && isShooting)
+        {
+            // Weapon profile overrides the macro's own recoil values when active
+            int compensationX, compensationY;
+            if (_weaponProfile != null)
+            {
+                compensationX = (int)(_weaponProfile.RecoilCompensationX * _weaponProfile.Intensity);
+                compensationY = (int)(_weaponProfile.RecoilCompensationY * _weaponProfile.Intensity);
+            }
+            else
+            {
+                compensationX = (int)(macro.RecoilCompensationX * macro.Intensity);
+                compensationY = (int)(macro.RecoilCompensationY * macro.Intensity);
+            }
+
+            if (macro.RandomizationFactor > 0)
+            {
+                var randRange = (int)(macro.RandomizationFactor * 100);
+                compensationX += _random.Next(-randRange, randRange + 1);
+                compensationY += _random.Next(-randRange, randRange + 1);
+            }
+
+            // Add compensation on top of current stick position (don't replace it)
+            state.RightStick = new StickPosition(
+                (short)Math.Clamp(state.RightStick.X + compensationX, short.MinValue, short.MaxValue),
+                (short)Math.Clamp(state.RightStick.Y + compensationY, short.MinValue, short.MaxValue));
+        }
+
+        return state;
+    }
+
+    private GamepadState ProcessAutoFire(GamepadState state, MacroDefinition macro)
+    {
+        var runtime = GetRuntime(macro);
+
+        // Determine if the trigger axis (RT/LT) or a button is the activation source
+        bool isTriggerAxis = macro.TriggerSource == TriggerSource.RightTrigger
+                             || macro.TriggerSource == TriggerSource.LeftTrigger;
+        bool held;
+        if (isTriggerAxis)
+        {
+            held = macro.TriggerSource == TriggerSource.RightTrigger
+                ? state.RightTrigger.IsPressed()
+                : state.LeftTrigger.IsPressed();
+        }
+        else
+        {
+            var btn = macro.ActivationButton ?? GamepadButton.RightShoulder;
+            held = state.IsButtonPressed(btn);
+        }
+
+        // If weapon profile is loaded and rapid fire is disabled on it, skip
+        if (_weaponProfile != null && !_weaponProfile.RapidFireEnabled)
+        {
+            runtime.ToggleState = false;
+            return state;
+        }
+
+        // Use weapon profile's interval when available, otherwise macro's interval
+        int intervalMs = (_weaponProfile?.RapidFireEnabled == true)
+            ? _weaponProfile.RapidFireIntervalMs
+            : macro.IntervalMs;
+
+        if (held)
+        {
+            var now = Environment.TickCount64;
+            if (now - runtime.LastFireTick >= intervalMs)
+            {
+                runtime.ToggleState = !runtime.ToggleState;
+                runtime.LastFireTick = now;
+            }
+
+            // Toggle the correct axis or button
+            if (isTriggerAxis)
+            {
+                if (macro.TriggerSource == TriggerSource.RightTrigger)
+                    state.RightTrigger = runtime.ToggleState ? TriggerValue.Full : TriggerValue.Zero;
+                else
+                    state.LeftTrigger = runtime.ToggleState ? TriggerValue.Full : TriggerValue.Zero;
+            }
+            else
+            {
+                var btn = macro.ActivationButton ?? GamepadButton.RightShoulder;
+                state.SetButton(btn, runtime.ToggleState);
+            }
+        }
+        else
+        {
+            runtime.ToggleState = false;
+        }
+
+        return state;
+    }
+
+    private GamepadState ProcessAutoPing(GamepadState state, MacroDefinition macro)
+    {
+        var runtime = GetRuntime(macro);
+        var pingButton = macro.PingButton ?? GamepadButton.DPadUp;
+        bool held = state.RightTrigger.IsPressed()
+            && (!macro.ActivationButton.HasValue || state.IsButtonPressed(macro.ActivationButton.Value));
+
+        if (held)
+        {
+            var now = Environment.TickCount64;
+            var interval = macro.IntervalMs > 0 ? macro.IntervalMs : 200;
+            if (now >= runtime.PulseUntilTick && now - runtime.LastFireTick >= interval)
+            {
+                state.SetButton(pingButton, true);
+                runtime.LastFireTick = now;
+                runtime.PulseUntilTick = now + 50;
+            }
+            else if (now < runtime.PulseUntilTick)
+            {
+                state.SetButton(pingButton, true);
+            }
+        }
+        else
+        {
+            // Cut off any in-flight pulse, but don't override a manual press of the button
+            if (runtime.PulseUntilTick > 0 && !state.IsButtonPressed(pingButton))
+                state.SetButton(pingButton, false);
+            runtime.PulseUntilTick = 0;
+        }
+
+        return state;
+    }
+
+    private GamepadState ProcessRemap(GamepadState state, MacroDefinition macro)
+    {
+        if (macro.SourceButton.HasValue && macro.TargetButton.HasValue)
+        {
+            bool pressed = state.IsButtonPressed(macro.SourceButton.Value);
+            state.SetButton(macro.SourceButton.Value, false);
+            state.SetButton(macro.TargetButton.Value, pressed);
+        }
+
+        return state;
+    }
+
+    private GamepadState ProcessSequence(GamepadState state, MacroDefinition macro)
+    {
+        var runtime = GetRuntime(macro);
+        var trigger = macro.ActivationButton ?? GamepadButton.A;
+        bool held = state.IsButtonPressed(trigger);
+
+        if (held && macro.Steps.Count > 0)
+        {
+            var now = Environment.TickCount64;
+            var step = macro.Steps[runtime.StepIndex];
+
+            if (now - runtime.LastFireTick >= step.DelayAfterMs)
+            {
+                if (step.ButtonPress.HasValue)
+                    state.SetButton(step.ButtonPress.Value, true);
+                if (step.ButtonRelease.HasValue)
+                    state.SetButton(step.ButtonRelease.Value, false);
+
+                runtime.LastFireTick = now;
+                runtime.StepIndex = (runtime.StepIndex + 1) % macro.Steps.Count;
+
+                if (runtime.StepIndex == 0 && !macro.Loop)
+                    runtime.StepIndex = macro.Steps.Count - 1;
+            }
+        }
+        else if (!held)
+        {
+            runtime.StepIndex = 0;
+        }
+
+        return state;
+    }
+
+    private GamepadState ProcessToggle(GamepadState state, MacroDefinition macro)
+    {
+        var runtime = GetRuntime(macro);
+        var trigger = macro.ActivationButton ?? GamepadButton.A;
+        bool pressed = state.IsButtonPressed(trigger);
+
+        if (pressed && !runtime.WasPressed)
+            runtime.ToggleState = !runtime.ToggleState;
+        runtime.WasPressed = pressed;
+
+        var target = macro.TargetButton ?? trigger;
+        state.SetButton(target, runtime.ToggleState);
+
+        return state;
+    }
+
+    private GamepadState ProcessAimAssistBuff(GamepadState state, MacroDefinition macro)
+    {
+        bool isShooting = macro.TriggerSource == TriggerSource.LeftTrigger
+            ? state.LeftTrigger.IsPressed()
+            : state.RightTrigger.IsPressed();
+
+        var runtime = GetRuntime(macro);
+
+        if (!isShooting)
+        {
+            // Reset flick direction when not shooting so next shot starts fresh
+            runtime.ToggleState = false;
+            runtime.LastFireTick = 0;
+            return state;
+        }
+
+        var now = Environment.TickCount64;
+        var interval = macro.FlickIntervalMs > 0 ? macro.FlickIntervalMs : 8;
+
+        // Toggle flick direction every interval
+        if (now - runtime.LastFireTick >= interval)
+        {
+            runtime.ToggleState = !runtime.ToggleState;
+            runtime.LastFireTick = now;
+        }
+
+        // Apply full-deflection flick to LEFT stick X axis
+        // Preserves Y (player vertical movement) untouched
+        var strength = (short)Math.Clamp(
+            (int)(macro.FlickStrength * macro.Intensity),
+            short.MinValue, short.MaxValue);
+
+        state.LeftStick = new StickPosition(
+            runtime.ToggleState ? strength : (short)-strength,
+            state.LeftStick.Y);
+
+        return state;
+    }
+
+    private sealed class MacroRuntime
+    {
+        public long LastFireTick;
+        public long PulseUntilTick;
+        public bool ToggleState;
+        public bool WasPressed;
+        public int StepIndex;
+    }
+}

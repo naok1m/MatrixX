@@ -1,0 +1,384 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:InputBusX.UI.ViewModels"
+             xmlns:conv="using:InputBusX.UI.Converters"
+             x:Class="InputBusX.UI.Views.WeaponDetectionView"
+             x:DataType="vm:WeaponDetectionViewModel">
+
+    <UserControl.Resources>
+        <conv:BoolToBrushConverter x:Key="RunningBrush"
+                                   TrueBrush="#FF6B6B"
+                                   FalseBrush="#00FF9C" />
+        <conv:BoolToStringConverter x:Key="RunLabel"
+                                    TrueValue="⏹  Stop Detection"
+                                    FalseValue="▶  Start Detection" />
+    </UserControl.Resources>
+
+    <ScrollViewer>
+        <StackPanel Margin="0,0,4,0" Spacing="12">
+
+            <!-- ── Header ─────────────────────────────────────────────── -->
+            <Border Classes="card" Padding="18,14">
+                <Grid ColumnDefinitions="*,Auto">
+
+                    <StackPanel Grid.Column="0" Spacing="4">
+                        <TextBlock Text="Weapon Detection"
+                                   FontSize="18" FontWeight="SemiBold"
+                                   Foreground="#EAEAEA" />
+                        <TextBlock Text="Automatically adjusts No-Recoil per weapon using screen OCR"
+                                   FontSize="12" Foreground="#4A4F5A" />
+                    </StackPanel>
+
+                    <Button Grid.Column="1"
+                            Command="{Binding ToggleDetectionCommand}"
+                            IsEnabled="{Binding !IsBusy}"
+                            Background="{Binding IsRunning, Converter={StaticResource RunningBrush}}"
+                            Content="{Binding IsRunning, Converter={StaticResource RunLabel}}"
+                            Foreground="#0A0A0A"
+                            CornerRadius="6"
+                            FontWeight="SemiBold"
+                            Padding="16,8"
+                            VerticalAlignment="Center" />
+
+                </Grid>
+            </Border>
+
+            <!-- ── Status ─────────────────────────────────────────────── -->
+            <Border Classes="card section-panel"
+                    BorderThickness="3,0,0,0"
+                    BorderBrush="#00FF9C"
+                    Padding="18,14">
+                <Grid ColumnDefinitions="*,*">
+
+                    <StackPanel Grid.Column="0" Spacing="4">
+                        <TextBlock Text="CURRENT WEAPON"
+                                   FontSize="10" FontWeight="Bold"
+                                   Foreground="#00FF9C" LetterSpacing="2" />
+                        <TextBlock Text="{Binding CurrentWeaponName}"
+                                   FontSize="22" FontWeight="Bold"
+                                   Foreground="#EAEAEA" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" Spacing="4">
+                        <TextBlock Text="STATUS"
+                                   FontSize="10" FontWeight="Bold"
+                                   Foreground="#4A4F5A" LetterSpacing="2" />
+                        <TextBlock Text="{Binding StatusMessage}"
+                                   FontSize="12" Foreground="#8A8F9A"
+                                   TextWrapping="Wrap" />
+                    </StackPanel>
+
+                </Grid>
+            </Border>
+
+            <!-- ── Capture region ─────────────────────────────────────── -->
+            <Border Classes="card section-panel"
+                    BorderThickness="3,0,0,0"
+                    BorderBrush="#00DDFF"
+                    Padding="18,14">
+                <StackPanel Spacing="12">
+
+                    <TextBlock Text="CAPTURE REGION"
+                               FontSize="11" FontWeight="Bold"
+                               Foreground="#00DDFF" LetterSpacing="2" />
+
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Grid.Column="0"
+                                   Text="Coordinates of the HUD area where the game shows the weapon name (top-left origin)."
+                                   FontSize="12" Foreground="#4A4F5A" TextWrapping="Wrap"
+                                   VerticalAlignment="Center" />
+
+                        <Button Grid.Column="1"
+                                x:Name="BtnSelectRegion"
+                                Content="⊕  Selecionar Área"
+                                Background="#1E2228"
+                                Foreground="#00FF9C"
+                                BorderBrush="#00FF9C"
+                                BorderThickness="1"
+                                CornerRadius="6"
+                                Padding="14,8"
+                                FontWeight="SemiBold"
+                                VerticalAlignment="Center"
+                                Margin="12,0,0,0" />
+                    </Grid>
+
+                    <!-- X / Y / W / H -->
+                    <Grid ColumnDefinitions="*,*,*,*">
+
+                        <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,8,0">
+                            <TextBlock Text="X" Classes="label" />
+                            <NumericUpDown Value="{Binding CaptureX}"
+                                           Minimum="0" Maximum="7680"
+                                           FormatString="0" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" Spacing="4" Margin="0,0,8,0">
+                            <TextBlock Text="Y" Classes="label" />
+                            <NumericUpDown Value="{Binding CaptureY}"
+                                           Minimum="0" Maximum="4320"
+                                           FormatString="0" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="2" Spacing="4" Margin="0,0,8,0">
+                            <TextBlock Text="Width" Classes="label" />
+                            <NumericUpDown Value="{Binding CaptureWidth}"
+                                           Minimum="10" Maximum="1920"
+                                           FormatString="0" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="3" Spacing="4">
+                            <TextBlock Text="Height" Classes="label" />
+                            <NumericUpDown Value="{Binding CaptureHeight}"
+                                           Minimum="10" Maximum="1080"
+                                           FormatString="0" />
+                        </StackPanel>
+
+                    </Grid>
+
+                    <!-- Interval + action buttons -->
+                    <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+
+                        <StackPanel Grid.Column="0" Spacing="4">
+                            <TextBlock Text="OCR Interval (ms)" Classes="label" />
+                            <NumericUpDown Value="{Binding IntervalMs}"
+                                           Minimum="100" Maximum="5000"
+                                           FormatString="0"
+                                           Width="150" />
+                        </StackPanel>
+
+                        <Button Grid.Column="2"
+                                Content="🔍 Preview Region"
+                                Command="{Binding PreviewCaptureCommand}"
+                                IsEnabled="{Binding !IsBusy}"
+                                Background="#1E2228"
+                                Foreground="#00DDFF"
+                                BorderBrush="#00DDFF"
+                                BorderThickness="1"
+                                CornerRadius="6"
+                                Padding="14,8"
+                                Margin="0,0,8,0"
+                                VerticalAlignment="Bottom"
+                                ToolTip.Tip="Captures a screenshot of the configured region so you can verify the coordinates are correct before starting detection." />
+
+                        <Button Grid.Column="3"
+                                Content="Test Capture"
+                                Command="{Binding TestCaptureCommand}"
+                                IsEnabled="{Binding !IsBusy}"
+                                Classes="accent"
+                                Padding="14,8"
+                                VerticalAlignment="Bottom" />
+
+                    </Grid>
+
+                    <!-- Live preview image -->
+                    <Border Background="#0D0F13"
+                            CornerRadius="6"
+                            Padding="12,10"
+                            IsVisible="{Binding CapturePreviewVisible}">
+                        <StackPanel Spacing="8">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Grid.Column="0"
+                                           Text="REGION PREVIEW"
+                                           FontSize="10" FontWeight="Bold"
+                                           Foreground="#00DDFF" LetterSpacing="2"
+                                           VerticalAlignment="Center" />
+                                <Button Grid.Column="1"
+                                        Content="✕"
+                                        Foreground="#4A4F5A"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        FontSize="12"
+                                        Padding="4,2"
+                                        Command="{Binding HidePreviewCommand}" />
+                            </Grid>
+                            <Image Source="{Binding CapturePreview}"
+                                   MaxHeight="120"
+                                   Stretch="Uniform"
+                                   HorizontalAlignment="Left"
+                                   RenderOptions.BitmapInterpolationMode="HighQuality" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- OCR test result -->
+                    <Border Background="#0D0F13"
+                            CornerRadius="6"
+                            Padding="12,10"
+                            IsVisible="{Binding TestCaptureResult,
+                                        Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="OCR RESULT"
+                                       FontSize="10" FontWeight="Bold"
+                                       Foreground="#FFD93D" LetterSpacing="2" />
+                            <TextBlock Text="{Binding TestCaptureResult}"
+                                       FontSize="12" Foreground="#EAEAEA"
+                                       TextWrapping="Wrap"
+                                       FontFamily="Cascadia Code,Consolas,Courier New" />
+                        </StackPanel>
+                    </Border>
+
+                </StackPanel>
+            </Border>
+
+            <!-- ── Weapons list ───────────────────────────────────────── -->
+            <Border Classes="card" Padding="18,14">
+                <StackPanel Spacing="12">
+
+                    <!-- Header row -->
+                    <Grid ColumnDefinitions="*,Auto,Auto">
+                        <StackPanel Grid.Column="0" Spacing="2">
+                            <TextBlock Text="WEAPON PROFILES"
+                                       FontSize="11" FontWeight="Bold"
+                                       Foreground="#B388FF" LetterSpacing="2" />
+                            <TextBlock Text="When detected, the weapon's recoil values override all No-Recoil macros."
+                                       FontSize="11" Foreground="#4A4F5A" />
+                        </StackPanel>
+
+                        <!-- Open library picker -->
+                        <Button Grid.Column="1"
+                                Content="📚 Banco de Armas"
+                                Command="{Binding OpenLibraryCommand}"
+                                Background="#1E2228"
+                                Foreground="#B388FF"
+                                BorderBrush="#B388FF"
+                                BorderThickness="1"
+                                CornerRadius="6"
+                                FontWeight="SemiBold"
+                                Padding="14,6"
+                                Margin="0,0,8,0"
+                                VerticalAlignment="Center" />
+
+                        <!-- Manual add -->
+                        <Button Grid.Column="2"
+                                Content="+ Adicionar"
+                                Command="{Binding AddWeaponCommand}"
+                                Classes="accent"
+                                Padding="14,6"
+                                VerticalAlignment="Center" />
+                    </Grid>
+
+                    <!-- Column labels -->
+                    <Grid ColumnDefinitions="*,*,80,80,70,34" Margin="2,0">
+                        <TextBlock Grid.Column="0" Text="NAME"
+                                   Classes="label" FontSize="10" />
+                        <TextBlock Grid.Column="1" Text="KEYWORDS (comma-separated)"
+                                   Classes="label" FontSize="10" />
+                        <TextBlock Grid.Column="2" Text="RECOIL X"
+                                   Classes="label" FontSize="10" HorizontalAlignment="Center" />
+                        <TextBlock Grid.Column="3" Text="RECOIL Y"
+                                   Classes="label" FontSize="10" HorizontalAlignment="Center" />
+                        <TextBlock Grid.Column="4" Text="INTENSITY"
+                                   Classes="label" FontSize="10" HorizontalAlignment="Center" />
+                    </Grid>
+
+                    <!-- Weapon rows -->
+                    <ItemsControl ItemsSource="{Binding Weapons}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="vm:WeaponProfileItemViewModel">
+                                <Border Background="#0D0F13"
+                                        CornerRadius="6"
+                                        Padding="8,6"
+                                        Margin="0,0,0,6">
+                                    <StackPanel Spacing="6">
+
+                                        <!-- Row 1: main fields -->
+                                        <Grid ColumnDefinitions="*,*,80,80,70,34">
+
+                                            <TextBox Grid.Column="0"
+                                                     Text="{Binding Name}"
+                                                     Margin="0,0,6,0"
+                                                     Watermark="e.g. M4A1" />
+
+                                            <TextBox Grid.Column="1"
+                                                     Text="{Binding Keywords}"
+                                                     Margin="0,0,6,0"
+                                                     Watermark="M4A1, M4, ASSAULT" />
+
+                                            <NumericUpDown Grid.Column="2"
+                                                           Value="{Binding RecoilCompensationX}"
+                                                           Minimum="-32767" Maximum="32767"
+                                                           Margin="0,0,6,0"
+                                                           FormatString="0"
+                                                           ShowButtonSpinner="False" />
+
+                                            <NumericUpDown Grid.Column="3"
+                                                           Value="{Binding RecoilCompensationY}"
+                                                           Minimum="-32767" Maximum="32767"
+                                                           Margin="0,0,6,0"
+                                                           FormatString="0"
+                                                           ShowButtonSpinner="False" />
+
+                                            <NumericUpDown Grid.Column="4"
+                                                           Value="{Binding Intensity}"
+                                                           Minimum="0" Maximum="5"
+                                                           Increment="0.1"
+                                                           Margin="0,0,6,0"
+                                                           FormatString="F2"
+                                                           ShowButtonSpinner="False" />
+
+                                            <Button Grid.Column="5"
+                                                    Content="✕"
+                                                    Foreground="#FF6B6B"
+                                                    Background="Transparent"
+                                                    BorderThickness="0"
+                                                    Padding="4,0"
+                                                    FontSize="13"
+                                                    VerticalAlignment="Center"
+                                                    CommandParameter="{Binding}"
+                                                    Command="{Binding DataContext.RemoveWeaponCommand,
+                                                              RelativeSource={RelativeSource AncestorType=UserControl}}" />
+
+                                        </Grid>
+
+                                        <!-- Row 2: rapid fire -->
+                                        <StackPanel Orientation="Horizontal" Spacing="10"
+                                                    Margin="2,0,0,0">
+                                            <CheckBox IsChecked="{Binding RapidFireEnabled}"
+                                                      Foreground="#FFD93D"
+                                                      VerticalAlignment="Center">
+                                                <TextBlock Text="Rapid Fire"
+                                                           FontSize="11"
+                                                           Foreground="#FFD93D" />
+                                            </CheckBox>
+                                            <StackPanel Orientation="Horizontal" Spacing="6"
+                                                        IsVisible="{Binding RapidFireEnabled}"
+                                                        VerticalAlignment="Center">
+                                                <TextBlock Text="Interval (ms):"
+                                                           FontSize="11" Foreground="#8A8F9A"
+                                                           VerticalAlignment="Center" />
+                                                <NumericUpDown Value="{Binding RapidFireIntervalMs}"
+                                                               Minimum="10" Maximum="500"
+                                                               FormatString="0"
+                                                               Width="90"
+                                                               ShowButtonSpinner="False" />
+                                            </StackPanel>
+                                        </StackPanel>
+
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <!-- Empty state -->
+                    <Border Background="#0D0F13" CornerRadius="6" Padding="16"
+                            IsVisible="{Binding !Weapons.Count}">
+                        <TextBlock Text="No weapons configured — click '+ Add Weapon' to begin."
+                                   FontSize="12" Foreground="#3A3F4A"
+                                   HorizontalAlignment="Center" />
+                    </Border>
+
+                    <!-- Save -->
+                    <Button Content="Save Settings"
+                            Command="{Binding SaveCommand}"
+                            IsEnabled="{Binding !IsBusy}"
+                            Classes="accent"
+                            HorizontalAlignment="Right"
+                            Padding="20,8" />
+
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+
+</UserControl>
