@@ -10,13 +10,24 @@ public partial class WeaponDetectionView : UserControl
     public WeaponDetectionView()
     {
         InitializeComponent();
-        BtnSelectRegion.Click += OnSelectRegionClick;
+        BtnSelectRegion.Click  += OnSelectRegionClick;
+        BtnCopyOcrResult.Click += OnCopyOcrResultClick;
 
         DataContextChanged += (_, _) =>
         {
             if (DataContext is WeaponDetectionViewModel vm)
                 vm.OpenLibraryRequested += OnOpenLibraryRequested;
         };
+    }
+
+    // ── Copy OCR result to clipboard ──────────────────────────────────────
+
+    private async void OnCopyOcrResultClick(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not WeaponDetectionViewModel vm) return;
+        var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
+        if (clipboard is null || string.IsNullOrEmpty(vm.TestCaptureResult)) return;
+        await clipboard.SetTextAsync(vm.TestCaptureResult);
     }
 
     // ── Region selector ───────────────────────────────────────────────────
