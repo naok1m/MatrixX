@@ -1,0 +1,103 @@
+name: Release
+
+on:
+  push:
+    branches: [master]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # ── Read version from csproj ──────────────────────────────────────────
+      - name: Read version
+        id: ver
+        shell: pwsh
+        run: |
+          $v = ([xml](Get-Content src/InputBusX.UI/InputBusX.UI.csproj)).Project.PropertyGroup.Version
+          "VERSION=$v"  | Out-File $env:GITHUB_OUTPUT -Append
+          "TAG=v$v"     | Out-File $env:GITHUB_OUTPUT -Append
+
+      # ── Skip if this version was already released ─────────────────────────
+      - name: Check existing tag
+        id: guard
+        shell: pwsh
+        run: |
+          $exists = git tag -l "${{ steps.ver.outputs.TAG }}"
+          $skip = if ($exists) { 'true' } else { 'false' }
+          "SKIP=$skip" | Out-File $env:GITHUB_OUTPUT -Append
+
+      # ── Build ─────────────────────────────────────────────────────────────
+      - name: Setup .NET 8
+        if: steps.guard.outputs.SKIP == 'false'
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Download tessdata
+        if: steps.guard.outputs.SKIP == 'false'
+        shell: pwsh
+        run: |
+          New-Item -Force -ItemType Directory tessdata | Out-Null
+          Invoke-WebRequest `
+            "https://github.com/tesseract-ocr/tessdata_fast/raw/main/eng.traineddata" `
+            -OutFile tessdata/eng.traineddata
+
+      - name: Publish
+        if: steps.guard.outputs.SKIP == 'false'
+        shell: pwsh
+        run: |
+          dotnet publish src/InputBusX.UI/InputBusX.UI.csproj `
+            -c Release `
+            -r win-x64 `
+            --self-contained `
+            -f net8.0-windows10.0.19041.0 `
+            -p:PublishSingleFile=true `
+            -p:IncludeNativeLibrariesForSelfExtract=true `
+            -p:EnableCompressionInSingleFile=true `
+            -p:PublishTrimmed=false `
+            -p:DebugType=embedded `
+            -o dist
+
+      # ── Package ───────────────────────────────────────────────────────────
+      - name: Package ZIP
+        if: steps.guard.outputs.SKIP == 'false'
+        shell: pwsh
+        run: |
+          Copy-Item -Recurse tessdata dist/tessdata
+          $zip = "MatrixX-${{ steps.ver.outputs.VERSION }}-win-x64.zip"
+          Compress-Archive -Path dist/* -DestinationPath $zip
+          "ZIP=$zip" | Out-File $env:GITHUB_OUTPUT -Append
+        id: pkg
+
+      # ── Release ───────────────────────────────────────────────────────────
+      - name: Build release notes
+        if: steps.guard.outputs.SKIP == 'false'
+        shell: pwsh
+        run: |
+          $prev = git describe --tags --abbrev=0 2>$null
+          if ($prev) {
+            $log = git log "$prev..HEAD" --pretty="format:- %s" | Out-String
+          } else {
+            $log = git log --pretty="format:- %s" | Out-String
+          }
+          $log.Trim() | Out-File -Encoding utf8 release-notes.md
+
+      - name: Create GitHub Release
+        if: steps.guard.outputs.SKIP == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: pwsh
+        run: |
+          gh release create "${{ steps.ver.outputs.TAG }}" `
+            "${{ steps.pkg.outputs.ZIP }}" `
+            --title "MatrixX ${{ steps.ver.outputs.TAG }}" `
+            --notes-file release-notes.md
