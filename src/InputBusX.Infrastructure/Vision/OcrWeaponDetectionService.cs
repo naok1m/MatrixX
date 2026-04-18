@@ -122,13 +122,22 @@ public sealed class OcrWeaponDetectionService : IWeaponDetectionService, IDispos
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "TestCapture failed");
-            return $"[error: {ex.Message}]";
+            var root = UnwrapException(ex);
+            _logger.LogError(ex, "TestCapture failed: {Root}", root.Message);
+            return $"[error: {root.Message}]";
         }
         finally
         {
             engine?.Dispose();
         }
+    }
+
+    /// Unwraps TargetInvocationException chains to expose the real inner cause.
+    private static Exception UnwrapException(Exception ex)
+    {
+        while (ex is System.Reflection.TargetInvocationException { InnerException: { } inner })
+            ex = inner;
+        return ex;
     }
 
     public void Dispose()
@@ -156,7 +165,9 @@ public sealed class OcrWeaponDetectionService : IWeaponDetectionService, IDispos
 
         try
         {
-            var engine = new TesseractEngine(tessdataPath, "eng", EngineMode.Default);
+            // LstmOnly: tessdata_fast ships only the LSTM neural model; Default tries legacy too
+            // and will throw "Unable to load unicharset file" if the .traineddata is fast-only.
+            var engine = new TesseractEngine(tessdataPath, "eng", EngineMode.LstmOnly);
             engine.SetVariable("tessedit_char_whitelist", CharWhitelist);
             engine.SetVariable("load_system_dawg", "false");
             engine.SetVariable("load_freq_dawg", "false");
@@ -176,6 +187,15 @@ public sealed class OcrWeaponDetectionService : IWeaponDetectionService, IDispos
                 "Tesseract native libraries failed to initialize. " +
                 "Install the Microsoft Visual C++ 2015-2022 x64 Redistributable (https://aka.ms/vs/17/release/vc_redist.x64.exe) and restart MatrixX.",
                 ex);
+        }
+        catch (Exception ex)
+        {
+            var root = ex;
+            while (root is System.Reflection.TargetInvocationException { InnerException: { } inner2 })
+                root = inner2;
+            if (!ReferenceEquals(root, ex))
+                throw new InvalidOperationException($"Tesseract init failed: {root.Message}", root);
+            throw;
         }
     }
 
@@ -198,7 +218,8 @@ public sealed class OcrWeaponDetectionService : IWeaponDetectionService, IDispos
             catch (OperationCanceledException) { break; }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "OCR detection error");
+                var root = UnwrapException(ex);
+                _logger.LogError(root, "OCR detection error: {Message}", root.Message);
                 await Task.Delay(1000, ct);
             }
         }
@@ -281,11 +302,18 @@ public sealed class OcrWeaponDetectionService : IWeaponDetectionService, IDispos
 
     private static (string Text, float Confidence) OcrBitmap(TesseractEngine engine, Bitmap bmp)
     {
-        var converter = new BitmapToPixConverter();
-        using var pix  = converter.Convert(bmp);
+        // Save to PNG bytes then load via Pix.LoadFromMemory — avoids BitmapToPixConverter
+        // which internally uses reflection and wraps any native error in TargetInvocationException.
+        byte[] pngBytes;
+        using (var ms = new MemoryStream())
+        {
+            bmp.Save(ms, SysImaging.ImageFormat.Png);
+            pngBytes = ms.ToArray();
+        }
+
+        using var pix  = Pix.LoadFromMemory(pngBytes);
         using var page = engine.Process(pix, PageSegMode.SingleLine);
-        // GetMeanConfidence returns 0–1; multiply by 100 for percent display
-        float conf = page.GetMeanConfidence() * 100f;
+        float  conf = page.GetMeanConfidence() * 100f;
         string text = page.GetText()?.Trim() ?? string.Empty;
         return (text, conf);
     }
