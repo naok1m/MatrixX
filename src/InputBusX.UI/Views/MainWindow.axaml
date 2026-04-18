@@ -5,8 +5,8 @@
         x:Class="InputBusX.UI.Views.MainWindow"
         x:DataType="vm:MainViewModel"
         Title="MatrixX"
-        Width="1100" Height="720"
-        MinWidth="900" MinHeight="600"
+        Width="1060" Height="720"
+        MinWidth="820" MinHeight="560"
         WindowStartupLocation="CenterScreen"
         Background="#0A0A0A">
 
@@ -18,34 +18,30 @@
     </Window.KeyBindings>
 
     <Panel>
-    <Grid ColumnDefinitions="244,*">
+    <Grid ColumnDefinitions="200,*">
 
         <!-- ── Sidebar ─────────────────────────────────────────────────── -->
         <Border Grid.Column="0"
                 Background="#0F1115"
                 BorderBrush="#1A1D22"
                 BorderThickness="0,0,1,0"
-                Padding="12,12,12,8">
+                Padding="10,10,10,6">
             <DockPanel>
 
                 <!-- Brand / Logo -->
-                <StackPanel DockPanel.Dock="Top" Margin="0,8,0,22" Spacing="6">
-                    <Border CornerRadius="14"
-                            Width="56" Height="56"
+                <StackPanel DockPanel.Dock="Top" Margin="0,4,0,14" Spacing="4">
+                    <Border CornerRadius="12"
+                            Width="44" Height="44"
                             HorizontalAlignment="Center"
                             ClipToBounds="True"
-                            BoxShadow="0 4 28 0 #5000FF9C">
+                            BoxShadow="0 4 20 0 #5000FF9C">
                         <Image Source="avares://MatrixX/Assets/matrixx-icon.png"
-                               Width="56" Height="56"
+                               Width="44" Height="44"
                                Stretch="UniformToFill" />
                     </Border>
                     <TextBlock Text="MatrixX"
-                               FontSize="18" FontWeight="Bold"
+                               FontSize="15" FontWeight="Bold"
                                Foreground="#EAEAEA"
-                               HorizontalAlignment="Center" />
-                    <TextBlock Text="Controller System"
-                               FontSize="10"
-                               Foreground="#3A3F4A"
                                HorizontalAlignment="Center" />
                 </StackPanel>
 

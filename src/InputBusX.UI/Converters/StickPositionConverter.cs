@@ -12,9 +12,11 @@ public class StickToCanvasConverter : IValueConverter
         if (value is double v)
         {
             bool invert = parameter is string s && s.Equals("invert", StringComparison.OrdinalIgnoreCase);
-            return (invert ? 1.0 - v : v + 1.0) / 2.0 * CanvasSize;
+            // Map [-1, 1] → [0, CanvasSize]; subtract half the dot size (6px) so the
+            // dot centre, not its top-left corner, tracks the stick position.
+            return (invert ? 1.0 - v : v + 1.0) / 2.0 * CanvasSize - 6;
         }
-        return CanvasSize / 2.0;
+        return CanvasSize / 2.0 - 6;
     }
 
     public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
