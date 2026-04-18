@@ -10,7 +10,6 @@
         <conv:StickToCanvasConverter x:Key="StickToCanvas" CanvasSize="120" />
         <conv:PercentageConverter x:Key="TriggerHeight" MaxHeight="100" />
         <conv:BoolToStringConverter x:Key="ConnectLabel" TrueValue="Stop" FalseValue="Start" />
-        <conv:BoolToStringConverter x:Key="HideLabel"   TrueValue="Hidden" FalseValue="Visible" />
     </UserControl.Resources>
 
     <ScrollViewer>
@@ -71,63 +70,6 @@
                     </StackPanel>
                 </Border>
             </Grid>
-
-            <!-- HidHide — Controller Visibility -->
-            <Border Classes="card" IsVisible="{Binding IsHidHideAvailable}">
-                <StackPanel Spacing="10">
-                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,4">
-                        <Ellipse Width="8" Height="8" Fill="#FF6B6B" VerticalAlignment="Center" />
-                        <TextBlock Text="Controller Visibility (HidHide)" FontSize="15" FontWeight="SemiBold" Foreground="#EAEAEA" />
-                    </StackPanel>
-
-                    <TextBlock FontSize="11" Foreground="#4A4F5A" TextWrapping="Wrap"
-                               Text="Hide physical controllers so only the virtual ViGEm device is visible to games. This prevents duplicate input and fixes double-detection issues after reboot." />
-
-                    <!-- Controller list -->
-                    <ItemsControl ItemsSource="{Binding Controllers}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="vm:ControllerRowViewModel">
-                                <Border Padding="10,8" Margin="0,2" CornerRadius="6" Background="#1E2228">
-                                    <Grid ColumnDefinitions="*,Auto">
-                                        <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding FriendlyName}" FontSize="13" Foreground="#EAEAEA" />
-                                            <TextBlock Text="{Binding InstanceId}" FontSize="10" Foreground="#4A4F5A" />
-                                        </StackPanel>
-                                                        <ToggleButton Grid.Column="1"
-                                                      IsChecked="{Binding IsHidden}"
-                                                      Command="{Binding $parent[UserControl].DataContext.ToggleHideDeviceCommand}"
-                                                      CommandParameter="{Binding}"
-                                                      VerticalAlignment="Center"
-                                                      Padding="12,4"
-                                                      Content="{Binding IsHidden, Converter={StaticResource HideLabel}}" />
-                                    </Grid>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-
-                    <TextBlock Text="No controllers detected. Make sure HidHide is installed."
-                               IsVisible="{Binding !Controllers.Count}"
-                               FontSize="11" Foreground="#4A4F5A" FontStyle="Italic" />
-
-                    <!-- Bulk actions -->
-                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
-                        <Button Content="Hide All"
-                                Command="{Binding HideAllCommand}"
-                                Classes="accent"
-                                Padding="14,6" />
-                        <Button Content="Unhide All"
-                                Command="{Binding UnhideAllCommand}"
-                                Padding="14,6" />
-                        <Button Content="↺ Refresh"
-                                Command="{Binding RefreshControllersCommand}"
-                                Padding="14,6" />
-                        <TextBlock Text="{Binding HideAllStatusText}"
-                                   VerticalAlignment="Center"
-                                   FontSize="11" Foreground="#4A4F5A" Margin="4,0,0,0" />
-                    </StackPanel>
-                </StackPanel>
-            </Border>
 
             <!-- Input Visualizer -->
             <Border Classes="card">

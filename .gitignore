@@ -24,3 +24,4 @@ Thumbs.db
 
 # ML models
 *.onnx
+dist-release/

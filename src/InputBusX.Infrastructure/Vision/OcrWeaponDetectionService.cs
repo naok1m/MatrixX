@@ -69,7 +69,7 @@ public sealed class OcrWeaponDetectionService : IWeaponDetectionService, IDispos
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Tesseract engine failed to initialize — check tessdata/eng.traineddata");
+            _logger.LogError(ex, "Tesseract engine failed to initialize: {Message}", ex.Message);
             return;
         }
 
@@ -145,11 +145,38 @@ public sealed class OcrWeaponDetectionService : IWeaponDetectionService, IDispos
     private static TesseractEngine CreateEngine()
     {
         var tessdataPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "tessdata");
-        var engine = new TesseractEngine(tessdataPath, "eng", EngineMode.Default);
-        engine.SetVariable("tessedit_char_whitelist", CharWhitelist);
-        engine.SetVariable("load_system_dawg", "false");
-        engine.SetVariable("load_freq_dawg", "false");
-        return engine;
+        var trainedData  = Path.Combine(tessdataPath, "eng.traineddata");
+
+        if (!File.Exists(trainedData))
+            throw new FileNotFoundException(
+                $"Tesseract language data not found at '{trainedData}'. " +
+                "The application install appears incomplete — reinstall MatrixX " +
+                "or restore the 'tessdata' folder next to the executable.",
+                trainedData);
+
+        try
+        {
+            var engine = new TesseractEngine(tessdataPath, "eng", EngineMode.Default);
+            engine.SetVariable("tessedit_char_whitelist", CharWhitelist);
+            engine.SetVariable("load_system_dawg", "false");
+            engine.SetVariable("load_freq_dawg", "false");
+            return engine;
+        }
+        catch (DllNotFoundException ex)
+        {
+            throw new InvalidOperationException(
+                "Tesseract native libraries (leptonica / tesseract) failed to load. " +
+                "This usually means the Microsoft Visual C++ 2015-2022 x64 Redistributable is missing. " +
+                "Install it from https://aka.ms/vs/17/release/vc_redist.x64.exe and restart MatrixX.",
+                ex);
+        }
+        catch (TypeInitializationException ex) when (ex.InnerException is DllNotFoundException)
+        {
+            throw new InvalidOperationException(
+                "Tesseract native libraries failed to initialize. " +
+                "Install the Microsoft Visual C++ 2015-2022 x64 Redistributable (https://aka.ms/vs/17/release/vc_redist.x64.exe) and restart MatrixX.",
+                ex);
+        }
     }
 
     // ──────────────────────────────────────────────────────────────────────

@@ -11,7 +11,6 @@ using InputBusX.Infrastructure.Output;
 using InputBusX.Infrastructure.Plugins;
 using InputBusX.Infrastructure.Data;
 using InputBusX.Infrastructure.Vision;
-using InputBusX.Infrastructure.HidHide;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Serilog;
@@ -68,7 +67,6 @@ public static class ServiceLocator
         services.AddSingleton<IConfigurationStore>(sp =>
             new JsonConfigurationStore(configPath, sp.GetRequiredService<ILogger<JsonConfigurationStore>>()));
 
-        services.AddSingleton<IHidHideService, HidHideService>();
         services.AddSingleton<IProcessMonitor, ProcessMonitor>();
         services.AddSingleton<IProfileManager, ProfileManagerService>();
         services.AddSingleton<XInputProvider>();
@@ -97,19 +95,6 @@ public static class ServiceLocator
         // Start config watching
         var configStore = _provider.GetRequiredService<IConfigurationStore>();
         configStore.StartWatching();
-
-        // Whitelist this exe in HidHide on every startup so the app can always
-        // read physical controllers, even if they were left hidden from a
-        // previous session (HidHide state persists across reboots in the driver).
-        try
-        {
-            var hidHide = _provider.GetService<IHidHideService>();
-            hidHide?.EnsureWhitelisted();
-        }
-        catch (Exception ex)
-        {
-            Log.Warning(ex, "HidHide: startup whitelist check failed (non-critical)");
-        }
     }
 
     public static void Shutdown()
