@@ -136,7 +136,8 @@ public sealed class OcrWeaponDetectionService : IWeaponDetectionService, IDispos
     /// Unwraps TargetInvocationException chains to expose the real inner cause.
     private static Exception UnwrapException(Exception ex)
     {
-        while (ex is System.Reflection.TargetInvocationException { InnerException: { } inner })
+        int depth = 0;
+        while (depth++ < 20 && ex is System.Reflection.TargetInvocationException { InnerException: { } inner })
             ex = inner;
         return ex;
     }
@@ -250,11 +251,14 @@ public sealed class OcrWeaponDetectionService : IWeaponDetectionService, IDispos
     private (string? Text, float Confidence, string Variant) RunOcrOnRegion(
         TesseractEngine engine, WeaponDetectionSettings s)
     {
-        float dpiScale = GetDpiScale();
-        int physX = (int)(s.CaptureX      * dpiScale);
-        int physY = (int)(s.CaptureY      * dpiScale);
-        int physW = Math.Max(1, (int)(s.CaptureWidth  * dpiScale));
-        int physH = Math.Max(1, (int)(s.CaptureHeight * dpiScale));
+        float dpiScale  = GetDpiScale();
+        int screenW     = Math.Max(1, GetSystemMetrics(0)); // SM_CXSCREEN (virtual desktop width)
+        int screenH     = Math.Max(1, GetSystemMetrics(1)); // SM_CYSCREEN (virtual desktop height)
+
+        int physW = Math.Clamp((int)(s.CaptureWidth  * dpiScale), 1, screenW);
+        int physH = Math.Clamp((int)(s.CaptureHeight * dpiScale), 1, screenH);
+        int physX = Math.Clamp((int)(s.CaptureX      * dpiScale), 0, screenW - physW);
+        int physY = Math.Clamp((int)(s.CaptureY      * dpiScale), 0, screenH - physH);
 
         using var captured = new Bitmap(physW, physH, SysImaging.PixelFormat.Format32bppArgb);
         using (var g = Graphics.FromImage(captured))
@@ -275,40 +279,40 @@ public sealed class OcrWeaponDetectionService : IWeaponDetectionService, IDispos
         }
 
         // Three preprocessing strategies — whichever gives Tesseract the highest confidence wins.
-        Bitmap[] variants =
+        // Each bitmap is created and disposed inline to prevent leaks if earlier variants throw.
+        (bool Invert, bool Aggressive, string Name)[] variantDefs =
         [
-            PreProcess(captured, invert: true,  aggressiveThreshold: false),
-            PreProcess(captured, invert: false, aggressiveThreshold: false),
-            PreProcess(captured, invert: true,  aggressiveThreshold: true),
+            (true,  false, "lightOnDark"),
+            (false, false, "darkOnLight"),
+            (true,  true,  "lightOnDarkAggressive"),
         ];
-        string[] variantNames = ["lightOnDark", "darkOnLight", "lightOnDarkAggressive"];
 
         string? bestText    = null;
         float   bestConf    = -1f;
         string  bestVariant = "";
 
-        for (int vi = 0; vi < variants.Length; vi++)
+        foreach (var (invert, aggressive, variantName) in variantDefs)
         {
-            using var bmp = variants[vi];
+            using var bmp = PreProcess(captured, invert, aggressive);
             try
             {
                 var (text, conf) = OcrBitmap(engine, bmp);
 
                 if (debugDir != null && timestamp != null)
                     bmp.Save(
-                        Path.Combine(debugDir, $"{timestamp}_{variantNames[vi]}_conf{conf:F0}.png"),
+                        Path.Combine(debugDir, $"{timestamp}_{variantName}_conf{conf:F0}.png"),
                         SysImaging.ImageFormat.Png);
 
                 if (conf > bestConf)
                 {
                     bestConf    = conf;
                     bestText    = text;
-                    bestVariant = variantNames[vi];
+                    bestVariant = variantName;
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogDebug(ex, "OCR variant {Variant} failed", variantNames[vi]);
+                _logger.LogDebug(ex, "OCR variant {Variant} failed", variantName);
             }
         }
 
@@ -438,6 +442,9 @@ public sealed class OcrWeaponDetectionService : IWeaponDetectionService, IDispos
 
     [DllImport("user32.dll")]
     private static extern uint GetDpiForSystem();
+
+    [DllImport("user32.dll")]
+    private static extern int GetSystemMetrics(int nIndex);
 
     // ──────────────────────────────────────────────────────────────────────
     //  Text filtering & normalization
