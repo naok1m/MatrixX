@@ -33,12 +33,18 @@ public sealed class ViGEmOutputController : IOutputController
             _controller = _client.CreateXbox360Controller();
             _controller.Connect();
 
-            // UserIndex is set by ViGEmBus after Connect() — tells us which XInput
-            // slot (0-3) the virtual controller was assigned so we can exclude it
-            // from physical input polling and prevent a feedback loop.
-            _virtualSlot = (int)_controller.UserIndex;
-            _logger.LogInformation(
-                "ViGEm virtual Xbox 360 controller connected on XInput slot {Slot}", _virtualSlot);
+            // UserIndex is assigned by ViGEmBus asynchronously after Connect().
+            // Poll briefly — the bus typically responds within a few ms.
+            // If it doesn't report in time, continue without a known slot
+            // (virtual output still works; XInput exclusion is just best-effort).
+            _virtualSlot = TryGetUserIndex(_controller);
+
+            if (_virtualSlot.HasValue)
+                _logger.LogInformation(
+                    "ViGEm virtual Xbox 360 controller connected on XInput slot {Slot}", _virtualSlot);
+            else
+                _logger.LogInformation(
+                    "ViGEm virtual Xbox 360 controller connected (slot not yet reported by ViGEmBus)");
         }
         catch (Exception ex)
         {
@@ -46,6 +52,31 @@ public sealed class ViGEmOutputController : IOutputController
             Disconnect();
             throw;
         }
+    }
+
+    /// <summary>
+    /// Polls UserIndex up to ~200 ms after Connect(). ViGEmBus assigns the slot
+    /// asynchronously; accessing it too early throws Xbox360UserIndexNotReportedException.
+    /// Returns null if the slot is still not available after the timeout.
+    /// </summary>
+    private static int? TryGetUserIndex(IXbox360Controller controller)
+    {
+        const int maxAttempts = 20;
+        const int delayMs     = 10;
+
+        for (int i = 0; i < maxAttempts; i++)
+        {
+            try
+            {
+                return (int)controller.UserIndex;
+            }
+            catch (Nefarius.ViGEm.Client.Targets.Xbox360.Exceptions.Xbox360UserIndexNotReportedException)
+            {
+                Thread.Sleep(delayMs);
+            }
+        }
+
+        return null;
     }
 
     public void Disconnect()
