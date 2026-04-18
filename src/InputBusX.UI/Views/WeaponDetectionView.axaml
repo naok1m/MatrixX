@@ -75,8 +75,8 @@
             <Border Classes="card section-panel"
                     BorderThickness="3,0,0,0"
                     BorderBrush="#00DDFF"
-                    Padding="18,14">
-                <StackPanel Spacing="12">
+                    Padding="14,12">
+                <StackPanel Spacing="10">
 
                     <TextBlock Text="CAPTURE REGION"
                                FontSize="11" FontWeight="Bold"
@@ -84,8 +84,8 @@
 
                     <Grid ColumnDefinitions="*,Auto">
                         <TextBlock Grid.Column="0"
-                                   Text="Coordinates of the HUD area where the game shows the weapon name (top-left origin)."
-                                   FontSize="12" Foreground="#4A4F5A" TextWrapping="Wrap"
+                                   Text="Coordinates of the HUD area where the game shows the weapon name."
+                                   FontSize="11" Foreground="#4A4F5A" TextWrapping="Wrap"
                                    VerticalAlignment="Center" />
 
                         <Button Grid.Column="1"
@@ -96,58 +96,60 @@
                                 BorderBrush="#00FF9C"
                                 BorderThickness="1"
                                 CornerRadius="6"
-                                Padding="14,8"
+                                Padding="12,6"
+                                FontSize="12"
                                 FontWeight="SemiBold"
                                 VerticalAlignment="Center"
-                                Margin="12,0,0,0" />
+                                Margin="10,0,0,0" />
                     </Grid>
 
-                    <!-- X / Y / W / H -->
-                    <Grid ColumnDefinitions="*,*,*,*">
+                    <!-- X / Y / W / H — equal columns, compact -->
+                    <Grid ColumnDefinitions="*,*,*,*" >
 
-                        <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,8,0">
-                            <TextBlock Text="X" Classes="label" />
+                        <StackPanel Grid.Column="0" Spacing="3" Margin="0,0,6,0">
+                            <TextBlock Text="X" Classes="label" FontSize="10" />
                             <NumericUpDown Value="{Binding CaptureX}"
                                            Minimum="0" Maximum="7680"
-                                           FormatString="0" />
+                                           FormatString="0" FontSize="12" />
                         </StackPanel>
 
-                        <StackPanel Grid.Column="1" Spacing="4" Margin="0,0,8,0">
-                            <TextBlock Text="Y" Classes="label" />
+                        <StackPanel Grid.Column="1" Spacing="3" Margin="0,0,6,0">
+                            <TextBlock Text="Y" Classes="label" FontSize="10" />
                             <NumericUpDown Value="{Binding CaptureY}"
                                            Minimum="0" Maximum="4320"
-                                           FormatString="0" />
+                                           FormatString="0" FontSize="12" />
                         </StackPanel>
 
-                        <StackPanel Grid.Column="2" Spacing="4" Margin="0,0,8,0">
-                            <TextBlock Text="Width" Classes="label" />
+                        <StackPanel Grid.Column="2" Spacing="3" Margin="0,0,6,0">
+                            <TextBlock Text="Width" Classes="label" FontSize="10" />
                             <NumericUpDown Value="{Binding CaptureWidth}"
                                            Minimum="10" Maximum="1920"
-                                           FormatString="0" />
+                                           FormatString="0" FontSize="12" />
                         </StackPanel>
 
-                        <StackPanel Grid.Column="3" Spacing="4">
-                            <TextBlock Text="Height" Classes="label" />
+                        <StackPanel Grid.Column="3" Spacing="3">
+                            <TextBlock Text="Height" Classes="label" FontSize="10" />
                             <NumericUpDown Value="{Binding CaptureHeight}"
                                            Minimum="10" Maximum="1080"
-                                           FormatString="0" />
+                                           FormatString="0" FontSize="12" />
                         </StackPanel>
 
                     </Grid>
 
-                    <!-- Interval + action buttons -->
+                    <!-- Interval + buttons in one row -->
                     <Grid ColumnDefinitions="Auto,*,Auto,Auto">
 
-                        <StackPanel Grid.Column="0" Spacing="4">
-                            <TextBlock Text="OCR Interval (ms)" Classes="label" />
+                        <StackPanel Grid.Column="0" Spacing="3">
+                            <TextBlock Text="Interval (ms)" Classes="label" FontSize="10" />
                             <NumericUpDown Value="{Binding IntervalMs}"
                                            Minimum="100" Maximum="5000"
                                            FormatString="0"
-                                           Width="150" />
+                                           FontSize="12"
+                                           Width="120" />
                         </StackPanel>
 
                         <Button Grid.Column="2"
-                                Content="🔍 Preview Region"
+                                Content="🔍 Preview"
                                 Command="{Binding PreviewCaptureCommand}"
                                 IsEnabled="{Binding !IsBusy}"
                                 Background="#1E2228"
@@ -155,17 +157,19 @@
                                 BorderBrush="#00DDFF"
                                 BorderThickness="1"
                                 CornerRadius="6"
-                                Padding="14,8"
-                                Margin="0,0,8,0"
+                                FontSize="12"
+                                Padding="12,6"
+                                Margin="0,0,6,0"
                                 VerticalAlignment="Bottom"
-                                ToolTip.Tip="Captures a screenshot of the configured region so you can verify the coordinates are correct before starting detection." />
+                                ToolTip.Tip="Capture a screenshot of the region to verify coordinates." />
 
                         <Button Grid.Column="3"
                                 Content="Test Capture"
                                 Command="{Binding TestCaptureCommand}"
                                 IsEnabled="{Binding !IsBusy}"
                                 Classes="accent"
-                                Padding="14,8"
+                                FontSize="12"
+                                Padding="12,6"
                                 VerticalAlignment="Bottom" />
 
                     </Grid>

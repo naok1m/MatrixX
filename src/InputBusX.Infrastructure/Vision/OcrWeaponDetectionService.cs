@@ -46,9 +46,10 @@ public sealed class OcrWeaponDetectionService : IWeaponDetectionService, IDispos
 
     private const double FuzzyTolerance = 0.25;
 
-    // Restrict Tesseract to the characters that can actually appear in weapon names.
-    // No dictionary words, no punctuation guessing, no digit↔letter confusion.
-    private const string CharWhitelist = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 -";
+    // Allow both cases so "Razor", "AK-47", "M4A1" etc. are read correctly.
+    // The result is uppercased before keyword matching, so case in OCR output doesn't matter.
+    // Restricting to letters+digits+space+hyphen prevents punctuation noise.
+    private const string CharWhitelist = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 -";
 
     public OcrWeaponDetectionService(ILogger<OcrWeaponDetectionService> logger)
     {
