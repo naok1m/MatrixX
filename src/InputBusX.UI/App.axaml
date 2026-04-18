@@ -4,6 +4,6 @@
              RequestedThemeVariant="Dark">
     <Application.Styles>
         <FluentTheme />
-        <StyleInclude Source="avares://InputBusX.UI/Styles/AppStyles.axaml" />
+        <StyleInclude Source="avares://MatrixX/Styles/AppStyles.axaml" />
     </Application.Styles>
 </Application>

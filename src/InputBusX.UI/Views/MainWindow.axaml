@@ -35,7 +35,7 @@
                             HorizontalAlignment="Center"
                             ClipToBounds="True"
                             BoxShadow="0 4 28 0 #5000FF9C">
-                        <Image Source="avares://InputBusX.UI/Assets/matrixx-icon.png"
+                        <Image Source="avares://MatrixX/Assets/matrixx-icon.png"
                                Width="56" Height="56"
                                Stretch="UniformToFill" />
                     </Border>
