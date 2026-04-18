@@ -151,9 +151,26 @@ public sealed class OcrWeaponDetectionService : IWeaponDetectionService, IDispos
     //  Engine factory
     // ──────────────────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Returns the directory that contains the MatrixX executable.
+    /// AppContext.BaseDirectory is the .NET 5+ recommended API; falls back to
+    /// the process path then the current directory so it never returns null.
+    /// </summary>
+    private static string GetBaseDirectory()
+    {
+        if (!string.IsNullOrEmpty(AppContext.BaseDirectory))
+            return AppContext.BaseDirectory;
+
+        var exeDir = Path.GetDirectoryName(Environment.ProcessPath);
+        if (!string.IsNullOrEmpty(exeDir))
+            return exeDir;
+
+        return Directory.GetCurrentDirectory();
+    }
+
     private static TesseractEngine CreateEngine()
     {
-        var tessdataPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "tessdata");
+        var tessdataPath = Path.Combine(GetBaseDirectory(), "tessdata");
         var trainedData  = Path.Combine(tessdataPath, "eng.traineddata");
 
         if (!File.Exists(trainedData))

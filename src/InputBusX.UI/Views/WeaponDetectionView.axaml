@@ -206,13 +206,36 @@
                             IsVisible="{Binding TestCaptureResult,
                                         Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
                         <StackPanel Spacing="6">
-                            <TextBlock Text="OCR RESULT"
-                                       FontSize="10" FontWeight="Bold"
-                                       Foreground="#FFD93D" LetterSpacing="2" />
-                            <TextBlock Text="{Binding TestCaptureResult}"
-                                       FontSize="12" Foreground="#EAEAEA"
-                                       TextWrapping="Wrap"
-                                       FontFamily="Cascadia Code,Consolas,Courier New" />
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Grid.Column="0"
+                                           Text="OCR RESULT"
+                                           FontSize="10" FontWeight="Bold"
+                                           Foreground="#FFD93D" LetterSpacing="2"
+                                           VerticalAlignment="Center" />
+                                <Button Grid.Column="1"
+                                        x:Name="BtnCopyOcrResult"
+                                        Content="⎘ Copy"
+                                        FontSize="11"
+                                        Foreground="#FFD93D"
+                                        Background="Transparent"
+                                        BorderBrush="#FFD93D"
+                                        BorderThickness="1"
+                                        CornerRadius="4"
+                                        Padding="8,3" />
+                            </Grid>
+                            <!-- IsReadOnly TextBox: same look but text is selectable + Ctrl+C works -->
+                            <TextBox Text="{Binding TestCaptureResult, Mode=OneWay}"
+                                     IsReadOnly="True"
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     Padding="0"
+                                     FontSize="12"
+                                     Foreground="#EAEAEA"
+                                     CaretBrush="#EAEAEA"
+                                     SelectionBrush="#2A4A7A"
+                                     TextWrapping="Wrap"
+                                     FontFamily="Cascadia Code,Consolas,Courier New"
+                                     AcceptsReturn="True" />
                         </StackPanel>
                     </Border>
 
