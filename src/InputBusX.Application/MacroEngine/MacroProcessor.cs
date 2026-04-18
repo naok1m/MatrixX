@@ -233,6 +233,10 @@ public sealed class MacroProcessor : IMacroProcessor
 
         if (held && macro.Steps.Count > 0)
         {
+            // Clamp index: Steps may have shrunk since the last frame (UI edit on another thread)
+            if (runtime.StepIndex >= macro.Steps.Count)
+                runtime.StepIndex = 0;
+
             var now = Environment.TickCount64;
             var step = macro.Steps[runtime.StepIndex];
 

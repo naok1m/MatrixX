@@ -12,6 +12,7 @@ public sealed class XInputProvider : IInputProvider
 {
     private readonly ILogger<XInputProvider> _logger;
     private readonly Dictionary<int, InputDevice> _devices = new();
+    private readonly object _devicesLock = new();
     private readonly bool[] _wasConnected = new bool[4];
     private CancellationTokenSource? _cts;
     private Task? _pollTask;
@@ -64,7 +65,10 @@ public sealed class XInputProvider : IInputProvider
     }
 
     public IReadOnlyList<InputDevice> GetConnectedDevices()
-        => _devices.Values.Where(d => d.IsConnected).ToList();
+    {
+        lock (_devicesLock)
+            return _devices.Values.Where(d => d.IsConnected).ToList();
+    }
 
     private void PollLoop(CancellationToken ct)
     {
@@ -101,14 +105,16 @@ public sealed class XInputProvider : IInputProvider
                             IsConnected = true,
                             LastSeen = DateTime.UtcNow
                         };
-                        _devices[i] = device;
+                        lock (_devicesLock) { _devices[i] = device; }
                         _wasConnected[i] = true;
                         DeviceConnected?.Invoke(device);
                         _logger.LogInformation("Controller connected: {Device}", device);
                     }
                     else if (!connected && _wasConnected[i])
                     {
-                        if (_devices.TryGetValue(i, out var device))
+                        InputDevice? device;
+                        lock (_devicesLock) { _devices.TryGetValue(i, out device); }
+                        if (device != null)
                         {
                             device.IsConnected = false;
                             DeviceDisconnected?.Invoke(device);
