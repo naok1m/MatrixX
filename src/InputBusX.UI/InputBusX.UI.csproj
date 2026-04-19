@@ -9,30 +9,19 @@
     <Product>MatrixX</Product>
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <ApplicationIcon>Assets\matrixx-icon.ico</ApplicationIcon>
-    <Version>1.3.9</Version>
-    <AssemblyVersion>1.3.9.0</AssemblyVersion>
-    <FileVersion>1.3.9.0</FileVersion>
+    <Version>2.0.0</Version>
+    <AssemblyVersion>2.0.0.0</AssemblyVersion>
+    <FileVersion>2.0.0.0</FileVersion>
+    <!--
+      OpenCvSharp ships OpenCvSharpExtern.dll as a native dependency. For single-file
+      publish, extract native libs to a temp dir at runtime so the P/Invoke loader
+      can find them — bundling native DLLs as embedded resources does not work.
+    -->
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
   </PropertyGroup>
   <ItemGroup>
     <AvaloniaResource Include="Assets\matrixx-icon.png" />
   </ItemGroup>
-
-  <!--
-    Keep Tesseract.dll outside the single-file bundle.
-    charlesw/tesseract discovers x64/tesseract50.dll via
-      Path.GetDirectoryName(typeof(TesseractEngine).Assembly.Location)
-    When bundled, Assembly.Location returns "" and Path.GetDirectoryName("") returns null
-    in .NET 8, causing ArgumentNullException inside Path.Combine.
-    Marking ExcludeFromSingleFile=true on the ResolvedFileToPublish item keeps the DLL
-    on disk so Assembly.Location has a real path → x64/ discovery works.
-  -->
-  <Target Name="ExcludeTesseractFromSingleFileBundle" BeforeTargets="_ComputeFilesToBundle">
-    <ItemGroup>
-      <ResolvedFileToPublish Condition="'%(Filename)%(Extension)' == 'Tesseract.dll'">
-        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-      </ResolvedFileToPublish>
-    </ItemGroup>
-  </Target>
   <ItemGroup>
     <Content Include="..\..\config\**\*">
       <Link>config\%(RecursiveDir)%(Filename)%(Extension)</Link>

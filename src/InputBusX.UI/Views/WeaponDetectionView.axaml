@@ -25,8 +25,9 @@
                         <TextBlock Text="Weapon Detection"
                                    FontSize="18" FontWeight="SemiBold"
                                    Foreground="#EAEAEA" />
-                        <TextBlock Text="Automatically adjusts No-Recoil per weapon using screen OCR"
-                                   FontSize="12" Foreground="#4A4F5A" />
+                        <TextBlock Text="Recognises your active weapon by matching the HUD name plate against reference captures (OpenCV TM_CCOEFF_NORMED)."
+                                   FontSize="12" Foreground="#4A4F5A"
+                                   TextWrapping="Wrap" />
                     </StackPanel>
 
                     <Button Grid.Column="1"
@@ -84,7 +85,7 @@
 
                     <Grid ColumnDefinitions="*,Auto">
                         <TextBlock Grid.Column="0"
-                                   Text="Coordinates of the HUD area where the game shows the weapon name."
+                                   Text="Coordinates of the HUD area where the game shows the weapon name. Tight regions match faster and more reliably."
                                    FontSize="11" Foreground="#4A4F5A" TextWrapping="Wrap"
                                    VerticalAlignment="Center" />
 
@@ -136,19 +137,31 @@
 
                     </Grid>
 
-                    <!-- Interval + buttons in one row -->
-                    <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+                    <!-- Interval + Threshold + buttons in one row -->
+                    <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto">
 
-                        <StackPanel Grid.Column="0" Spacing="3">
+                        <StackPanel Grid.Column="0" Spacing="3" Margin="0,0,12,0">
                             <TextBlock Text="Interval (ms)" Classes="label" FontSize="10" />
                             <NumericUpDown Value="{Binding IntervalMs}"
-                                           Minimum="100" Maximum="5000"
+                                           Minimum="50" Maximum="5000"
                                            FormatString="0"
                                            FontSize="12"
-                                           Width="120" />
+                                           Width="110" />
                         </StackPanel>
 
-                        <Button Grid.Column="2"
+                        <StackPanel Grid.Column="1" Spacing="3">
+                            <TextBlock Text="Match Threshold (0.00–1.00)"
+                                       Classes="label" FontSize="10"
+                                       ToolTip.Tip="Minimum normalized correlation needed to accept a match. 0.80 recommended; raise for stricter matching, lower if valid weapons are being rejected." />
+                            <NumericUpDown Value="{Binding MatchThreshold}"
+                                           Minimum="0.50" Maximum="1.00"
+                                           Increment="0.01"
+                                           FormatString="F2"
+                                           FontSize="12"
+                                           Width="110" />
+                        </StackPanel>
+
+                        <Button Grid.Column="3"
                                 Content="🔍 Preview"
                                 Command="{Binding PreviewCaptureCommand}"
                                 IsEnabled="{Binding !IsBusy}"
@@ -163,14 +176,15 @@
                                 VerticalAlignment="Bottom"
                                 ToolTip.Tip="Capture a screenshot of the region to verify coordinates." />
 
-                        <Button Grid.Column="3"
-                                Content="Test Capture"
+                        <Button Grid.Column="4"
+                                Content="Run Test"
                                 Command="{Binding TestCaptureCommand}"
                                 IsEnabled="{Binding !IsBusy}"
                                 Classes="accent"
                                 FontSize="12"
                                 Padding="12,6"
-                                VerticalAlignment="Bottom" />
+                                VerticalAlignment="Bottom"
+                                ToolTip.Tip="Runs a single detection pass and prints per-weapon correlation scores." />
 
                     </Grid>
 
@@ -203,7 +217,7 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- OCR test result -->
+                    <!-- Detection test result -->
                     <Border Background="#0D0F13"
                             CornerRadius="6"
                             Padding="12,10"
@@ -212,7 +226,7 @@
                         <StackPanel Spacing="6">
                             <Grid ColumnDefinitions="*,Auto">
                                 <TextBlock Grid.Column="0"
-                                           Text="OCR RESULT"
+                                           Text="DETECTION RESULT"
                                            FontSize="10" FontWeight="Bold"
                                            Foreground="#FFD93D" LetterSpacing="2"
                                            VerticalAlignment="Center" />
@@ -256,8 +270,9 @@
                             <TextBlock Text="WEAPON PROFILES"
                                        FontSize="11" FontWeight="Bold"
                                        Foreground="#B388FF" LetterSpacing="2" />
-                            <TextBlock Text="When detected, the weapon's recoil values override all No-Recoil macros."
-                                       FontSize="11" Foreground="#4A4F5A" />
+                            <TextBlock Text="Equip a weapon in-game, then click 📷 on its row to capture a reference. More references = more robust detection."
+                                       FontSize="11" Foreground="#4A4F5A"
+                                       TextWrapping="Wrap" />
                         </StackPanel>
 
                         <!-- Open library picker -->
@@ -284,16 +299,14 @@
                     </Grid>
 
                     <!-- Column labels -->
-                    <Grid ColumnDefinitions="*,*,80,80,70,34" Margin="2,0">
+                    <Grid ColumnDefinitions="*,80,80,70,34" Margin="2,0">
                         <TextBlock Grid.Column="0" Text="NAME"
                                    Classes="label" FontSize="10" />
-                        <TextBlock Grid.Column="1" Text="KEYWORDS (comma-separated)"
-                                   Classes="label" FontSize="10" />
-                        <TextBlock Grid.Column="2" Text="RECOIL X"
+                        <TextBlock Grid.Column="1" Text="RECOIL X"
                                    Classes="label" FontSize="10" HorizontalAlignment="Center" />
-                        <TextBlock Grid.Column="3" Text="RECOIL Y"
+                        <TextBlock Grid.Column="2" Text="RECOIL Y"
                                    Classes="label" FontSize="10" HorizontalAlignment="Center" />
-                        <TextBlock Grid.Column="4" Text="INTENSITY"
+                        <TextBlock Grid.Column="3" Text="INTENSITY"
                                    Classes="label" FontSize="10" HorizontalAlignment="Center" />
                     </Grid>
 
@@ -308,33 +321,28 @@
                                     <StackPanel Spacing="6">
 
                                         <!-- Row 1: main fields -->
-                                        <Grid ColumnDefinitions="*,*,80,80,70,34">
+                                        <Grid ColumnDefinitions="*,80,80,70,34">
 
                                             <TextBox Grid.Column="0"
                                                      Text="{Binding Name}"
                                                      Margin="0,0,6,0"
                                                      Watermark="e.g. M4A1" />
 
-                                            <TextBox Grid.Column="1"
-                                                     Text="{Binding Keywords}"
-                                                     Margin="0,0,6,0"
-                                                     Watermark="M4A1, M4, ASSAULT" />
-
-                                            <NumericUpDown Grid.Column="2"
+                                            <NumericUpDown Grid.Column="1"
                                                            Value="{Binding RecoilCompensationX}"
                                                            Minimum="-32767" Maximum="32767"
                                                            Margin="0,0,6,0"
                                                            FormatString="0"
                                                            ShowButtonSpinner="False" />
 
-                                            <NumericUpDown Grid.Column="3"
+                                            <NumericUpDown Grid.Column="2"
                                                            Value="{Binding RecoilCompensationY}"
                                                            Minimum="-32767" Maximum="32767"
                                                            Margin="0,0,6,0"
                                                            FormatString="0"
                                                            ShowButtonSpinner="False" />
 
-                                            <NumericUpDown Grid.Column="4"
+                                            <NumericUpDown Grid.Column="3"
                                                            Value="{Binding Intensity}"
                                                            Minimum="0" Maximum="5"
                                                            Increment="0.1"
@@ -342,7 +350,7 @@
                                                            FormatString="F2"
                                                            ShowButtonSpinner="False" />
 
-                                            <Button Grid.Column="5"
+                                            <Button Grid.Column="4"
                                                     Content="✕"
                                                     Foreground="#FF6B6B"
                                                     Background="Transparent"
@@ -356,29 +364,78 @@
 
                                         </Grid>
 
-                                        <!-- Row 2: rapid fire -->
-                                        <StackPanel Orientation="Horizontal" Spacing="10"
-                                                    Margin="2,0,0,0">
-                                            <CheckBox IsChecked="{Binding RapidFireEnabled}"
-                                                      Foreground="#FFD93D"
-                                                      VerticalAlignment="Center">
-                                                <TextBlock Text="Rapid Fire"
-                                                           FontSize="11"
-                                                           Foreground="#FFD93D" />
-                                            </CheckBox>
-                                            <StackPanel Orientation="Horizontal" Spacing="6"
-                                                        IsVisible="{Binding RapidFireEnabled}"
+                                        <!-- Row 2: reference capture + rapid fire -->
+                                        <Grid ColumnDefinitions="Auto,Auto,*,Auto"
+                                              Margin="2,2,0,0">
+
+                                            <Button Grid.Column="0"
+                                                    Content="📷 Capturar Referência"
+                                                    CommandParameter="{Binding}"
+                                                    Command="{Binding DataContext.CaptureReferenceCommand,
+                                                              RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    IsEnabled="{Binding DataContext.IsBusy,
+                                                                RelativeSource={RelativeSource AncestorType=UserControl},
+                                                                Converter={x:Static BoolConverters.Not}}"
+                                                    Background="#1E2228"
+                                                    Foreground="#00FF9C"
+                                                    BorderBrush="#00FF9C"
+                                                    BorderThickness="1"
+                                                    CornerRadius="6"
+                                                    FontSize="11"
+                                                    Padding="10,4"
+                                                    Margin="0,0,6,0"
+                                                    VerticalAlignment="Center"
+                                                    ToolTip.Tip="Equip this weapon in-game first, then click to save a reference image of its HUD name plate." />
+
+                                            <Button Grid.Column="1"
+                                                    Content="🗑"
+                                                    CommandParameter="{Binding}"
+                                                    Command="{Binding DataContext.ClearReferencesCommand,
+                                                              RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    IsVisible="{Binding HasReferences}"
+                                                    Background="Transparent"
+                                                    Foreground="#FF6B6B"
+                                                    BorderBrush="#FF6B6B"
+                                                    BorderThickness="1"
+                                                    CornerRadius="6"
+                                                    FontSize="11"
+                                                    Padding="8,4"
+                                                    Margin="0,0,10,0"
+                                                    VerticalAlignment="Center"
+                                                    ToolTip.Tip="Delete every reference image for this weapon." />
+
+                                            <TextBlock Grid.Column="2"
+                                                       Text="{Binding ReferenceSummary}"
+                                                       FontSize="11"
+                                                       Foreground="#8A8F9A"
+                                                       VerticalAlignment="Center" />
+
+                                            <StackPanel Grid.Column="3"
+                                                        Orientation="Horizontal"
+                                                        Spacing="8"
                                                         VerticalAlignment="Center">
-                                                <TextBlock Text="Interval (ms):"
-                                                           FontSize="11" Foreground="#8A8F9A"
-                                                           VerticalAlignment="Center" />
-                                                <NumericUpDown Value="{Binding RapidFireIntervalMs}"
-                                                               Minimum="10" Maximum="500"
-                                                               FormatString="0"
-                                                               Width="90"
-                                                               ShowButtonSpinner="False" />
+                                                <CheckBox IsChecked="{Binding RapidFireEnabled}"
+                                                          Foreground="#FFD93D"
+                                                          VerticalAlignment="Center">
+                                                    <TextBlock Text="Rapid Fire"
+                                                               FontSize="11"
+                                                               Foreground="#FFD93D" />
+                                                </CheckBox>
+                                                <StackPanel Orientation="Horizontal" Spacing="6"
+                                                            IsVisible="{Binding RapidFireEnabled}"
+                                                            VerticalAlignment="Center">
+                                                    <TextBlock Text="ms:"
+                                                               FontSize="11" Foreground="#8A8F9A"
+                                                               VerticalAlignment="Center" />
+                                                    <NumericUpDown Value="{Binding RapidFireIntervalMs}"
+                                                                   Minimum="10" Maximum="500"
+                                                                   FormatString="0"
+                                                                   Width="80"
+                                                                   ShowButtonSpinner="False" />
+                                                </StackPanel>
                                             </StackPanel>
-                                        </StackPanel>
+
+                                        </Grid>
 
                                     </StackPanel>
                                 </Border>
@@ -389,7 +446,7 @@
                     <!-- Empty state -->
                     <Border Background="#0D0F13" CornerRadius="6" Padding="16"
                             IsVisible="{Binding !Weapons.Count}">
-                        <TextBlock Text="No weapons configured — click '+ Add Weapon' to begin."
+                        <TextBlock Text="No weapons configured — click '+ Adicionar' or pick from the library to begin."
                                    FontSize="12" Foreground="#3A3F4A"
                                    HorizontalAlignment="Center" />
                     </Border>

@@ -13,13 +13,21 @@ public sealed class WeaponDetectionSettings
     public int CaptureWidth { get; set; } = 300;
     public int CaptureHeight { get; set; } = 60;
 
-    /// <summary>How often to run OCR, in milliseconds.</summary>
-    public int IntervalMs { get; set; } = 500;
+    /// <summary>How often the detection loop runs, in milliseconds.</summary>
+    public int IntervalMs { get; set; } = 250;
 
     /// <summary>
-    /// When true, every OCR frame writes the raw capture + all pre-processing
-    /// variants to <c>%TEMP%/matrixx-ocr-debug/</c> so you can inspect what
-    /// Tesseract actually sees. Leave this OFF in production — it's I/O-heavy.
+    /// Normalized cross-correlation score (TM_CCOEFF_NORMED) that a reference must
+    /// reach to count as a positive match. Range [0..1]; higher = stricter.
+    ///   0.70  very loose — may accept similar-looking weapons
+    ///   0.80  balanced — recommended default
+    ///   0.90  strict — only near-pixel-identical matches
+    /// </summary>
+    public double MatchThreshold { get; set; } = 0.80;
+
+    /// <summary>
+    /// When true, every detection frame writes the live capture + per-weapon scores
+    /// to <c>%TEMP%/matrixx-detection-debug/</c>. Leave OFF in production — disk I/O heavy.
     /// </summary>
     public bool DebugSaveImages { get; set; } = false;
 

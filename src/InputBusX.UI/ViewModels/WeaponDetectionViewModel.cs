@@ -33,7 +33,10 @@ public partial class WeaponDetectionViewModel : ViewModelBase
     [ObservableProperty] private int _captureY = 950;
     [ObservableProperty] private int _captureWidth = 300;
     [ObservableProperty] private int _captureHeight = 60;
-    [ObservableProperty] private int _intervalMs = 500;
+    [ObservableProperty] private int _intervalMs = 250;
+
+    // ── Matching ──────────────────────────────────────────────────────────
+    [ObservableProperty] private double _matchThreshold = 0.80;
 
     // ── Weapons list ──────────────────────────────────────────────────────
     public ObservableCollection<WeaponProfileItemViewModel> Weapons { get; } = [];
@@ -65,7 +68,7 @@ public partial class WeaponDetectionViewModel : ViewModelBase
     }
 
     // ──────────────────────────────────────────────────────────────────────
-    //  Commands
+    //  Commands — detection lifecycle
     // ──────────────────────────────────────────────────────────────────────
 
     [RelayCommand]
@@ -88,7 +91,7 @@ public partial class WeaponDetectionViewModel : ViewModelBase
                 var settings = BuildSettings();
                 await _detection.StartAsync(settings);
                 IsRunning = true;
-                StatusMessage = $"Detecting every {settings.IntervalMs} ms…";
+                StatusMessage = $"Detecting every {settings.IntervalMs} ms (threshold {settings.MatchThreshold:F2})…";
                 _notifications.ShowSuccess("Weapon detection started.");
             }
         }
@@ -108,12 +111,12 @@ public partial class WeaponDetectionViewModel : ViewModelBase
     {
         if (IsBusy) return;
         IsBusy = true;
-        TestCaptureResult = "Capturing…";
+        TestCaptureResult = "Running detection pass…";
         try
         {
             var settings = BuildSettings();
             var text = await _detection.TestCaptureAsync(settings);
-            TestCaptureResult = string.IsNullOrWhiteSpace(text) ? "[no text detected]" : text;
+            TestCaptureResult = string.IsNullOrWhiteSpace(text) ? "[no output]" : text;
         }
         catch (Exception ex)
         {
@@ -164,6 +167,10 @@ public partial class WeaponDetectionViewModel : ViewModelBase
         CapturePreview = null;
     }
 
+    // ──────────────────────────────────────────────────────────────────────
+    //  Commands — weapon list management
+    // ──────────────────────────────────────────────────────────────────────
+
     [RelayCommand]
     private void AddWeapon()
     {
@@ -189,6 +196,76 @@ public partial class WeaponDetectionViewModel : ViewModelBase
     {
         OpenLibraryRequested?.Invoke();
     }
+
+    // ──────────────────────────────────────────────────────────────────────
+    //  Commands — reference capture
+    // ──────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Takes a screenshot of the current capture region and attaches it as a reference
+    /// image for the given weapon. Safe to call while detection is running — the
+    /// engine re-reads its reference cache immediately.
+    /// </summary>
+    [RelayCommand]
+    private async Task CaptureReference(WeaponProfileItemViewModel item)
+    {
+        if (item == null || IsBusy) return;
+        IsBusy = true;
+        try
+        {
+            var settings = BuildSettings();
+            var profile  = item.ToEntity();
+
+            var path = await _detection.CaptureReferenceAsync(settings, profile);
+
+            // Mirror the new path back into the VM list so the UI updates.
+            if (!item.ReferenceImagePaths.Contains(path))
+                item.ReferenceImagePaths.Add(path);
+
+            _notifications.ShowSuccess($"Reference captured for {item.Name}.");
+            StatusMessage = $"Reference saved: {Path.GetFileName(path)}";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to capture reference for {Name}", item.Name);
+            _notifications.ShowError($"Capture failed: {ex.Message}");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    /// <summary>
+    /// Removes every reference image for the given weapon (on disk + in memory).
+    /// </summary>
+    [RelayCommand]
+    private async Task ClearReferences(WeaponProfileItemViewModel item)
+    {
+        if (item == null || IsBusy) return;
+        if (item.ReferenceImagePaths.Count == 0) return;
+        IsBusy = true;
+        try
+        {
+            var profile = item.ToEntity();
+            await _detection.ClearReferencesAsync(profile);
+            item.ReferenceImagePaths.Clear();
+            _notifications.ShowInfo($"References cleared for {item.Name}.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to clear references for {Name}", item.Name);
+            _notifications.ShowError($"Clear failed: {ex.Message}");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    //  Commands — persistence
+    // ──────────────────────────────────────────────────────────────────────
 
     [RelayCommand]
     private void Save()
@@ -218,11 +295,12 @@ public partial class WeaponDetectionViewModel : ViewModelBase
         var cfg = _configStore.Load();
         var s = cfg.WeaponDetection;
 
-        CaptureX      = s.CaptureX;
-        CaptureY      = s.CaptureY;
-        CaptureWidth  = s.CaptureWidth;
-        CaptureHeight = s.CaptureHeight;
-        IntervalMs    = s.IntervalMs;
+        CaptureX       = s.CaptureX;
+        CaptureY       = s.CaptureY;
+        CaptureWidth   = s.CaptureWidth;
+        CaptureHeight  = s.CaptureHeight;
+        IntervalMs     = s.IntervalMs;
+        MatchThreshold = s.MatchThreshold <= 0 ? 0.80 : s.MatchThreshold;
 
         Weapons.Clear();
         foreach (var w in s.Weapons)
@@ -231,18 +309,19 @@ public partial class WeaponDetectionViewModel : ViewModelBase
 
     private WeaponDetectionSettings BuildSettings() => new()
     {
-        Enabled       = IsRunning,
-        CaptureX      = CaptureX,
-        CaptureY      = CaptureY,
-        CaptureWidth  = CaptureWidth,
-        CaptureHeight = CaptureHeight,
-        IntervalMs    = IntervalMs,
-        Weapons       = Weapons.Select(w => w.ToEntity()).ToList()
+        Enabled        = IsRunning,
+        CaptureX       = CaptureX,
+        CaptureY       = CaptureY,
+        CaptureWidth   = CaptureWidth,
+        CaptureHeight  = CaptureHeight,
+        IntervalMs     = IntervalMs,
+        MatchThreshold = MatchThreshold,
+        Weapons        = Weapons.Select(w => w.ToEntity()).ToList()
     };
 
     private void OnWeaponChanged(WeaponProfile? weapon)
     {
-        // OCR detection fires from a background thread — UI properties must be on UI thread
+        // Detection fires from a background thread — UI properties must be on UI thread
         _macroProcessor.SetWeaponProfile(weapon);  // thread-safe (just sets a field)
         Dispatcher.UIThread.Post(() =>
             CurrentWeaponName = weapon?.Name ?? "None");

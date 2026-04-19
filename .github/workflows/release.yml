@@ -42,15 +42,6 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      - name: Download tessdata
-        if: steps.guard.outputs.SKIP == 'false'
-        shell: pwsh
-        run: |
-          New-Item -Force -ItemType Directory tessdata | Out-Null
-          Invoke-WebRequest `
-            "https://github.com/tesseract-ocr/tessdata_fast/raw/main/eng.traineddata" `
-            -OutFile tessdata/eng.traineddata
-
       - name: Publish
         if: steps.guard.outputs.SKIP == 'false'
         shell: pwsh
@@ -70,7 +61,6 @@ jobs:
         if: steps.guard.outputs.SKIP == 'false'
         shell: pwsh
         run: |
-          Copy-Item -Recurse tessdata dist/tessdata
           $zip = "MatrixX-${{ steps.ver.outputs.VERSION }}-win-x64.zip"
           Compress-Archive -Path dist/* -DestinationPath $zip
           "ZIP=$zip" | Out-File $env:GITHUB_OUTPUT -Append
