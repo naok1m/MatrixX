@@ -287,20 +287,14 @@ public sealed class OcrWeaponDetectionService : IWeaponDetectionService, IDispos
 
     private Bitmap CaptureRegion(WeaponDetectionSettings s)
     {
-        float dpiScale = GetDpiScale();
-        int screenW    = Math.Max(1, GetSystemMetrics(0)); // SM_CXSCREEN
-        int screenH    = Math.Max(1, GetSystemMetrics(1)); // SM_CYSCREEN
+        float dpiScale  = GetDpiScale();
+        int screenW     = Math.Max(1, GetSystemMetrics(0)); // SM_CXSCREEN (virtual desktop width)
+        int screenH     = Math.Max(1, GetSystemMetrics(1)); // SM_CYSCREEN (virtual desktop height)
 
         int physW = Math.Clamp((int)(s.CaptureWidth  * dpiScale), 1, screenW);
         int physH = Math.Clamp((int)(s.CaptureHeight * dpiScale), 1, screenH);
         int physX = Math.Clamp((int)(s.CaptureX      * dpiScale), 0, screenW - physW);
         int physY = Math.Clamp((int)(s.CaptureY      * dpiScale), 0, screenH - physH);
-
-        var bmp = new Bitmap(physW, physH, SysImaging.PixelFormat.Format32bppArgb);
-        using var g = Graphics.FromImage(bmp);
-        g.CopyFromScreen(physX, physY, 0, 0, new Size(physW, physH), CopyPixelOperation.SourceCopy);
-        return bmp;
-    }
 
     // ──────────────────────────────────────────────────────────────────────
     //  Frame-diff (white-binary comparison)
@@ -382,26 +376,22 @@ public sealed class OcrWeaponDetectionService : IWeaponDetectionService, IDispos
             captured.Save(Path.Combine(debugDir, $"{timestamp}_capture.png"), SysImaging.ImageFormat.Png);
         }
 
-        // WhiteOnly=true uses ExtractWhiteText instead of Otsu binarization.
-        // This variant excels when the HUD text is white on a complex 3D background
-        // because Otsu's global threshold is confused by the environment colours.
-        (bool Invert, bool Aggressive, bool WhiteOnly, string Name)[] variantDefs =
+        // Three preprocessing strategies — whichever gives Tesseract the highest confidence wins.
+        // Each bitmap is created and disposed inline to prevent leaks if earlier variants throw.
+        (bool Invert, bool Aggressive, string Name)[] variantDefs =
         [
-            (true,  false, false, "lightOnDark"),
-            (false, false, false, "darkOnLight"),
-            (true,  true,  false, "lightOnDarkAggressive"),
-            (false, false, true,  "whiteTextIsolation"),
+            (true,  false, "lightOnDark"),
+            (false, false, "darkOnLight"),
+            (true,  true,  "lightOnDarkAggressive"),
         ];
 
         string? bestText    = null;
         float   bestConf    = -1f;
         string  bestVariant = "";
 
-        foreach (var (invert, aggressive, whiteOnly, variantName) in variantDefs)
+        foreach (var (invert, aggressive, variantName) in variantDefs)
         {
-            using var bmp = whiteOnly
-                ? ExtractWhiteText(captured)
-                : PreProcess(captured, invert, aggressive);
+            using var bmp = PreProcess(captured, invert, aggressive);
             try
             {
                 var (text, conf) = OcrBitmap(engine, bmp);
