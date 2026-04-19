@@ -296,6 +296,12 @@ public sealed class OcrWeaponDetectionService : IWeaponDetectionService, IDispos
         int physX = Math.Clamp((int)(s.CaptureX      * dpiScale), 0, screenW - physW);
         int physY = Math.Clamp((int)(s.CaptureY      * dpiScale), 0, screenH - physH);
 
+        var bmp = new Bitmap(physW, physH, SysImaging.PixelFormat.Format32bppArgb);
+        using var g = Graphics.FromImage(bmp);
+        g.CopyFromScreen(physX, physY, 0, 0, new Size(physW, physH), CopyPixelOperation.SourceCopy);
+        return bmp;
+    }
+
     // ──────────────────────────────────────────────────────────────────────
     //  Frame-diff (white-binary comparison)
     // ──────────────────────────────────────────────────────────────────────
