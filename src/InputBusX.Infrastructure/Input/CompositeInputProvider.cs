@@ -5,12 +5,14 @@ using Microsoft.Extensions.Logging;
 namespace InputBusX.Infrastructure.Input;
 
 /// <summary>
-/// Wraps XInputProvider only. DirectInput is kept available but disabled by default
-/// to avoid double-picking controllers that already work via XInput.
+/// Aggregates XInput (Xbox, Xbox-compatible) and DirectInput (PS4/PS5 DualShock/DualSense,
+/// generic HID gamepads) into a single <see cref="IInputProvider"/>. DirectInput filters out
+/// controllers that also expose themselves via XInput, so no device is double-reported.
 /// </summary>
 public sealed class CompositeInputProvider : IInputProvider
 {
     private readonly XInputProvider _xinput;
+    private readonly DirectInputProvider _dinput;
     private readonly ILogger<CompositeInputProvider> _logger;
 
     public event Action<InputDevice>? DeviceConnected;
@@ -19,33 +21,46 @@ public sealed class CompositeInputProvider : IInputProvider
 
     public CompositeInputProvider(
         XInputProvider xinput,
-        DirectInputProvider dinput,          // kept in DI graph, just not used
+        DirectInputProvider dinput,
         ILogger<CompositeInputProvider> logger)
     {
         _xinput = xinput;
+        _dinput = dinput;
         _logger = logger;
 
         _xinput.DeviceConnected    += d => DeviceConnected?.Invoke(d);
         _xinput.DeviceDisconnected += d => DeviceDisconnected?.Invoke(d);
         _xinput.StateUpdated       += (id, s) => StateUpdated?.Invoke(id, s);
+
+        _dinput.DeviceConnected    += d => DeviceConnected?.Invoke(d);
+        _dinput.DeviceDisconnected += d => DeviceDisconnected?.Invoke(d);
+        _dinput.StateUpdated       += (id, s) => StateUpdated?.Invoke(id, s);
     }
 
     public async Task StartAsync(CancellationToken ct)
     {
         await _xinput.StartAsync(ct);
-        _logger.LogInformation("Input provider started (XInput only)");
+        await _dinput.StartAsync(ct);
+        _logger.LogInformation("Input provider started (XInput + DirectInput)");
     }
 
     public async Task StopAsync()
     {
         await _xinput.StopAsync();
+        await _dinput.StopAsync();
     }
 
     public IReadOnlyList<InputDevice> GetConnectedDevices()
-        => _xinput.GetConnectedDevices();
+    {
+        var list = new List<InputDevice>();
+        list.AddRange(_xinput.GetConnectedDevices());
+        list.AddRange(_dinput.GetConnectedDevices());
+        return list;
+    }
 
     public void Dispose()
     {
         _xinput.Dispose();
+        _dinput.Dispose();
     }
 }

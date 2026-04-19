@@ -77,7 +77,7 @@ public static class ServiceLocator
         services.AddSingleton<IInputFilter, CompositeInputFilter>();
         services.AddSingleton<IInputPipeline, InputPipeline>();
         services.AddSingleton<PluginLoader>();
-        services.AddSingleton<IWeaponDetectionService, OcrWeaponDetectionService>();
+        services.AddSingleton<IWeaponDetectionService, TemplateWeaponDetectionService>();
         services.AddSingleton<IWeaponLibraryService, WeaponLibraryService>();
         // ViewModels
         services.AddSingleton<ViewModels.MainViewModel>();
