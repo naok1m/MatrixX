@@ -1,12 +1,42 @@
 [
   {
-    "id": "wz_mr_mk35isr",
+    "id": "wz_ar_voyak_kt3",
     "game": "Warzone",
-    "category": "Marksman Rifle",
-    "name": "MK35 ISR",
-    "keywords": ["MK35 ISR", "MK35", "MK3 SR"],
+    "category": "Assault Rifle",
+    "name": "VOYAK KT-3",
+    "keywords": ["VOYAK KT-3", "VOYAK", "KT-3", "KT3"],
     "recoilCompensationX": 0,
-    "recoilCompensationY": -7000,
+    "recoilCompensationY": -20000,
+    "intensity": 1.0
+  },
+  {
+    "id": "wz_smg_peacekeeper_mk1",
+    "game": "Warzone",
+    "category": "SMG",
+    "name": "PEACEKEEPER MK1",
+    "keywords": ["PEACEKEEPER MK1", "PEACEKEEPER", "MK1"],
+    "recoilCompensationX": 0,
+    "recoilCompensationY": -12000,
+    "intensity": 1.0
+  },
+  {
+    "id": "wz_ar_vst",
+    "game": "Warzone",
+    "category": "Assault Rifle",
+    "name": "VST",
+    "keywords": ["VST"],
+    "recoilCompensationX": 0,
+    "recoilCompensationY": -30000,
+    "intensity": 1.0
+  },
+  {
+    "id": "wz_ar_xm325",
+    "game": "Warzone",
+    "category": "Assault Rifle",
+    "name": "XM325",
+    "keywords": ["XM325"],
+    "recoilCompensationX": 0,
+    "recoilCompensationY": -5000,
     "intensity": 1.0
   },
   {
@@ -17,6 +47,96 @@
     "keywords": ["DRAVEC", "Dravec"],
     "recoilCompensationX": 0,
     "recoilCompensationY": -3000,
+    "intensity": 1.0
+  },
+  {
+    "id": "wz_ar_swordfish_al",
+    "game": "Warzone",
+    "category": "Assault Rifle",
+    "name": "SWORDFISH AL",
+    "keywords": ["SWORDFISH AL", "SWORDFISH", "SWORD1SH AL"],
+    "recoilCompensationX": 0,
+    "recoilCompensationY": -20000,
+    "intensity": 1.0
+  },
+  {
+    "id": "wz_ar_jager",
+    "game": "Warzone",
+    "category": "Assault Rifle",
+    "name": "JAGER",
+    "keywords": ["JAGER"],
+    "recoilCompensationX": 0,
+    "recoilCompensationY": -7000,
+    "intensity": 1.0
+  },
+  {
+    "id": "wz_smg_velox_s7",
+    "game": "Warzone",
+    "category": "SMG",
+    "name": "VELOX S7",
+    "keywords": ["VELOX S7", "Velox S7", "VELOX"],
+    "recoilCompensationX": 0,
+    "recoilCompensationY": -7000,
+    "intensity": 1.0
+  },
+  {
+    "id": "wz_pistol_razor_9mm",
+    "game": "Warzone",
+    "category": "Pistol",
+    "name": "A RAZOR 9MM",
+    "keywords": ["A RAZOR 9MM", "RAZOR 9MM", "RAZOR 9", "A RAZOR"],
+    "recoilCompensationX": 0,
+    "recoilCompensationY": -5000,
+    "intensity": 1.0
+  },
+  {
+    "id": "wz_smg_sturmwolf",
+    "game": "Warzone",
+    "category": "SMG",
+    "name": "STURMWOLF",
+    "keywords": ["STURMWOLF"],
+    "recoilCompensationX": 0,
+    "recoilCompensationY": -5000,
+    "intensity": 1.0
+  },
+  {
+    "id": "wz_smg_mpc25",
+    "game": "Warzone",
+    "category": "SMG",
+    "name": "MPC-25",
+    "keywords": ["MPC-25", "MPC25", "MPC 25"],
+    "recoilCompensationX": 0,
+    "recoilCompensationY": -12000,
+    "intensity": 1.0
+  },
+  {
+    "id": "wz_mr_rev46",
+    "game": "Warzone",
+    "category": "Marksman Rifle",
+    "name": "REV-46",
+    "keywords": ["REV-46", "REV46", "REV 46"],
+    "recoilCompensationX": 0,
+    "recoilCompensationY": -20000,
+    "intensity": 1.0
+  },
+  {
+    "id": "wz_ar_maddox_rfb",
+    "game": "Warzone",
+    "category": "Assault Rifle",
+    "name": "MADDOX RFB",
+    "keywords": ["MADDOX RFB", "MADDOX"],
+    "recoilCompensationX": 0,
+    "recoilCompensationY": -12000,
+    "intensity": 1.0
+  },
+  {
+    "id": "wz_mr_mk35isr",
+    "game": "Warzone",
+    "category": "Marksman Rifle",
+    "name": "MK35 ISR",
+    "keywords": ["MK35 ISR", "MK35", "MK3 SR"],
+    "recoilCompensationX": 0,
+    "recoilCompensationY": -7000,
     "intensity": 1.0
   }
 ]
