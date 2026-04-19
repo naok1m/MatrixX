@@ -12,13 +12,24 @@ namespace InputBusX.Infrastructure.Vision;
 /// <summary>
 /// Uses Tesseract 5 (LSTM, PSM=SingleLine, whitelist, no dictionary) and System.Drawing
 /// screen capture to detect the current weapon from a configurable HUD region.
-/// Three preprocessing variants are tried per frame; the one with the highest
-/// Tesseract mean-confidence wins.
 ///
-/// Matching strategy (3 layers):
-///   1. Exact match after normalization          — fastest, most precise
-///   2. Contains match (keyword inside OCR text) — handles extra words around the name
-///   3. Fuzzy match (Levenshtein ≤ threshold)    — tolerates dropped/swapped characters
+/// Four preprocessing variants are tried per OCR call; best confidence wins:
+///   1. lightOnDark           — Otsu, invert
+///   2. darkOnLight           — Otsu, no invert
+///   3. lightOnDarkAggressive — Otsu +20, invert
+///   4. whiteTextIsolation    — keeps only near-white pixels (R,G,B ≥ WhiteThreshold)
+///
+/// Frame-diff optimisation:
+///   Each frame the raw capture is reduced to a white-binary map and compared with the
+///   previous one.  When fewer than FrameDiffThreshold% of pixels changed the region is
+///   considered stable and OCR is skipped entirely.
+///   When a change IS detected we enter a "scan burst" of ScanBurstLength frames so the
+///   stability debounce (StabilityFrames) has enough reads to confirm the new weapon.
+///
+/// Matching strategy (3 tiers):
+///   1. Exact whole-word regex match
+///   2. Contains match (keyword anywhere in OCR text)
+///   3. Fuzzy match (Levenshtein ≤ floor(keyword.length × FuzzyTolerance))
 /// </summary>
 public sealed class OcrWeaponDetectionService : IWeaponDetectionService, IDisposable
 {
@@ -28,28 +39,42 @@ public sealed class OcrWeaponDetectionService : IWeaponDetectionService, IDispos
     private Task? _loopTask;
     private WeaponProfile? _currentWeapon;
 
-    // Stability debounce: require this many consecutive matching frames before switching.
+    // ── Stability debounce ─────────────────────────────────────────────────
     private const int StabilityFrames = 3;
     private WeaponProfile? _candidateWeapon;
     private int _candidateCount;
 
-    public event Action<WeaponProfile?>? WeaponChanged;
-    public WeaponProfile? CurrentWeapon => _currentWeapon;
-    public bool IsRunning => _cts is { IsCancellationRequested: false };
+    // ── Frame-diff state ───────────────────────────────────────────────────
+    // White-binary of the previous captured frame (one byte per pixel, 0=white-text, 255=background).
+    private byte[]? _prevBinaryBytes;
 
-    // Only the safest, unambiguous single-char confusions for HUD fonts.
+    // After a significant diff, force OCR for this many frames so StabilityFrames can be reached.
+    private const int ScanBurstLength = StabilityFrames + 2;
+    private int _activeScanFrames;
+
+    // 4 % of white-isolated pixels must change to be considered a weapon switch.
+    private const double FrameDiffThreshold = 0.04;
+
+    // Minimum per-channel value for a pixel to be classified as "white HUD text".
+    private const int WhiteThreshold = 175;
+
+    // ── OCR config ─────────────────────────────────────────────────────────
     private static readonly (string From, string To)[] CharNormMap =
     [
-        ("l", "1"),   // lowercase L → 1
-        ("I", "1"),   // uppercase I → 1
+        ("l", "1"),
+        ("I", "1"),
     ];
 
     private const double FuzzyTolerance = 0.25;
 
-    // Allow both cases so "Razor", "AK-47", "M4A1" etc. are read correctly.
-    // The result is uppercased before keyword matching, so case in OCR output doesn't matter.
-    // Restricting to letters+digits+space+hyphen prevents punctuation noise.
-    private const string CharWhitelist = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 -";
+    // Both cases so "Razor", "AK-47", "M4A1" are read correctly.
+    // Result is uppercased before keyword matching so case in OCR output doesn't matter.
+    private const string CharWhitelist =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 -";
+
+    public event Action<WeaponProfile?>? WeaponChanged;
+    public WeaponProfile? CurrentWeapon => _currentWeapon;
+    public bool IsRunning => _cts is { IsCancellationRequested: false };
 
     public OcrWeaponDetectionService(ILogger<OcrWeaponDetectionService> logger)
     {
@@ -64,10 +89,7 @@ public sealed class OcrWeaponDetectionService : IWeaponDetectionService, IDispos
     {
         await StopAsync();
 
-        try
-        {
-            _engine = CreateEngine();
-        }
+        try { _engine = CreateEngine(); }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Tesseract engine failed to initialize: {Message}", ex.Message);
@@ -100,6 +122,8 @@ public sealed class OcrWeaponDetectionService : IWeaponDetectionService, IDispos
         _engine?.Dispose();
         _engine = null;
 
+        _prevBinaryBytes = null;
+        _activeScanFrames = 0;
         _candidateWeapon = null;
         _candidateCount  = 0;
         SetCurrentWeapon(null);
@@ -113,7 +137,8 @@ public sealed class OcrWeaponDetectionService : IWeaponDetectionService, IDispos
         try
         {
             engine = CreateEngine();
-            var (text, conf, variant) = RunOcrOnRegion(engine, settings);
+            using var captured = CaptureRegion(settings);
+            var (text, conf, variant) = RunOcrOnCapture(engine, settings, captured);
             if (text == null) return "[capture returned no text]";
 
             var filtered   = FilterOcrText(text);
@@ -133,7 +158,6 @@ public sealed class OcrWeaponDetectionService : IWeaponDetectionService, IDispos
         }
     }
 
-    /// Unwraps TargetInvocationException chains to expose the real inner cause.
     private static Exception UnwrapException(Exception ex)
     {
         int depth = 0;
@@ -153,20 +177,11 @@ public sealed class OcrWeaponDetectionService : IWeaponDetectionService, IDispos
     //  Engine factory
     // ──────────────────────────────────────────────────────────────────────
 
-    /// <summary>
-    /// Returns the directory that contains the MatrixX executable.
-    /// AppContext.BaseDirectory is the .NET 5+ recommended API; falls back to
-    /// the process path then the current directory so it never returns null.
-    /// </summary>
     private static string GetBaseDirectory()
     {
-        if (!string.IsNullOrEmpty(AppContext.BaseDirectory))
-            return AppContext.BaseDirectory;
-
+        if (!string.IsNullOrEmpty(AppContext.BaseDirectory)) return AppContext.BaseDirectory;
         var exeDir = Path.GetDirectoryName(Environment.ProcessPath);
-        if (!string.IsNullOrEmpty(exeDir))
-            return exeDir;
-
+        if (!string.IsNullOrEmpty(exeDir)) return exeDir;
         return Directory.GetCurrentDirectory();
     }
 
@@ -184,8 +199,6 @@ public sealed class OcrWeaponDetectionService : IWeaponDetectionService, IDispos
 
         try
         {
-            // LstmOnly: tessdata_fast ships only the LSTM neural model; Default tries legacy too
-            // and will throw "Unable to load unicharset file" if the .traineddata is fast-only.
             var engine = new TesseractEngine(tessdataPath, "eng", EngineMode.LstmOnly);
             engine.SetVariable("tessedit_char_whitelist", CharWhitelist);
             engine.SetVariable("load_system_dawg", "false");
@@ -196,16 +209,15 @@ public sealed class OcrWeaponDetectionService : IWeaponDetectionService, IDispos
         {
             throw new InvalidOperationException(
                 "Tesseract native libraries (leptonica / tesseract) failed to load. " +
-                "This usually means the Microsoft Visual C++ 2015-2022 x64 Redistributable is missing. " +
-                "Install it from https://aka.ms/vs/17/release/vc_redist.x64.exe and restart MatrixX.",
-                ex);
+                "Install the Microsoft Visual C++ 2015-2022 x64 Redistributable " +
+                "(https://aka.ms/vs/17/release/vc_redist.x64.exe) and restart MatrixX.", ex);
         }
         catch (TypeInitializationException ex) when (ex.InnerException is DllNotFoundException)
         {
             throw new InvalidOperationException(
                 "Tesseract native libraries failed to initialize. " +
-                "Install the Microsoft Visual C++ 2015-2022 x64 Redistributable (https://aka.ms/vs/17/release/vc_redist.x64.exe) and restart MatrixX.",
-                ex);
+                "Install the Microsoft Visual C++ 2015-2022 x64 Redistributable " +
+                "(https://aka.ms/vs/17/release/vc_redist.x64.exe) and restart MatrixX.", ex);
         }
         catch (Exception ex)
         {
@@ -228,7 +240,32 @@ public sealed class OcrWeaponDetectionService : IWeaponDetectionService, IDispos
         {
             try
             {
-                var (text, _, _) = RunOcrOnRegion(_engine!, settings);
+                using var captured = CaptureRegion(settings);
+                bool regionChanged = ComputeAndStoreDiff(captured);
+
+                if (regionChanged)
+                {
+                    // Region changed: reset stability debounce and arm a scan burst
+                    // so OCR runs for enough frames to reach StabilityFrames.
+                    _candidateWeapon  = null;
+                    _candidateCount   = 0;
+                    _activeScanFrames = ScanBurstLength;
+                    _logger.LogDebug("Frame diff triggered scan burst");
+                }
+
+                bool shouldRunOcr = _activeScanFrames > 0 || _currentWeapon == null;
+
+                if (!shouldRunOcr)
+                {
+                    _logger.LogDebug("HUD region stable — skipping OCR");
+                    await Task.Delay(settings.IntervalMs, ct);
+                    continue;
+                }
+
+                if (_activeScanFrames > 0)
+                    _activeScanFrames--;
+
+                var (text, _, _) = RunOcrOnCapture(_engine!, settings, captured);
                 if (text != null)
                     MatchWeapon(text, settings);
 
@@ -245,11 +282,10 @@ public sealed class OcrWeaponDetectionService : IWeaponDetectionService, IDispos
     }
 
     // ──────────────────────────────────────────────────────────────────────
-    //  Screen capture + pre-processing + OCR (3 variants, best confidence wins)
+    //  Screen capture
     // ──────────────────────────────────────────────────────────────────────
 
-    private (string? Text, float Confidence, string Variant) RunOcrOnRegion(
-        TesseractEngine engine, WeaponDetectionSettings s)
+    private Bitmap CaptureRegion(WeaponDetectionSettings s)
     {
         float dpiScale  = GetDpiScale();
         int screenW     = Math.Max(1, GetSystemMetrics(0)); // SM_CXSCREEN (virtual desktop width)
@@ -260,16 +296,78 @@ public sealed class OcrWeaponDetectionService : IWeaponDetectionService, IDispos
         int physX = Math.Clamp((int)(s.CaptureX      * dpiScale), 0, screenW - physW);
         int physY = Math.Clamp((int)(s.CaptureY      * dpiScale), 0, screenH - physH);
 
-        using var captured = new Bitmap(physW, physH, SysImaging.PixelFormat.Format32bppArgb);
-        using (var g = Graphics.FromImage(captured))
+    // ──────────────────────────────────────────────────────────────────────
+    //  Frame-diff (white-binary comparison)
+    // ──────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Builds a white-pixel binary from <paramref name="captured"/>, diffs it against the stored
+    /// previous binary, updates the stored copy, and returns whether enough pixels changed.
+    ///
+    /// Using the white-binary (not raw grayscale) means that background pixels — grass, dirt,
+    /// sky — are always mapped to 255 regardless of camera movement, so only actual HUD text
+    /// changes register as a diff.
+    /// </summary>
+    private bool ComputeAndStoreDiff(Bitmap captured)
+    {
+        var binary = GetWhiteBinaryBytes(captured);
+
+        bool changed;
+        if (_prevBinaryBytes == null || _prevBinaryBytes.Length != binary.Length)
         {
-            g.CopyFromScreen(physX, physY, 0, 0,
-                new Size(physW, physH),
-                CopyPixelOperation.SourceCopy);
+            changed = true; // first frame, or capture region was resized
+        }
+        else
+        {
+            int diffPixels = 0;
+            for (int i = 0; i < binary.Length; i++)
+                if (binary[i] != _prevBinaryBytes[i]) diffPixels++;
+            double diffRatio = (double)diffPixels / binary.Length;
+            changed = diffRatio >= FrameDiffThreshold;
+            _logger.LogDebug("Frame diff: {Ratio:P1}", diffRatio);
         }
 
-        string? debugDir   = null;
-        string? timestamp  = null;
+        _prevBinaryBytes = binary;
+        return changed;
+    }
+
+    /// <summary>
+    /// Returns one byte per pixel at the bitmap's original resolution (no upscaling).
+    /// White-ish pixels (R,G,B ≥ <see cref="WhiteThreshold"/>) → 0; everything else → 255.
+    /// </summary>
+    private static byte[] GetWhiteBinaryBytes(Bitmap bmp)
+    {
+        var rect     = new Rectangle(0, 0, bmp.Width, bmp.Height);
+        var data     = bmp.LockBits(rect, SysImaging.ImageLockMode.ReadOnly, SysImaging.PixelFormat.Format32bppArgb);
+        int stride   = Math.Abs(data.Stride);
+        var rawBytes = new byte[stride * bmp.Height];
+        Marshal.Copy(data.Scan0, rawBytes, 0, rawBytes.Length);
+        bmp.UnlockBits(data);
+
+        var binary = new byte[bmp.Width * bmp.Height];
+        for (int y = 0; y < bmp.Height; y++)
+            for (int x = 0; x < bmp.Width; x++)
+            {
+                int i    = y * stride + x * 4;
+                byte bVal = rawBytes[i];
+                byte gVal = rawBytes[i + 1];
+                byte rVal = rawBytes[i + 2];
+                binary[y * bmp.Width + x] =
+                    (rVal >= WhiteThreshold && gVal >= WhiteThreshold && bVal >= WhiteThreshold)
+                    ? (byte)0 : (byte)255;
+            }
+        return binary;
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    //  OCR — 4 preprocessing variants, best confidence wins
+    // ──────────────────────────────────────────────────────────────────────
+
+    private (string? Text, float Confidence, string Variant) RunOcrOnCapture(
+        TesseractEngine engine, WeaponDetectionSettings s, Bitmap captured)
+    {
+        string? debugDir  = null;
+        string? timestamp = null;
         if (s.DebugSaveImages)
         {
             debugDir  = Path.Combine(Path.GetTempPath(), "matrixx-ocr-debug");
@@ -316,7 +414,7 @@ public sealed class OcrWeaponDetectionService : IWeaponDetectionService, IDispos
             }
         }
 
-        _logger.LogDebug("OCR best variant: {Variant} conf={Conf:F0} text=\"{Text}\"",
+        _logger.LogDebug("OCR best: {Variant} conf={Conf:F0} text=\"{Text}\"",
             bestVariant, bestConf, bestText);
 
         return (bestText, bestConf, bestVariant);
@@ -325,7 +423,7 @@ public sealed class OcrWeaponDetectionService : IWeaponDetectionService, IDispos
     private static (string Text, float Confidence) OcrBitmap(TesseractEngine engine, Bitmap bmp)
     {
         // Save to PNG bytes then load via Pix.LoadFromMemory — avoids BitmapToPixConverter
-        // which internally uses reflection and wraps any native error in TargetInvocationException.
+        // which wraps any native error in TargetInvocationException.
         byte[] pngBytes;
         using (var ms = new MemoryStream())
         {
@@ -339,6 +437,10 @@ public sealed class OcrWeaponDetectionService : IWeaponDetectionService, IDispos
         string text = page.GetText()?.Trim() ?? string.Empty;
         return (text, conf);
     }
+
+    // ──────────────────────────────────────────────────────────────────────
+    //  Preprocessing
+    // ──────────────────────────────────────────────────────────────────────
 
     /// <summary>
     /// Scale 3× → grayscale → Otsu binarization.
@@ -375,11 +477,52 @@ public sealed class OcrWeaponDetectionService : IWeaponDetectionService, IDispos
 
         for (int i = 0; i < bytes; i += 4)
         {
-            byte gray = ToGray(pixelData[i], pixelData[i + 1], pixelData[i + 2]);
-            // invert=true  → bright pixels are text → map gray >= threshold to black (0)
-            // invert=false → dark pixels are text  → map gray <  threshold to black (0)
+            byte gray   = ToGray(pixelData[i], pixelData[i + 1], pixelData[i + 2]);
             bool isText = invert ? gray >= threshold : gray < threshold;
             byte output = isText ? (byte)0 : (byte)255;
+            pixelData[i]     = output;
+            pixelData[i + 1] = output;
+            pixelData[i + 2] = output;
+            pixelData[i + 3] = 255;
+        }
+
+        Marshal.Copy(pixelData, 0, bmpData.Scan0, bytes);
+        scaled.UnlockBits(bmpData);
+        return scaled;
+    }
+
+    /// <summary>
+    /// Scale 3× then isolate near-white pixels (R,G,B ≥ <see cref="WhiteThreshold"/>) as black
+    /// text on a white background.  Bypasses Otsu entirely, so the complex 3D environment behind
+    /// the HUD does not influence the threshold — only the bright white letters matter.
+    /// </summary>
+    private static Bitmap ExtractWhiteText(Bitmap src)
+    {
+        const int scale = 3;
+        int dstW = src.Width  * scale;
+        int dstH = src.Height * scale;
+
+        var scaled = new Bitmap(dstW, dstH, SysImaging.PixelFormat.Format32bppArgb);
+        using (var g = Graphics.FromImage(scaled))
+        {
+            g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+            g.PixelOffsetMode   = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
+            g.DrawImage(src, 0, 0, dstW, dstH);
+        }
+
+        var rect    = new Rectangle(0, 0, dstW, dstH);
+        var bmpData = scaled.LockBits(rect, SysImaging.ImageLockMode.ReadWrite, SysImaging.PixelFormat.Format32bppArgb);
+        int bytes      = Math.Abs(bmpData.Stride) * dstH;
+        var pixelData  = new byte[bytes];
+        Marshal.Copy(bmpData.Scan0, pixelData, 0, bytes);
+
+        for (int i = 0; i < bytes; i += 4)
+        {
+            byte bVal    = pixelData[i];
+            byte gVal    = pixelData[i + 1];
+            byte rVal    = pixelData[i + 2];
+            bool isWhite = rVal >= WhiteThreshold && gVal >= WhiteThreshold && bVal >= WhiteThreshold;
+            byte output  = isWhite ? (byte)0 : (byte)255;
             pixelData[i]     = output;
             pixelData[i + 1] = output;
             pixelData[i + 2] = output;
@@ -394,7 +537,6 @@ public sealed class OcrWeaponDetectionService : IWeaponDetectionService, IDispos
     private static byte ToGray(byte b, byte gn, byte r) =>
         (byte)(0.299 * r + 0.587 * gn + 0.114 * b);
 
-    /// <summary>Otsu's method — finds threshold that minimizes intra-class variance.</summary>
     private static int ComputeOtsuThreshold(int[] hist, int totalPixels)
     {
         double sumAll = 0;
