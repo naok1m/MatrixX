@@ -382,22 +382,25 @@ public sealed class OcrWeaponDetectionService : IWeaponDetectionService, IDispos
             captured.Save(Path.Combine(debugDir, $"{timestamp}_capture.png"), SysImaging.ImageFormat.Png);
         }
 
-        // Three preprocessing strategies — whichever gives Tesseract the highest confidence wins.
-        // Each bitmap is created and disposed inline to prevent leaks if earlier variants throw.
-        (bool Invert, bool Aggressive, string Name)[] variantDefs =
+        // Five preprocessing variants — best Tesseract confidence wins.
+        // Factories are lambdas so each bitmap is created only when its turn arrives;
+        // the using-inside-try pattern guarantees disposal even if OCR throws.
+        (string Name, Func<Bitmap> Factory)[] variantDefs =
         [
-            (true,  false, "lightOnDark"),
-            (false, false, "darkOnLight"),
-            (true,  true,  "lightOnDarkAggressive"),
+            ("lightOnDark",           () => PreProcess(captured, invert: true,  aggressiveThreshold: false)),
+            ("darkOnLight",           () => PreProcess(captured, invert: false, aggressiveThreshold: false)),
+            ("lightOnDarkAggressive", () => PreProcess(captured, invert: true,  aggressiveThreshold: true)),
+            ("whiteTextIsolation",    () => ExtractWhiteText(captured)),
+            ("localContrast",         () => ExtractByLocalContrast(captured)),
         ];
 
         string? bestText    = null;
         float   bestConf    = -1f;
         string  bestVariant = "";
 
-        foreach (var (invert, aggressive, variantName) in variantDefs)
+        foreach (var (variantName, factory) in variantDefs)
         {
-            using var bmp = PreProcess(captured, invert, aggressive);
+            using var bmp = factory();
             try
             {
                 var (text, conf) = OcrBitmap(engine, bmp);
@@ -538,6 +541,108 @@ public sealed class OcrWeaponDetectionService : IWeaponDetectionService, IDispos
         Marshal.Copy(pixelData, 0, bmpData.Scan0, bytes);
         scaled.UnlockBits(bmpData);
         return scaled;
+    }
+
+    /// <summary>
+    /// Scale 3x then apply local-contrast thresholding via box-blur subtraction.
+    /// For each pixel: if (gray - local_average) >= ContrastThreshold it is classified as text.
+    /// This works on any background colour because it measures relative brightness, not absolute —
+    /// white text on green grass, yellow text on grey concrete, etc. all produce strong local
+    /// contrast while the background itself blends into its neighbourhood average.
+    /// The box blur uses an integral image so cost is O(N) regardless of radius.
+    /// </summary>
+    private static Bitmap ExtractByLocalContrast(Bitmap src,
+        int blurRadius = 12, int contrastThreshold = 20)
+    {
+        const int scale = 3;
+        int dstW = src.Width  * scale;
+        int dstH = src.Height * scale;
+
+        var scaled = new Bitmap(dstW, dstH, SysImaging.PixelFormat.Format32bppArgb);
+        using (var g = Graphics.FromImage(scaled))
+        {
+            g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+            g.PixelOffsetMode   = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
+            g.DrawImage(src, 0, 0, dstW, dstH);
+        }
+
+        var rect    = new Rectangle(0, 0, dstW, dstH);
+        var bmpData = scaled.LockBits(rect, SysImaging.ImageLockMode.ReadWrite,
+                          SysImaging.PixelFormat.Format32bppArgb);
+        int stride    = Math.Abs(bmpData.Stride);
+        int bytes     = stride * dstH;
+        var pixelData = new byte[bytes];
+        Marshal.Copy(bmpData.Scan0, pixelData, 0, bytes);
+
+        // Build grayscale array
+        var gray = new int[dstW * dstH];
+        for (int y = 0; y < dstH; y++)
+            for (int x = 0; x < dstW; x++)
+            {
+                int i = y * stride + x * 4;
+                gray[y * dstW + x] = ToGray(pixelData[i], pixelData[i + 1], pixelData[i + 2]);
+            }
+
+        // Blur then subtract: pixels brighter than their neighbourhood are text
+        var blurred = BoxBlur(gray, dstW, dstH, blurRadius);
+
+        for (int y = 0; y < dstH; y++)
+            for (int x = 0; x < dstW; x++)
+            {
+                int idx    = y * dstW + x;
+                bool isText = (gray[idx] - blurred[idx]) >= contrastThreshold;
+                byte output = isText ? (byte)0 : (byte)255;
+                int i = y * stride + x * 4;
+                pixelData[i]     = output;
+                pixelData[i + 1] = output;
+                pixelData[i + 2] = output;
+                pixelData[i + 3] = 255;
+            }
+
+        Marshal.Copy(pixelData, 0, bmpData.Scan0, bytes);
+        scaled.UnlockBits(bmpData);
+        return scaled;
+    }
+
+    /// <summary>
+    /// O(N) box blur using a summed-area (integral) table.
+    /// Each output pixel is the integer average of all pixels within
+    /// [x-radius, x+radius] x [y-radius, y+radius], clamped to image bounds.
+    /// </summary>
+    private static int[] BoxBlur(int[] gray, int width, int height, int radius)
+    {
+        // Integral image with 1-pixel zero border so edge arithmetic is uniform.
+        // integral[y+1][x+1] = sum of gray[0..y][0..x]
+        int iw = width  + 1;
+        int ih = height + 1;
+        var integral = new long[iw * ih]; // row 0 and col 0 stay zero
+
+        for (int y = 0; y < height; y++)
+            for (int x = 0; x < width; x++)
+                integral[(y + 1) * iw + (x + 1)] =
+                    gray[y * width + x]
+                    + integral[y       * iw + (x + 1)]
+                    + integral[(y + 1) * iw + x]
+                    - integral[y       * iw + x];
+
+        var result = new int[width * height];
+        for (int y = 0; y < height; y++)
+            for (int x = 0; x < width; x++)
+            {
+                int x1 = Math.Max(0, x - radius);
+                int y1 = Math.Max(0, y - radius);
+                int x2 = Math.Min(width  - 1, x + radius);
+                int y2 = Math.Min(height - 1, y + radius);
+
+                long sum = integral[(y2 + 1) * iw + (x2 + 1)]
+                         - integral[y1       * iw + (x2 + 1)]
+                         - integral[(y2 + 1) * iw + x1]
+                         + integral[y1       * iw + x1];
+
+                result[y * width + x] = (int)(sum / ((x2 - x1 + 1) * (y2 - y1 + 1)));
+            }
+
+        return result;
     }
 
     private static byte ToGray(byte b, byte gn, byte r) =>
