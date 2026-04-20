@@ -1,3 +1,4 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using InputBusX.UI.Services;
@@ -12,6 +13,11 @@ public partial class WeaponDetectionView : UserControl
         InitializeComponent();
         BtnSelectRegion.Click  += OnSelectRegionClick;
         BtnCopyOcrResult.Click += OnCopyOcrResultClick;
+
+        // Every "Selecionar" button inside a weapon row shares this class —
+        // intercept the click at the UserControl level instead of wiring
+        // each button individually (they are created dynamically by the ItemTemplate).
+        AddHandler(Button.ClickEvent, OnAnyButtonClick, handledEventsToo: false);
 
         DataContextChanged += (_, _) =>
         {
@@ -47,6 +53,28 @@ public partial class WeaponDetectionView : UserControl
             vm.CaptureWidth  = result.Value.Width;
             vm.CaptureHeight = result.Value.Height;
         }
+    }
+
+    // ── Per-weapon region selector (bubbled from ItemsControl rows) ───────
+
+    private async void OnAnyButtonClick(object? sender, RoutedEventArgs e)
+    {
+        if (e.Source is not Button btn) return;
+        if (!btn.Classes.Contains("weapon-pick-region")) return;
+        if (btn.CommandParameter is not WeaponProfileItemViewModel weapon) return;
+
+        var parentWindow = TopLevel.GetTopLevel(this) as Window;
+        var selector = new ScreenRegionSelectorWindow();
+        selector.Show(parentWindow!);
+
+        var result = await selector.SelectionTask;
+        if (!result.HasValue) return;
+
+        weapon.CaptureX      = result.Value.X;
+        weapon.CaptureY      = result.Value.Y;
+        weapon.CaptureWidth  = result.Value.Width;
+        weapon.CaptureHeight = result.Value.Height;
+        weapon.UseCustomRegion = true;
     }
 
     // ── Weapon library picker ─────────────────────────────────────────────
