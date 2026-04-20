@@ -84,6 +84,7 @@ public partial class MacroEditorViewModel : ViewModelBase
     [ObservableProperty] private int _reFireCooldownMs = 250;
     [ObservableProperty] private int _minTriggerHoldMs = 20;
     [ObservableProperty] private bool _fireOnPress = true;
+    [ObservableProperty] private bool _fireOnce = true;
     [ObservableProperty] private StickTargetKind _haStickTarget = StickTargetKind.Right;
     [ObservableProperty] private bool _haAdditive = true;
 
@@ -241,6 +242,7 @@ public partial class MacroEditorViewModel : ViewModelBase
             h.ReFireCooldownMs = ReFireCooldownMs;
             h.MinTriggerHoldMs = MinTriggerHoldMs;
             h.FireOnPress = FireOnPress;
+            h.FireOnce = FireOnce;
             h.ShortRange.AmplitudeNorm = HaShortAmp;
             h.ShortRange.DurationMs = HaShortDurMs;
             h.ShortRange.DirectionDeg = HaShortDirDeg;
@@ -327,6 +329,7 @@ public partial class MacroEditorViewModel : ViewModelBase
         ReFireCooldownMs = ha.ReFireCooldownMs;
         MinTriggerHoldMs = ha.MinTriggerHoldMs;
         FireOnPress = ha.FireOnPress;
+        FireOnce = ha.FireOnce;
         HaShortAmp = ha.ShortRange.AmplitudeNorm;
         HaShortDurMs = ha.ShortRange.DurationMs;
         HaShortDirDeg = ha.ShortRange.DirectionDeg;

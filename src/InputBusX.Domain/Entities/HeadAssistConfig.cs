@@ -89,4 +89,12 @@ public sealed class HeadAssistConfig
 
     /// <summary>When true, the assist also fires on the FIRST frame the trigger goes down (ADS snap).</summary>
     public bool FireOnPress { get; set; } = true;
+
+    /// <summary>
+    /// When true, only one flick fires per trigger press — no cooldown re-fire while held.
+    /// The trigger must be released and pressed again to fire again. Default true because
+    /// a single HS-assist flick per shot is almost always what the player wants;
+    /// cooldown re-fire is for sustained-tracking scenarios.
+    /// </summary>
+    public bool FireOnce { get; set; } = true;
 }
