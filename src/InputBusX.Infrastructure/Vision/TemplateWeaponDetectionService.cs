@@ -132,8 +132,9 @@ public sealed class TemplateWeaponDetectionService : IWeaponDetectionService, ID
 
                 using var captured = CaptureRegion(settings);
                 using var liveGray = ToGrayscaleMat(captured);
+                using var liveEdges = ToEdgeMat(liveGray);
 
-                var scores = ScoreAllWeapons(liveGray, settings).ToList();
+                var scores = ScoreAllWeapons(liveEdges, settings).ToList();
                 var ordered = scores
                     .OrderByDescending(s => s.BestScore)
                     .ToList();
@@ -258,7 +259,8 @@ public sealed class TemplateWeaponDetectionService : IWeaponDetectionService, ID
                     continue;
                 }
 
-                var (best, bestScore) = FindBestMatch(liveGray, settings);
+                using var liveEdges = ToEdgeMat(liveGray);
+                var (best, bestScore) = FindBestMatch(liveEdges, settings);
 
                 WeaponProfile? matched = (best != null && bestScore >= settings.MatchThreshold)
                     ? best : null;
@@ -305,12 +307,12 @@ public sealed class TemplateWeaponDetectionService : IWeaponDetectionService, ID
     // ─────────────────────────────────────────────────────────────────────────
 
     private (WeaponProfile? Weapon, double Score) FindBestMatch(
-        Mat liveGray, WeaponDetectionSettings settings)
+        Mat liveEdges, WeaponDetectionSettings settings)
     {
         WeaponProfile? best = null;
         double bestScore = double.MinValue;
 
-        foreach (var score in ScoreAllWeapons(liveGray, settings))
+        foreach (var score in ScoreAllWeapons(liveEdges, settings))
         {
             if (score.ReferenceCount == 0) continue;
             if (score.BestScore > bestScore)
@@ -323,7 +325,7 @@ public sealed class TemplateWeaponDetectionService : IWeaponDetectionService, ID
         return (best, bestScore);
     }
 
-    private IEnumerable<WeaponScore> ScoreAllWeapons(Mat liveGray, WeaponDetectionSettings settings)
+    private IEnumerable<WeaponScore> ScoreAllWeapons(Mat liveEdges, WeaponDetectionSettings settings)
     {
         List<CachedReference> snapshotRefs;
 
@@ -343,7 +345,7 @@ public sealed class TemplateWeaponDetectionService : IWeaponDetectionService, ID
             double best = double.MinValue;
             foreach (var r in snapshotRefs)
             {
-                double score = ScoreAgainstReference(liveGray, r.Gray);
+                double score = ScoreAgainstReference(liveEdges, r.Edges);
                 if (score > best) best = score;
             }
             yield return new WeaponScore(weapon, best, snapshotRefs.Count);
@@ -426,14 +428,13 @@ public sealed class TemplateWeaponDetectionService : IWeaponDetectionService, ID
                             _logger.LogWarning("Reference missing on disk: {Path}", path);
                             continue;
                         }
-                        var gray = Cv2.ImRead(path, ImreadModes.Grayscale);
+                        using var gray = Cv2.ImRead(path, ImreadModes.Grayscale);
                         if (gray.Empty())
                         {
-                            gray.Dispose();
                             _logger.LogWarning("Reference failed to load: {Path}", path);
                             continue;
                         }
-                        list.Add(new CachedReference(path, gray));
+                        list.Add(new CachedReference(path, ToEdgeMat(gray)));
                     }
                     catch (Exception ex)
                     {
@@ -462,7 +463,7 @@ public sealed class TemplateWeaponDetectionService : IWeaponDetectionService, ID
     {
         foreach (var list in _referenceCache.Values)
             foreach (var r in list)
-                r.Gray.Dispose();
+                r.Edges.Dispose();
         _referenceCache.Clear();
     }
 
@@ -493,6 +494,20 @@ public sealed class TemplateWeaponDetectionService : IWeaponDetectionService, ID
         var gray = new Mat();
         Cv2.CvtColor(color, gray, ColorConversionCodes.BGR2GRAY);
         return gray;
+    }
+
+    /// <summary>
+    /// Converts a grayscale Mat to a Canny edge image. Both reference cache and live
+    /// frames are converted to edges before matching so the comparison is invariant to
+    /// background colour and texture — only the shape/silhouette of the weapon matters.
+    /// </summary>
+    private static Mat ToEdgeMat(Mat gray)
+    {
+        using var blurred = new Mat();
+        Cv2.GaussianBlur(gray, blurred, new OpenCvSharp.Size(3, 3), 0);
+        var edges = new Mat();
+        Cv2.Canny(blurred, edges, 50, 150);
+        return edges;
     }
 
     /// <summary>
@@ -580,7 +595,7 @@ public sealed class TemplateWeaponDetectionService : IWeaponDetectionService, ID
     //  Inner types
     // ─────────────────────────────────────────────────────────────────────────
 
-    private sealed record CachedReference(string Path, Mat Gray);
+    private sealed record CachedReference(string Path, Mat Edges);
 
     private sealed record WeaponScore(WeaponProfile Weapon, double BestScore, int ReferenceCount);
 }
