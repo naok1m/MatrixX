@@ -1,4 +1,10 @@
 using System.Collections.ObjectModel;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using InputBusX.Domain.Entities;
@@ -130,6 +136,138 @@ public partial class MacroEditorViewModel : ViewModelBase
         ShowTimingSettings = SelectedMacroType is MacroType.AutoFire or MacroType.AutoPing or MacroType.Sequence;
     }
 
+    // ── JSON options shared between save/load and import/export ────────────
+    private static readonly JsonSerializerOptions _jsonOptions = new()
+    {
+        WriteIndented = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) },
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+    };
+
+    private static readonly FilePickerFileType _macroFileType = new("MatrixX Macros")
+    {
+        Patterns = ["*.matrixmacros"],
+        MimeTypes = ["application/json"],
+    };
+
+    // ── Import / Export ──────────────────────────────────────────────────
+
+    [RelayCommand]
+    private async Task ExportSelectedMacro()
+    {
+        if (SelectedMacro is null) return;
+        await ExportMacrosToFileAsync([SelectedMacro]);
+    }
+
+    [RelayCommand]
+    private async Task ExportAllMacros()
+    {
+        if (Macros.Count == 0) return;
+        await ExportMacrosToFileAsync([.. Macros]);
+    }
+
+    [RelayCommand]
+    private async Task ImportMacros()
+    {
+        var sp = GetStorageProvider();
+        if (sp is null) return;
+
+        var files = await sp.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Importar Macros — MatrixX",
+            AllowMultiple = false,
+            FileTypeFilter = [_macroFileType, FilePickerFileTypes.All],
+        });
+
+        if (files is not { Count: > 0 }) return;
+
+        try
+        {
+            await using var stream = await files[0].OpenReadAsync();
+            var file = await JsonSerializer.DeserializeAsync<MacroExportFile>(stream, _jsonOptions);
+            if (file?.Macros is not { Count: > 0 })
+            {
+                SaveStatus = "Arquivo vazio ou inválido.";
+                return;
+            }
+
+            var profile = _profileManager.ActiveProfile;
+            int added = 0;
+            foreach (var m in file.Macros)
+            {
+                // Re-generate ID to avoid collisions with existing macros
+                m.Id = Guid.NewGuid().ToString("N")[..8];
+                profile.Macros.Add(m);
+                Macros.Add(m);
+                added++;
+            }
+
+            _profileManager.SaveProfile(profile);
+            SaveStatus = $"{added} macro(s) importado(s)!";
+            SelectedMacro = Macros.LastOrDefault();
+            _logger.LogInformation("Imported {Count} macros from file", added);
+        }
+        catch (Exception ex)
+        {
+            SaveStatus = "Erro ao importar.";
+            _logger.LogError(ex, "Failed to import macros");
+        }
+
+        _ = Task.Delay(3000).ContinueWith(_ => SaveStatus = "", TaskScheduler.FromCurrentSynchronizationContext());
+    }
+
+    private async Task ExportMacrosToFileAsync(List<MacroDefinition> macros)
+    {
+        var sp = GetStorageProvider();
+        if (sp is null) return;
+
+        var suggested = macros.Count == 1
+            ? $"{macros[0].Name.Replace(' ', '_')}.matrixmacros"
+            : "MatrixX_Macros_Export.matrixmacros";
+
+        var file = await sp.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "Exportar Macros — MatrixX",
+            SuggestedFileName = suggested,
+            FileTypeChoices = [_macroFileType],
+            DefaultExtension = "matrixmacros",
+        });
+
+        if (file is null) return;
+
+        try
+        {
+            var export = new MacroExportFile(
+                Version: "2",
+                ExportedAt: DateTimeOffset.UtcNow,
+                AppVersion: System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "?",
+                Macros: macros);
+
+            await using var stream = await file.OpenWriteAsync();
+            await JsonSerializer.SerializeAsync(stream, export, _jsonOptions);
+
+            SaveStatus = $"{macros.Count} macro(s) exportado(s)!";
+            _logger.LogInformation("Exported {Count} macros to {File}", macros.Count, file.Name);
+        }
+        catch (Exception ex)
+        {
+            SaveStatus = "Erro ao exportar.";
+            _logger.LogError(ex, "Failed to export macros");
+        }
+
+        _ = Task.Delay(3000).ContinueWith(_ => SaveStatus = "", TaskScheduler.FromCurrentSynchronizationContext());
+    }
+
+    private static IStorageProvider? GetStorageProvider()
+    {
+        if (Avalonia.Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+            return TopLevel.GetTopLevel(desktop.MainWindow)?.StorageProvider;
+        return null;
+    }
+
+    // ── Macro CRUD ───────────────────────────────────────────────────────
+
     [RelayCommand]
     private void AddMacro()
     {
@@ -222,6 +360,7 @@ public partial class MacroEditorViewModel : ViewModelBase
             SelectedMacro.Motion.Easing = Easing;
             SelectedMacro.Motion.IntensityMul = IntensityMul;
             SelectedMacro.Motion.Additive = Additive;
+            SelectedMacro.TriggerSource = TriggerSource;
         }
 
         // HeadAssist
@@ -353,4 +492,15 @@ public partial class MacroEditorViewModel : ViewModelBase
             Macros.Add(macro);
         SelectedMacro = Macros.FirstOrDefault();
     }
+}
+
+/// <summary>File envelope written/read by the import-export feature.</summary>
+internal sealed record MacroExportFile(
+    string Version,
+    DateTimeOffset ExportedAt,
+    string AppVersion,
+    List<MacroDefinition> Macros)
+{
+    // Parameterless ctor required by System.Text.Json deserialization
+    public MacroExportFile() : this("2", DateTimeOffset.UtcNow, "?", []) { }
 }

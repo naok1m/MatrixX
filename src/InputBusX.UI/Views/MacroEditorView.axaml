@@ -10,13 +10,26 @@
             <DockPanel>
                 <TextBlock Text="Macros" Classes="section-header" DockPanel.Dock="Top" />
 
-                <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
-                    <Button Content="+ Add" Command="{Binding AddMacroCommand}" Classes="accent"
-                            ToolTip.Tip="Criar novo macro  (Ctrl+N)"
-                            AutomationProperties.Name="Add new macro" />
-                    <Button Content="Delete" Command="{Binding DeleteMacroCommand}" Classes="danger"
-                            ToolTip.Tip="Deletar macro selecionado  (Del)"
-                            AutomationProperties.Name="Delete selected macro" />
+                <StackPanel DockPanel.Dock="Bottom" Spacing="6" Margin="0,8,0,0">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Content="+ Add" Command="{Binding AddMacroCommand}" Classes="accent"
+                                ToolTip.Tip="Criar novo macro  (Ctrl+N)"
+                                AutomationProperties.Name="Add new macro" />
+                        <Button Content="Delete" Command="{Binding DeleteMacroCommand}" Classes="danger"
+                                ToolTip.Tip="Deletar macro selecionado  (Del)"
+                                AutomationProperties.Name="Delete selected macro" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Content="⬆ Exportar" Command="{Binding ExportSelectedMacroCommand}"
+                                ToolTip.Tip="Exporta o macro selecionado para um arquivo .json"
+                                AutomationProperties.Name="Export selected macro" />
+                        <Button Content="⬆⬆ Exportar Todos" Command="{Binding ExportAllMacrosCommand}"
+                                ToolTip.Tip="Exporta todos os macros do perfil para um arquivo .json"
+                                AutomationProperties.Name="Export all macros" />
+                        <Button Content="⬇ Importar" Command="{Binding ImportMacrosCommand}" Classes="accent"
+                                ToolTip.Tip="Importa macros de um arquivo .json exportado anteriormente"
+                                AutomationProperties.Name="Import macros" />
+                    </StackPanel>
                 </StackPanel>
 
                 <!-- Empty state -->
@@ -450,6 +463,15 @@
                             <StackPanel Orientation="Horizontal" Spacing="16">
                                 <CheckBox Content="Horário" IsChecked="{Binding Clockwise}" />
                                 <CheckBox Content="Aditivo (somar ao input do jogador)" IsChecked="{Binding Additive}" />
+                            </StackPanel>
+
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Gatilho de ativação" Classes="label" />
+                                <ComboBox ItemsSource="{Binding TriggerSources}"
+                                          SelectedItem="{Binding TriggerSource}"
+                                          MinWidth="200" />
+                                <TextBlock Text="None = ativado apenas pelo botão acima. RT/LT = também exige o gatilho pressionado."
+                                           FontSize="10" Foreground="#4A4F5A" TextWrapping="Wrap" />
                             </StackPanel>
                         </StackPanel>
                     </Border>
