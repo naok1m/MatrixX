@@ -373,6 +373,241 @@
                         </StackPanel>
                     </Border>
 
+                    <!-- ============ SCRIPTED SHAPE ============ -->
+                    <Border Classes="section-panel" BorderBrush="#7C5CFF" BorderThickness="3,0,0,0"
+                            IsVisible="{Binding ShowScriptedShapeSettings}">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="Scripted Shape" FontWeight="SemiBold" FontSize="14" Foreground="#7C5CFF" />
+                            <TextBlock Classes="label" TextWrapping="Wrap" Foreground="#8A8F9A"
+                                       Text="Movimento paramétrico do analógico: círculo, oval, flick. Enquanto o botão de ativação estiver ativo, a forma é aplicada (aditivo ou override)." />
+
+                            <Grid ColumnDefinitions="*,*">
+                                <StackPanel Spacing="4" Margin="0,0,8,0">
+                                    <TextBlock Text="Forma" Classes="label" />
+                                    <ComboBox ItemsSource="{Binding ShapeKinds}" SelectedItem="{Binding Shape}" MinWidth="160" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Spacing="4">
+                                    <TextBlock Text="Analógico alvo" Classes="label" />
+                                    <ComboBox ItemsSource="{Binding StickTargetKinds}" SelectedItem="{Binding StickTarget}" MinWidth="160" />
+                                </StackPanel>
+                            </Grid>
+
+                            <Grid ColumnDefinitions="*,*">
+                                <StackPanel Spacing="4" Margin="0,0,8,0">
+                                    <TextBlock Text="Raio X (0..1)" Classes="label" />
+                                    <NumericUpDown Value="{Binding RadiusXNorm}" Minimum="0" Maximum="1" Increment="0.05" FormatString="F2" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Spacing="4">
+                                    <TextBlock Text="Raio Y (0..1)" Classes="label" />
+                                    <NumericUpDown Value="{Binding RadiusYNorm}" Minimum="0" Maximum="1" Increment="0.05" FormatString="F2" />
+                                </StackPanel>
+                            </Grid>
+
+                            <Grid ColumnDefinitions="*,*">
+                                <StackPanel Spacing="4" Margin="0,0,8,0">
+                                    <TextBlock Text="Rotação (°)" Classes="label" />
+                                    <NumericUpDown Value="{Binding RotationDeg}" Minimum="-360" Maximum="360" Increment="5" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Spacing="4">
+                                    <TextBlock Text="Período (ms) — 1 revolução" Classes="label" />
+                                    <NumericUpDown Value="{Binding PeriodMs}" Minimum="50" Maximum="5000" Increment="50" />
+                                </StackPanel>
+                            </Grid>
+
+                            <Grid ColumnDefinitions="*,*">
+                                <StackPanel Spacing="4" Margin="0,0,8,0">
+                                    <TextBlock Text="Duração total (ms) — 0 = infinito" Classes="label" />
+                                    <NumericUpDown Value="{Binding MotionDurationMs}" Minimum="0" Maximum="10000" Increment="50" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Spacing="4">
+                                    <TextBlock Text="Fase inicial (°)" Classes="label" />
+                                    <NumericUpDown Value="{Binding StartPhaseDeg}" Minimum="-360" Maximum="360" Increment="5" />
+                                </StackPanel>
+                            </Grid>
+
+                            <Grid ColumnDefinitions="*,*">
+                                <StackPanel Spacing="4" Margin="0,0,8,0">
+                                    <TextBlock Text="Direção do Flick (°)" Classes="label" />
+                                    <NumericUpDown Value="{Binding DirectionDeg}" Minimum="-360" Maximum="360" Increment="5" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Spacing="4">
+                                    <TextBlock Text="Amplitude do Flick (0..1)" Classes="label" />
+                                    <NumericUpDown Value="{Binding AmplitudeNorm}" Minimum="0" Maximum="1" Increment="0.05" FormatString="F2" />
+                                </StackPanel>
+                            </Grid>
+
+                            <Grid ColumnDefinitions="*,*">
+                                <StackPanel Spacing="4" Margin="0,0,8,0">
+                                    <TextBlock Text="Easing" Classes="label" />
+                                    <ComboBox ItemsSource="{Binding EasingKinds}" SelectedItem="{Binding Easing}" MinWidth="160" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Spacing="4">
+                                    <TextBlock Text="Multiplicador de intensidade" Classes="label" />
+                                    <NumericUpDown Value="{Binding IntensityMul}" Minimum="0" Maximum="3" Increment="0.1" FormatString="F2" />
+                                </StackPanel>
+                            </Grid>
+
+                            <StackPanel Orientation="Horizontal" Spacing="16">
+                                <CheckBox Content="Horário" IsChecked="{Binding Clockwise}" />
+                                <CheckBox Content="Aditivo (somar ao input do jogador)" IsChecked="{Binding Additive}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ============ HEAD ASSIST ============ -->
+                    <Border Classes="section-panel" BorderBrush="#FF2D7A" BorderThickness="3,0,0,0"
+                            IsVisible="{Binding ShowHeadAssistSettings}">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="Head Assist" FontWeight="SemiBold" FontSize="14" Foreground="#FF2D7A" />
+                            <TextBlock Classes="label" TextWrapping="Wrap" Foreground="#8A8F9A"
+                                       Text="Mini flick no analógico esquerdo para travar HS quando o inimigo pula. Três presets (curto/médio/longo) são escolhidos pela distância estimada em tempo real." />
+
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Gatilho de tiro" Classes="label" />
+                                <ComboBox ItemsSource="{Binding TriggerSources}" SelectedItem="{Binding TriggerSource}" MinWidth="200" />
+                                <TextBlock Text="RT = padrão (atirar). Mudar só se a arma atual usa LT."
+                                           FontSize="10" Foreground="#4A4F5A" />
+                            </StackPanel>
+
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Fonte da distância" Classes="label" />
+                                <ComboBox ItemsSource="{Binding DistanceSources}" SelectedItem="{Binding DistanceSource}" MinWidth="200" />
+                                <TextBlock Text="Auto = fusão ponderada dos 3 sinais (recomendado)."
+                                           FontSize="10" Foreground="#4A4F5A" />
+                            </StackPanel>
+
+                            <!-- Short range -->
+                            <Border Classes="section-panel" BorderBrush="#00FF9C" BorderThickness="2,0,0,0">
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="Curto alcance" FontWeight="SemiBold" Foreground="#00FF9C" />
+                                    <Grid ColumnDefinitions="*,*,*">
+                                        <StackPanel Spacing="4" Margin="0,0,6,0">
+                                            <TextBlock Text="Amplitude" Classes="label" />
+                                            <NumericUpDown Value="{Binding HaShortAmp}" Minimum="0" Maximum="1" Increment="0.05" FormatString="F2" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" Spacing="4" Margin="0,0,6,0">
+                                            <TextBlock Text="Duração (ms)" Classes="label" />
+                                            <NumericUpDown Value="{Binding HaShortDurMs}" Minimum="20" Maximum="1000" Increment="10" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2" Spacing="4">
+                                            <TextBlock Text="Direção (°)" Classes="label" />
+                                            <NumericUpDown Value="{Binding HaShortDirDeg}" Minimum="0" Maximum="360" Increment="5" />
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Medium range -->
+                            <Border Classes="section-panel" BorderBrush="#FFD93D" BorderThickness="2,0,0,0">
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="Médio alcance" FontWeight="SemiBold" Foreground="#FFD93D" />
+                                    <Grid ColumnDefinitions="*,*,*">
+                                        <StackPanel Spacing="4" Margin="0,0,6,0">
+                                            <TextBlock Text="Amplitude" Classes="label" />
+                                            <NumericUpDown Value="{Binding HaMediumAmp}" Minimum="0" Maximum="1" Increment="0.05" FormatString="F2" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" Spacing="4" Margin="0,0,6,0">
+                                            <TextBlock Text="Duração (ms)" Classes="label" />
+                                            <NumericUpDown Value="{Binding HaMediumDurMs}" Minimum="20" Maximum="1000" Increment="10" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2" Spacing="4">
+                                            <TextBlock Text="Direção (°)" Classes="label" />
+                                            <NumericUpDown Value="{Binding HaMediumDirDeg}" Minimum="0" Maximum="360" Increment="5" />
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Long range -->
+                            <Border Classes="section-panel" BorderBrush="#FF6B6B" BorderThickness="2,0,0,0">
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="Longo alcance" FontWeight="SemiBold" Foreground="#FF6B6B" />
+                                    <Grid ColumnDefinitions="*,*,*">
+                                        <StackPanel Spacing="4" Margin="0,0,6,0">
+                                            <TextBlock Text="Amplitude" Classes="label" />
+                                            <NumericUpDown Value="{Binding HaLongAmp}" Minimum="0" Maximum="1" Increment="0.05" FormatString="F2" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" Spacing="4" Margin="0,0,6,0">
+                                            <TextBlock Text="Duração (ms)" Classes="label" />
+                                            <NumericUpDown Value="{Binding HaLongDurMs}" Minimum="20" Maximum="1000" Increment="10" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2" Spacing="4">
+                                            <TextBlock Text="Direção (°)" Classes="label" />
+                                            <NumericUpDown Value="{Binding HaLongDirDeg}" Minimum="0" Maximum="360" Increment="5" />
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Thresholds -->
+                            <TextBlock Text="Limiares do estimador" FontWeight="SemiBold" Foreground="#EAEAEA" Margin="0,4,0,0" />
+                            <Grid ColumnDefinitions="*,*">
+                                <StackPanel Spacing="4" Margin="0,0,8,0">
+                                    <TextBlock Text="Trigger hold curto (ms)" Classes="label" />
+                                    <NumericUpDown Value="{Binding ShortHoldMsMax}" Minimum="20" Maximum="2000" Increment="10" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Spacing="4">
+                                    <TextBlock Text="Trigger hold médio (ms)" Classes="label" />
+                                    <NumericUpDown Value="{Binding MediumHoldMsMax}" Minimum="50" Maximum="5000" Increment="50" />
+                                </StackPanel>
+                            </Grid>
+                            <Grid ColumnDefinitions="*,*">
+                                <StackPanel Spacing="4" Margin="0,0,8,0">
+                                    <TextBlock Text="Deflexão curta (0..1)" Classes="label" />
+                                    <NumericUpDown Value="{Binding DeflectionShortMax}" Minimum="0" Maximum="1" Increment="0.05" FormatString="F2" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Spacing="4">
+                                    <TextBlock Text="Deflexão média (0..1)" Classes="label" />
+                                    <NumericUpDown Value="{Binding DeflectionMediumMax}" Minimum="0" Maximum="1" Increment="0.05" FormatString="F2" />
+                                </StackPanel>
+                            </Grid>
+                            <Grid ColumnDefinitions="*,*">
+                                <StackPanel Spacing="4" Margin="0,0,8,0">
+                                    <TextBlock Text="Recoil curto (magnitude)" Classes="label" />
+                                    <NumericUpDown Value="{Binding RecoilShortMax}" Minimum="0" Maximum="32767" Increment="250" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Spacing="4">
+                                    <TextBlock Text="Recoil médio (magnitude)" Classes="label" />
+                                    <NumericUpDown Value="{Binding RecoilMediumMax}" Minimum="0" Maximum="32767" Increment="250" />
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Fusion weights -->
+                            <TextBlock Text="Pesos da fusão (Auto)" FontWeight="SemiBold" Foreground="#EAEAEA" Margin="0,4,0,0" />
+                            <Grid ColumnDefinitions="*,*,*">
+                                <StackPanel Spacing="4" Margin="0,0,6,0">
+                                    <TextBlock Text="Trigger" Classes="label" />
+                                    <NumericUpDown Value="{Binding WeightTrigger}" Minimum="0" Maximum="5" Increment="0.1" FormatString="F2" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Spacing="4" Margin="0,0,6,0">
+                                    <TextBlock Text="Deflexão" Classes="label" />
+                                    <NumericUpDown Value="{Binding WeightDeflection}" Minimum="0" Maximum="5" Increment="0.1" FormatString="F2" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2" Spacing="4">
+                                    <TextBlock Text="Recoil" Classes="label" />
+                                    <NumericUpDown Value="{Binding WeightRecoil}" Minimum="0" Maximum="5" Increment="0.1" FormatString="F2" />
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Manual cycle + safeguards -->
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Botão de ciclo (modo Manual)" Classes="label" />
+                                <ComboBox ItemsSource="{Binding ButtonList}" SelectedItem="{Binding CycleButton}" MinWidth="200" />
+                            </StackPanel>
+                            <Grid ColumnDefinitions="*,*">
+                                <StackPanel Spacing="4" Margin="0,0,8,0">
+                                    <TextBlock Text="Cooldown entre flicks (ms)" Classes="label" />
+                                    <NumericUpDown Value="{Binding ReFireCooldownMs}" Minimum="0" Maximum="2000" Increment="25" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Spacing="4">
+                                    <TextBlock Text="Hold mínimo do gatilho (ms)" Classes="label" />
+                                    <NumericUpDown Value="{Binding MinTriggerHoldMs}" Minimum="0" Maximum="500" Increment="5" />
+                                </StackPanel>
+                            </Grid>
+                            <CheckBox Content="Disparar no primeiro frame (ADS snap)" IsChecked="{Binding FireOnPress}" />
+                        </StackPanel>
+                    </Border>
+
                     <!-- ============ TIMING (shared) ============ -->
                     <Border Classes="section-panel" BorderBrush="#4A4F5A" BorderThickness="3,0,0,0"
                             IsVisible="{Binding ShowTimingSettings}">
