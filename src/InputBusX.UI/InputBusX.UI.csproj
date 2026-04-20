@@ -9,9 +9,9 @@
     <Product>MatrixX</Product>
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <ApplicationIcon>Assets\matrixx-icon.ico</ApplicationIcon>
-    <Version>2.0.0</Version>
-    <AssemblyVersion>2.0.0.0</AssemblyVersion>
-    <FileVersion>2.0.0.0</FileVersion>
+    <Version>2.0.1</Version>
+    <AssemblyVersion>2.0.1.0</AssemblyVersion>
+    <FileVersion>2.0.1.0</FileVersion>
     <!--
       OpenCvSharp ships OpenCvSharpExtern.dll as a native dependency. For single-file
       publish, extract native libs to a temp dir at runtime so the P/Invoke loader

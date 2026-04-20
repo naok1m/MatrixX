@@ -351,10 +351,20 @@ public sealed class TemplateWeaponDetectionService : IWeaponDetectionService, ID
     }
 
     /// <summary>
-    /// TM_CCOEFF_NORMED correlation. Handles size mismatches by resizing the reference
-    /// to the live frame's dimensions — users may have captured refs at one region size
-    /// and later tightened the region. If the reference is larger, it's shrunk; smaller,
-    /// it's upscaled to match. Same-size captures (the common case) skip the resize.
+    /// TM_CCOEFF_NORMED correlation with size-mismatch handling.
+    ///
+    /// When the reference is SMALLER than the live frame the template slides over the
+    /// search area (standard MatchTemplate behaviour) and we take the max score — this
+    /// tolerates references captured at a tighter region than the current capture area
+    /// without any quality loss, because no interpolation is performed.
+    ///
+    /// When the reference is LARGER than the live frame in either dimension we scale it
+    /// DOWN proportionally so it fits (downscale preserves detail far better than
+    /// upscaling the live frame). We never upscale a reference — upscaling blurs edges
+    /// and collapses the NCC score.
+    ///
+    /// Same-size captures (the common case once references stabilise) produce a 1×1
+    /// result matrix and skip all resizing.
     /// </summary>
     private static double ScoreAgainstReference(Mat live, Mat reference)
     {
@@ -362,17 +372,29 @@ public sealed class TemplateWeaponDetectionService : IWeaponDetectionService, ID
         try
         {
             Mat template = reference;
-            if (reference.Size() != live.Size())
+
+            bool refTooWide = reference.Cols > live.Cols;
+            bool refTooTall = reference.Rows > live.Rows;
+
+            if (refTooWide || refTooTall)
             {
+                // Scale DOWN proportionally so the reference fits within the live frame.
+                // Never upscale — upscaling destroys the NCC score.
+                double scale = Math.Min(
+                    (double)live.Rows / reference.Rows,
+                    (double)live.Cols / reference.Cols);
+                var targetSize = new OpenCvSharp.Size(
+                    Math.Max(1, (int)(reference.Cols * scale)),
+                    Math.Max(1, (int)(reference.Rows * scale)));
                 resized = new Mat();
-                Cv2.Resize(reference, resized, live.Size(), 0, 0, InterpolationFlags.Area);
+                Cv2.Resize(reference, resized, targetSize, 0, 0, InterpolationFlags.Area);
                 template = resized;
             }
+            // If template is still smaller than live (or was already smaller), MatchTemplate
+            // slides it over the search area automatically — no resize needed.
 
-            // Equal-size template → MatchTemplate returns a 1×1 scalar matrix with the score.
             using var result = new Mat();
             Cv2.MatchTemplate(live, template, result, TemplateMatchModes.CCoeffNormed);
-
             Cv2.MinMaxLoc(result, out _, out double maxVal);
             return maxVal;
         }
