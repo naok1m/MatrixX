@@ -439,14 +439,49 @@
 
                                         <!-- Row 3: per-weapon capture region override -->
                                         <StackPanel Spacing="4" Margin="2,2,0,0">
-                                            <CheckBox IsChecked="{Binding UseCustomRegion}"
-                                                      Foreground="#8A8F9A"
-                                                      VerticalAlignment="Center">
-                                                <TextBlock Text="Usar região de captura própria desta arma"
-                                                           FontSize="11"
-                                                           Foreground="#8A8F9A"
-                                                           ToolTip.Tip="Quando marcado, a detecção captura esta arma da região abaixo em vez da região global. Útil quando armas diferentes têm nomes de larguras muito distintas." />
-                                            </CheckBox>
+                                            <Grid ColumnDefinitions="*,Auto,Auto">
+                                                <CheckBox Grid.Column="0"
+                                                          IsChecked="{Binding UseCustomRegion}"
+                                                          Foreground="#8A8F9A"
+                                                          VerticalAlignment="Center">
+                                                    <TextBlock Text="Usar região de captura própria desta arma"
+                                                               FontSize="11"
+                                                               Foreground="#8A8F9A"
+                                                               ToolTip.Tip="Quando marcado, a detecção captura esta arma da região abaixo em vez da região global. Útil quando armas diferentes têm nomes de larguras muito distintas." />
+                                                </CheckBox>
+
+                                                <Button Grid.Column="1"
+                                                        Classes="weapon-pick-region"
+                                                        Content="⊕ Selecionar"
+                                                        IsVisible="{Binding UseCustomRegion}"
+                                                        CommandParameter="{Binding}"
+                                                        Background="#1E2228"
+                                                        Foreground="#00FF9C"
+                                                        BorderBrush="#00FF9C"
+                                                        BorderThickness="1"
+                                                        CornerRadius="6"
+                                                        FontSize="11"
+                                                        Padding="10,4"
+                                                        Margin="0,0,6,0"
+                                                        VerticalAlignment="Center"
+                                                        ToolTip.Tip="Desenha a região desta arma com o mouse sobre a tela." />
+
+                                                <Button Grid.Column="2"
+                                                        Content="🔍 Preview"
+                                                        IsVisible="{Binding UseCustomRegion}"
+                                                        CommandParameter="{Binding}"
+                                                        Command="{Binding DataContext.PreviewWeaponRegionCommand,
+                                                                  RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        Background="#1E2228"
+                                                        Foreground="#00DDFF"
+                                                        BorderBrush="#00DDFF"
+                                                        BorderThickness="1"
+                                                        CornerRadius="6"
+                                                        FontSize="11"
+                                                        Padding="10,4"
+                                                        VerticalAlignment="Center"
+                                                        ToolTip.Tip="Captura um snapshot da região desta arma para conferir." />
+                                            </Grid>
 
                                             <Grid ColumnDefinitions="Auto,80,Auto,80,Auto,80,Auto,80"
                                                   IsVisible="{Binding UseCustomRegion}"

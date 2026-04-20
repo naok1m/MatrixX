@@ -167,6 +167,48 @@ public partial class WeaponDetectionViewModel : ViewModelBase
         CapturePreview = null;
     }
 
+    /// <summary>
+    /// Captures the per-weapon region and shows it in the shared preview panel.
+    /// Used by the "Preview" button inside each weapon row.
+    /// </summary>
+    [RelayCommand]
+    private async Task PreviewWeaponRegion(WeaponProfileItemViewModel? weapon)
+    {
+        if (weapon is null) return;
+        if (!weapon.UseCustomRegion)
+        {
+            _notifications.ShowError("Marque 'Usar região de captura própria' antes de pré-visualizar.");
+            return;
+        }
+
+        try
+        {
+            int x = weapon.CaptureX, y = weapon.CaptureY;
+            int w = Math.Max(1, weapon.CaptureWidth);
+            int h = Math.Max(1, weapon.CaptureHeight);
+
+            var bmp = await Task.Run(() =>
+            {
+                using var gdi = new System.Drawing.Bitmap(w, h);
+                using var g = System.Drawing.Graphics.FromImage(gdi);
+                g.CopyFromScreen(x, y, 0, 0, new System.Drawing.Size(w, h));
+
+                using var ms = new MemoryStream();
+                gdi.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+                ms.Position = 0;
+                return new Bitmap(ms);
+            });
+
+            CapturePreview?.Dispose();
+            CapturePreview        = bmp;
+            CapturePreviewVisible = true;
+        }
+        catch (Exception ex)
+        {
+            _notifications.ShowError($"Preview failed: {ex.Message}");
+        }
+    }
+
     // ──────────────────────────────────────────────────────────────────────
     //  Commands — weapon list management
     // ──────────────────────────────────────────────────────────────────────
