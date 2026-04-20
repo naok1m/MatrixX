@@ -437,6 +437,58 @@
 
                                         </Grid>
 
+                                        <!-- Row 3: per-weapon capture region override -->
+                                        <StackPanel Spacing="4" Margin="2,2,0,0">
+                                            <CheckBox IsChecked="{Binding UseCustomRegion}"
+                                                      Foreground="#8A8F9A"
+                                                      VerticalAlignment="Center">
+                                                <TextBlock Text="Usar região de captura própria desta arma"
+                                                           FontSize="11"
+                                                           Foreground="#8A8F9A"
+                                                           ToolTip.Tip="Quando marcado, a detecção captura esta arma da região abaixo em vez da região global. Útil quando armas diferentes têm nomes de larguras muito distintas." />
+                                            </CheckBox>
+
+                                            <Grid ColumnDefinitions="Auto,80,Auto,80,Auto,80,Auto,80"
+                                                  IsVisible="{Binding UseCustomRegion}"
+                                                  Margin="20,0,0,0">
+                                                <TextBlock Grid.Column="0" Text="X:" FontSize="11"
+                                                           Foreground="#8A8F9A" VerticalAlignment="Center"
+                                                           Margin="0,0,4,0" />
+                                                <NumericUpDown Grid.Column="1"
+                                                               Value="{Binding CaptureX}"
+                                                               Minimum="0" Maximum="9999"
+                                                               FormatString="0"
+                                                               ShowButtonSpinner="False"
+                                                               Margin="0,0,10,0" />
+                                                <TextBlock Grid.Column="2" Text="Y:" FontSize="11"
+                                                           Foreground="#8A8F9A" VerticalAlignment="Center"
+                                                           Margin="0,0,4,0" />
+                                                <NumericUpDown Grid.Column="3"
+                                                               Value="{Binding CaptureY}"
+                                                               Minimum="0" Maximum="9999"
+                                                               FormatString="0"
+                                                               ShowButtonSpinner="False"
+                                                               Margin="0,0,10,0" />
+                                                <TextBlock Grid.Column="4" Text="W:" FontSize="11"
+                                                           Foreground="#8A8F9A" VerticalAlignment="Center"
+                                                           Margin="0,0,4,0" />
+                                                <NumericUpDown Grid.Column="5"
+                                                               Value="{Binding CaptureWidth}"
+                                                               Minimum="1" Maximum="9999"
+                                                               FormatString="0"
+                                                               ShowButtonSpinner="False"
+                                                               Margin="0,0,10,0" />
+                                                <TextBlock Grid.Column="6" Text="H:" FontSize="11"
+                                                           Foreground="#8A8F9A" VerticalAlignment="Center"
+                                                           Margin="0,0,4,0" />
+                                                <NumericUpDown Grid.Column="7"
+                                                               Value="{Binding CaptureHeight}"
+                                                               Minimum="1" Maximum="9999"
+                                                               FormatString="0"
+                                                               ShowButtonSpinner="False" />
+                                            </Grid>
+                                        </StackPanel>
+
                                     </StackPanel>
                                 </Border>
                             </DataTemplate>

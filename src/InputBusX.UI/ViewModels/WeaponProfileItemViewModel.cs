@@ -19,6 +19,13 @@ public sealed partial class WeaponProfileItemViewModel : ObservableObject
     [ObservableProperty] private bool _rapidFireEnabled;
     [ObservableProperty] private int _rapidFireIntervalMs;
 
+    // ── Per-weapon capture region (optional override) ────────────────────────
+    [ObservableProperty] private bool _useCustomRegion;
+    [ObservableProperty] private int _captureX;
+    [ObservableProperty] private int _captureY;
+    [ObservableProperty] private int _captureWidth;
+    [ObservableProperty] private int _captureHeight;
+
     /// <summary>Mutable collection backing <see cref="WeaponProfile.ReferenceImagePaths"/>.</summary>
     public ObservableCollection<string> ReferenceImagePaths { get; } = [];
 
@@ -45,6 +52,12 @@ public sealed partial class WeaponProfileItemViewModel : ObservableObject
         _rapidFireEnabled = profile.RapidFireEnabled;
         _rapidFireIntervalMs = profile.RapidFireIntervalMs;
 
+        _useCustomRegion = profile.UseCustomRegion;
+        _captureX        = profile.CaptureX;
+        _captureY        = profile.CaptureY;
+        _captureWidth    = profile.CaptureWidth;
+        _captureHeight   = profile.CaptureHeight;
+
         foreach (var p in profile.ReferenceImagePaths)
             ReferenceImagePaths.Add(p);
 
@@ -70,6 +83,11 @@ public sealed partial class WeaponProfileItemViewModel : ObservableObject
         RecoilCompensationY = RecoilCompensationY,
         Intensity = Intensity,
         RapidFireEnabled = RapidFireEnabled,
-        RapidFireIntervalMs = RapidFireIntervalMs
+        RapidFireIntervalMs = RapidFireIntervalMs,
+        UseCustomRegion = UseCustomRegion,
+        CaptureX        = CaptureX,
+        CaptureY        = CaptureY,
+        CaptureWidth    = CaptureWidth,
+        CaptureHeight   = CaptureHeight
     };
 }
