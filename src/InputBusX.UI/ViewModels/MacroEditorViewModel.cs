@@ -47,14 +47,63 @@ public partial class MacroEditorViewModel : ViewModelBase
     [ObservableProperty] private bool _showRemapSettings;
     [ObservableProperty] private bool _showTimingSettings;
     [ObservableProperty] private bool _showAimAssistBuffSettings;
+    [ObservableProperty] private bool _showScriptedShapeSettings;
+    [ObservableProperty] private bool _showHeadAssistSettings;
 
     [ObservableProperty] private string _saveStatus = "";
     [ObservableProperty] private GamepadButton _pingButton;
+
+    // ── ScriptedShape (single MotionScript) ──────────────────────────────
+    [ObservableProperty] private ShapeKind _shape = ShapeKind.Circle;
+    [ObservableProperty] private StickTargetKind _stickTarget = StickTargetKind.Right;
+    [ObservableProperty] private double _radiusXNorm = 0.35;
+    [ObservableProperty] private double _radiusYNorm = 0.35;
+    [ObservableProperty] private double _rotationDeg;
+    [ObservableProperty] private double _periodMs = 400;
+    [ObservableProperty] private double _motionDurationMs;
+    [ObservableProperty] private double _directionDeg = 90;
+    [ObservableProperty] private double _amplitudeNorm = 0.55;
+    [ObservableProperty] private double _startPhaseDeg;
+    [ObservableProperty] private bool _clockwise = true;
+    [ObservableProperty] private EasingKind _easing = EasingKind.EaseOutCubic;
+    [ObservableProperty] private double _intensityMul = 1.0;
+    [ObservableProperty] private bool _additive = true;
+
+    // ── HeadAssist ───────────────────────────────────────────────────────
+    [ObservableProperty] private DistanceSource _distanceSource = DistanceSource.Auto;
+    [ObservableProperty] private double _shortHoldMsMax = 150;
+    [ObservableProperty] private double _mediumHoldMsMax = 500;
+    [ObservableProperty] private double _deflectionShortMax = 0.30;
+    [ObservableProperty] private double _deflectionMediumMax = 0.65;
+    [ObservableProperty] private double _recoilShortMax = 2500;
+    [ObservableProperty] private double _recoilMediumMax = 6000;
+    [ObservableProperty] private double _weightTrigger = 1.0;
+    [ObservableProperty] private double _weightDeflection = 1.0;
+    [ObservableProperty] private double _weightRecoil = 0.5;
+    [ObservableProperty] private GamepadButton _cycleButton;
+    [ObservableProperty] private int _reFireCooldownMs = 250;
+    [ObservableProperty] private int _minTriggerHoldMs = 20;
+    [ObservableProperty] private bool _fireOnPress = true;
+
+    // Head Assist per-range amplitude/duration sliders (flick-only simplified UI)
+    [ObservableProperty] private double _haShortAmp = 0.45;
+    [ObservableProperty] private double _haShortDurMs = 90;
+    [ObservableProperty] private double _haShortDirDeg = 90;
+    [ObservableProperty] private double _haMediumAmp = 0.70;
+    [ObservableProperty] private double _haMediumDurMs = 140;
+    [ObservableProperty] private double _haMediumDirDeg = 90;
+    [ObservableProperty] private double _haLongAmp = 0.90;
+    [ObservableProperty] private double _haLongDurMs = 220;
+    [ObservableProperty] private double _haLongDirDeg = 90;
 
     public ObservableCollection<MacroDefinition> Macros { get; } = [];
     public Array MacroTypes => Enum.GetValues(typeof(MacroType));
     public GamepadButton[] ButtonList { get; } = (GamepadButton[])Enum.GetValues(typeof(GamepadButton));
     public Array TriggerSources => Enum.GetValues(typeof(TriggerSource));
+    public Array ShapeKinds => Enum.GetValues(typeof(ShapeKind));
+    public Array EasingKinds => Enum.GetValues(typeof(EasingKind));
+    public Array StickTargetKinds => Enum.GetValues(typeof(StickTargetKind));
+    public Array DistanceSources => Enum.GetValues(typeof(DistanceSource));
 
     public MacroEditorViewModel(IProfileManager profileManager, ILogger<MacroEditorViewModel> logger)
     {
@@ -73,6 +122,8 @@ public partial class MacroEditorViewModel : ViewModelBase
         ShowAutoPingSettings = SelectedMacroType == MacroType.AutoPing;
         ShowRemapSettings = SelectedMacroType == MacroType.Remap;
         ShowAimAssistBuffSettings = SelectedMacroType == MacroType.AimAssistBuff;
+        ShowScriptedShapeSettings = SelectedMacroType == MacroType.ScriptedShape;
+        ShowHeadAssistSettings = SelectedMacroType == MacroType.HeadAssist;
         ShowTimingSettings = SelectedMacroType is MacroType.AutoFire or MacroType.AutoPing or MacroType.Sequence;
     }
 
@@ -151,6 +202,55 @@ public partial class MacroEditorViewModel : ViewModelBase
         SelectedMacro.SourceButton = SourceButton != GamepadButton.None ? SourceButton : null;
         SelectedMacro.TargetButton = TargetButton != GamepadButton.None ? TargetButton : null;
 
+        // ScriptedShape
+        if (SelectedMacroType == MacroType.ScriptedShape)
+        {
+            SelectedMacro.Motion.Shape = Shape;
+            SelectedMacro.Motion.Target = StickTarget;
+            SelectedMacro.Motion.RadiusXNorm = RadiusXNorm;
+            SelectedMacro.Motion.RadiusYNorm = RadiusYNorm;
+            SelectedMacro.Motion.RotationDeg = RotationDeg;
+            SelectedMacro.Motion.PeriodMs = PeriodMs;
+            SelectedMacro.Motion.DurationMs = MotionDurationMs;
+            SelectedMacro.Motion.DirectionDeg = DirectionDeg;
+            SelectedMacro.Motion.AmplitudeNorm = AmplitudeNorm;
+            SelectedMacro.Motion.StartPhaseDeg = StartPhaseDeg;
+            SelectedMacro.Motion.Clockwise = Clockwise;
+            SelectedMacro.Motion.Easing = Easing;
+            SelectedMacro.Motion.IntensityMul = IntensityMul;
+            SelectedMacro.Motion.Additive = Additive;
+        }
+
+        // HeadAssist
+        if (SelectedMacroType == MacroType.HeadAssist)
+        {
+            var h = SelectedMacro.HeadAssist;
+            h.DistanceSource = DistanceSource;
+            h.ShortHoldMsMax = ShortHoldMsMax;
+            h.MediumHoldMsMax = MediumHoldMsMax;
+            h.DeflectionShortMax = DeflectionShortMax;
+            h.DeflectionMediumMax = DeflectionMediumMax;
+            h.RecoilShortMax = RecoilShortMax;
+            h.RecoilMediumMax = RecoilMediumMax;
+            h.WeightTrigger = WeightTrigger;
+            h.WeightDeflection = WeightDeflection;
+            h.WeightRecoil = WeightRecoil;
+            h.CycleButton = CycleButton != GamepadButton.None ? CycleButton : null;
+            h.ReFireCooldownMs = ReFireCooldownMs;
+            h.MinTriggerHoldMs = MinTriggerHoldMs;
+            h.FireOnPress = FireOnPress;
+            h.ShortRange.AmplitudeNorm = HaShortAmp;
+            h.ShortRange.DurationMs = HaShortDurMs;
+            h.ShortRange.DirectionDeg = HaShortDirDeg;
+            h.MediumRange.AmplitudeNorm = HaMediumAmp;
+            h.MediumRange.DurationMs = HaMediumDurMs;
+            h.MediumRange.DirectionDeg = HaMediumDirDeg;
+            h.LongRange.AmplitudeNorm = HaLongAmp;
+            h.LongRange.DurationMs = HaLongDurMs;
+            h.LongRange.DirectionDeg = HaLongDirDeg;
+            SelectedMacro.TriggerSource = TriggerSource;
+        }
+
         _profileManager.SaveProfile(_profileManager.ActiveProfile);
         SaveStatus = "Saved!";
         _logger.LogInformation("Saved macro: {Name} (Type: {Type}, Activation: {Activation})",
@@ -185,6 +285,49 @@ public partial class MacroEditorViewModel : ViewModelBase
         RecoilCompensationY = value.RecoilCompensationY;
         FlickStrength = value.FlickStrength > 0 ? value.FlickStrength : 32767;
         FlickIntervalMs = value.FlickIntervalMs > 0 ? value.FlickIntervalMs : 8;
+
+        // ScriptedShape
+        Shape = value.Motion.Shape;
+        StickTarget = value.Motion.Target;
+        RadiusXNorm = value.Motion.RadiusXNorm;
+        RadiusYNorm = value.Motion.RadiusYNorm;
+        RotationDeg = value.Motion.RotationDeg;
+        PeriodMs = value.Motion.PeriodMs;
+        MotionDurationMs = value.Motion.DurationMs;
+        DirectionDeg = value.Motion.DirectionDeg;
+        AmplitudeNorm = value.Motion.AmplitudeNorm;
+        StartPhaseDeg = value.Motion.StartPhaseDeg;
+        Clockwise = value.Motion.Clockwise;
+        Easing = value.Motion.Easing;
+        IntensityMul = value.Motion.IntensityMul;
+        Additive = value.Motion.Additive;
+
+        // HeadAssist
+        var ha = value.HeadAssist;
+        DistanceSource = ha.DistanceSource;
+        ShortHoldMsMax = ha.ShortHoldMsMax;
+        MediumHoldMsMax = ha.MediumHoldMsMax;
+        DeflectionShortMax = ha.DeflectionShortMax;
+        DeflectionMediumMax = ha.DeflectionMediumMax;
+        RecoilShortMax = ha.RecoilShortMax;
+        RecoilMediumMax = ha.RecoilMediumMax;
+        WeightTrigger = ha.WeightTrigger;
+        WeightDeflection = ha.WeightDeflection;
+        WeightRecoil = ha.WeightRecoil;
+        CycleButton = ha.CycleButton ?? GamepadButton.None;
+        ReFireCooldownMs = ha.ReFireCooldownMs;
+        MinTriggerHoldMs = ha.MinTriggerHoldMs;
+        FireOnPress = ha.FireOnPress;
+        HaShortAmp = ha.ShortRange.AmplitudeNorm;
+        HaShortDurMs = ha.ShortRange.DurationMs;
+        HaShortDirDeg = ha.ShortRange.DirectionDeg;
+        HaMediumAmp = ha.MediumRange.AmplitudeNorm;
+        HaMediumDurMs = ha.MediumRange.DurationMs;
+        HaMediumDirDeg = ha.MediumRange.DirectionDeg;
+        HaLongAmp = ha.LongRange.AmplitudeNorm;
+        HaLongDurMs = ha.LongRange.DurationMs;
+        HaLongDirDeg = ha.LongRange.DirectionDeg;
+
         SaveStatus = "";
         UpdateVisibility();
     }

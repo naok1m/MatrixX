@@ -41,6 +41,8 @@ public sealed class MacroProcessor : IMacroProcessor
                 MacroType.Sequence => ProcessSequence(state, macro),
                 MacroType.Toggle => ProcessToggle(state, macro),
                 MacroType.AimAssistBuff => ProcessAimAssistBuff(state, macro),
+                MacroType.HeadAssist => ProcessHeadAssist(state, macro),
+                MacroType.ScriptedShape => ProcessScriptedShape(state, macro),
                 _ => state
             };
         }
@@ -317,6 +319,263 @@ public sealed class MacroProcessor : IMacroProcessor
         return state;
     }
 
+    // ─────────────────────────────────────────────────────────────────────
+    //  ScriptedShape — drives a thumbstick along a parametric motion while
+    //  the activation button (or trigger) is held. Orbital shapes loop until
+    //  the trigger releases; Flick runs once per press edge.
+    // ─────────────────────────────────────────────────────────────────────
+    private GamepadState ProcessScriptedShape(GamepadState state, MacroDefinition macro)
+    {
+        var runtime = GetRuntime(macro);
+        var motion = macro.Motion;
+        bool held = IsMacroActive(state, macro, runtime);
+        long now = Environment.TickCount64;
+
+        if (!held)
+        {
+            runtime.MotionActivationTick = 0;
+            runtime.WasPressed = false;
+            return state;
+        }
+
+        // Press edge — stamp activation time so elapsedMs walks from zero
+        if (runtime.MotionActivationTick == 0)
+            runtime.MotionActivationTick = now;
+
+        double elapsedMs = now - runtime.MotionActivationTick;
+        var sample = MotionSampler.Evaluate(motion, elapsedMs);
+
+        // Re-arm on completion for looping orbital shapes (Flick completes => stay silent)
+        if (sample.Completed)
+        {
+            if (motion.Shape != ShapeKind.Flick && motion.DurationMs == 0)
+            {
+                // shouldn't happen — DurationMs==0 means indefinite, so Completed stays false
+            }
+            return state;
+        }
+
+        ApplyMotionSample(state, motion, sample, macro.Intensity);
+        return state;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    //  HeadAssist — distance-adaptive flick fired from the fire trigger.
+    //  Picks one of three presets (short / medium / long) per trigger press
+    //  based on the configured DistanceSource; respects a re-fire cooldown
+    //  so sustained fire doesn't stack flicks on top of each other.
+    // ─────────────────────────────────────────────────────────────────────
+    private GamepadState ProcessHeadAssist(GamepadState state, MacroDefinition macro)
+    {
+        var runtime = GetRuntime(macro);
+        var cfg = macro.HeadAssist;
+        long now = Environment.TickCount64;
+
+        bool fireHeld = macro.TriggerSource == TriggerSource.LeftTrigger
+            ? state.LeftTrigger.IsPressed()
+            : state.RightTrigger.IsPressed();
+
+        // Track press edge + hold duration for the TriggerHoldTime estimator.
+        if (fireHeld)
+        {
+            if (runtime.TriggerDownSinceTick == 0)
+                runtime.TriggerDownSinceTick = now;
+        }
+        else
+        {
+            runtime.TriggerDownSinceTick = 0;
+            runtime.HeadAssistActivationTick = 0;
+        }
+
+        // Manual cycle button — rotates DistanceLevel short → medium → long → short.
+        if (cfg.CycleButton.HasValue)
+        {
+            bool cyclePressed = state.IsButtonPressed(cfg.CycleButton.Value);
+            if (cyclePressed && !runtime.WasCycleButtonPressed)
+            {
+                runtime.ManualLevel = runtime.ManualLevel switch
+                {
+                    DistanceLevel.Short  => DistanceLevel.Medium,
+                    DistanceLevel.Medium => DistanceLevel.Long,
+                    _ => DistanceLevel.Short,
+                };
+            }
+            runtime.WasCycleButtonPressed = cyclePressed;
+        }
+
+        // Decide whether this frame starts a new flick.
+        bool activeFlick = runtime.HeadAssistActivationTick != 0;
+        bool fireEdge = fireHeld && !runtime.WasFirePressed;
+        runtime.WasFirePressed = fireHeld;
+
+        if (!activeFlick && fireHeld)
+        {
+            double heldMs = now - runtime.TriggerDownSinceTick;
+            bool cooldownOk = (now - runtime.LastHeadAssistTick) >= cfg.ReFireCooldownMs;
+            bool minHoldOk = heldMs >= cfg.MinTriggerHoldMs;
+            bool shouldFire =
+                (cfg.FireOnPress && fireEdge && minHoldOk) ||
+                (!cfg.FireOnPress && cooldownOk && minHoldOk);
+
+            if (shouldFire)
+            {
+                var level = EstimateDistance(state, cfg, runtime, heldMs);
+                runtime.CurrentHeadAssistLevel = level;
+                runtime.HeadAssistActivationTick = now;
+                runtime.LastHeadAssistTick = now;
+                _logger.LogDebug("HeadAssist firing: level={Level} heldMs={Held:F0}", level, heldMs);
+            }
+        }
+
+        if (runtime.HeadAssistActivationTick == 0) return state;
+
+        var script = runtime.CurrentHeadAssistLevel switch
+        {
+            DistanceLevel.Short  => cfg.ShortRange,
+            DistanceLevel.Medium => cfg.MediumRange,
+            _ => cfg.LongRange,
+        };
+
+        double elapsed = now - runtime.HeadAssistActivationTick;
+        var sample = MotionSampler.Evaluate(script, elapsed);
+        if (sample.Completed)
+        {
+            runtime.HeadAssistActivationTick = 0;
+            return state;
+        }
+
+        ApplyMotionSample(state, script, sample, macro.Intensity);
+        return state;
+    }
+
+    /// <summary>
+    /// Fuses the configured <see cref="DistanceSource"/> signals into a
+    /// <see cref="DistanceLevel"/>. Each auto signal produces a scalar in
+    /// [0,1] (0=close, 1=long) — the Auto mode takes a weighted mean of the
+    /// three signals then buckets into Short/Medium/Long.
+    /// </summary>
+    private DistanceLevel EstimateDistance(
+        GamepadState state, HeadAssistConfig cfg, MacroRuntime runtime, double heldMs)
+    {
+        if (cfg.DistanceSource == DistanceSource.Manual)
+            return runtime.ManualLevel;
+
+        double ScoreTrigger()
+        {
+            if (heldMs <= cfg.ShortHoldMsMax)  return 0.0;
+            if (heldMs >= cfg.MediumHoldMsMax) return 1.0;
+            return (heldMs - cfg.ShortHoldMsMax) / (cfg.MediumHoldMsMax - cfg.ShortHoldMsMax);
+        }
+
+        double ScoreDeflection()
+        {
+            double mag = Math.Sqrt(
+                (state.LeftStick.X / 32767.0) * (state.LeftStick.X / 32767.0) +
+                (state.LeftStick.Y / 32767.0) * (state.LeftStick.Y / 32767.0));
+            if (mag <= cfg.DeflectionShortMax)  return 0.0;
+            if (mag >= cfg.DeflectionMediumMax) return 1.0;
+            return (mag - cfg.DeflectionShortMax) / (cfg.DeflectionMediumMax - cfg.DeflectionShortMax);
+        }
+
+        double ScoreRecoil()
+        {
+            if (_weaponProfile == null) return 0.5;
+            double recoil = Math.Abs(_weaponProfile.RecoilCompensationY) + Math.Abs(_weaponProfile.RecoilCompensationX);
+            if (recoil <= cfg.RecoilShortMax)  return 0.0;
+            if (recoil >= cfg.RecoilMediumMax) return 1.0;
+            return (recoil - cfg.RecoilShortMax) / (cfg.RecoilMediumMax - cfg.RecoilShortMax);
+        }
+
+        double score = cfg.DistanceSource switch
+        {
+            DistanceSource.TriggerHoldTime     => ScoreTrigger(),
+            DistanceSource.AimStickDeflection  => ScoreDeflection(),
+            DistanceSource.RecoilMagnitude     => ScoreRecoil(),
+            DistanceSource.Auto                => WeightedMean(
+                (ScoreTrigger(),    cfg.WeightTrigger),
+                (ScoreDeflection(), cfg.WeightDeflection),
+                (ScoreRecoil(),     cfg.WeightRecoil)),
+            _ => 0.5,
+        };
+
+        return score switch
+        {
+            <= 0.34 => DistanceLevel.Short,
+            <= 0.66 => DistanceLevel.Medium,
+            _       => DistanceLevel.Long,
+        };
+    }
+
+    private static double WeightedMean(params (double Value, double Weight)[] items)
+    {
+        double ws = 0, ss = 0;
+        foreach (var (v, w) in items)
+        {
+            if (w <= 0) continue;
+            ss += v * w;
+            ws += w;
+        }
+        return ws > 0 ? ss / ws : 0.5;
+    }
+
+    /// <summary>
+    /// Resolves whether a scripted macro is active right now: respects
+    /// toggle-mode, trigger source, and activation button just like NoRecoil.
+    /// </summary>
+    private static bool IsMacroActive(GamepadState state, MacroDefinition macro, MacroRuntime runtime)
+    {
+        // Trigger-bound activation takes precedence when TriggerSource is set to a trigger axis.
+        bool triggerActive = macro.TriggerSource switch
+        {
+            TriggerSource.LeftTrigger  => state.LeftTrigger.IsPressed(),
+            TriggerSource.RightTrigger => state.RightTrigger.IsPressed(),
+            _ => true,  // None → not gated by trigger
+        };
+
+        bool buttonActive;
+        if (macro.ToggleMode && macro.ActivationButton.HasValue)
+        {
+            bool pressed = state.IsButtonPressed(macro.ActivationButton.Value);
+            if (pressed && !runtime.WasPressed)
+                runtime.ToggleState = !runtime.ToggleState;
+            runtime.WasPressed = pressed;
+            buttonActive = runtime.ToggleState;
+        }
+        else
+        {
+            buttonActive = !macro.ActivationButton.HasValue
+                || state.IsButtonPressed(macro.ActivationButton.Value);
+        }
+
+        return triggerActive && buttonActive;
+    }
+
+    /// <summary>Writes a motion sample to the target stick, additive or override per the script.</summary>
+    private static void ApplyMotionSample(
+        GamepadState state, MotionScript motion, MotionSampler.Sample sample, double macroIntensity)
+    {
+        double scale = macroIntensity * 32767.0;
+        short dx = (short)Math.Clamp(sample.X * scale, short.MinValue, short.MaxValue);
+        short dy = (short)Math.Clamp(sample.Y * scale, short.MinValue, short.MaxValue);
+
+        if (motion.Target == StickTargetKind.Left)
+        {
+            state.LeftStick = motion.Additive
+                ? new StickPosition(
+                    (short)Math.Clamp(state.LeftStick.X + dx, short.MinValue, short.MaxValue),
+                    (short)Math.Clamp(state.LeftStick.Y + dy, short.MinValue, short.MaxValue))
+                : new StickPosition(dx, dy);
+        }
+        else
+        {
+            state.RightStick = motion.Additive
+                ? new StickPosition(
+                    (short)Math.Clamp(state.RightStick.X + dx, short.MinValue, short.MaxValue),
+                    (short)Math.Clamp(state.RightStick.Y + dy, short.MinValue, short.MaxValue))
+                : new StickPosition(dx, dy);
+        }
+    }
+
     private sealed class MacroRuntime
     {
         public long LastFireTick;
@@ -324,5 +583,15 @@ public sealed class MacroProcessor : IMacroProcessor
         public bool ToggleState;
         public bool WasPressed;
         public int StepIndex;
+
+        // ScriptedShape / HeadAssist — time-parametric state
+        public long MotionActivationTick;      // ScriptedShape: start of current motion window
+        public long HeadAssistActivationTick;  // HeadAssist: start of current flick
+        public long LastHeadAssistTick;        // HeadAssist: cooldown anchor
+        public long TriggerDownSinceTick;      // HeadAssist: fire-trigger edge timestamp
+        public bool WasFirePressed;            // HeadAssist: fire-trigger edge detector
+        public bool WasCycleButtonPressed;     // HeadAssist: manual cycle edge detector
+        public DistanceLevel ManualLevel = DistanceLevel.Medium;
+        public DistanceLevel CurrentHeadAssistLevel = DistanceLevel.Medium;
     }
 }

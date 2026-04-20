@@ -45,6 +45,14 @@ public sealed class MacroDefinition
 
     // Sequence steps
     public List<MacroStep> Steps { get; set; } = [];
+
+    // ── Scripted motion (ScriptedShape macro type) ───────────────────────
+    /// <summary>Parametric stick motion used by <see cref="MacroType.ScriptedShape"/>.</summary>
+    public MotionScript Motion { get; set; } = new();
+
+    // ── Head Assist (HeadAssist macro type) ──────────────────────────────
+    /// <summary>Distance-adaptive flick configuration for <see cref="MacroType.HeadAssist"/>.</summary>
+    public HeadAssistConfig HeadAssist { get; set; } = new();
 }
 
 public sealed class MacroStep
