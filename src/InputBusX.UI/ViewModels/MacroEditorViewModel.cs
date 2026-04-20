@@ -84,6 +84,8 @@ public partial class MacroEditorViewModel : ViewModelBase
     [ObservableProperty] private int _reFireCooldownMs = 250;
     [ObservableProperty] private int _minTriggerHoldMs = 20;
     [ObservableProperty] private bool _fireOnPress = true;
+    [ObservableProperty] private StickTargetKind _haStickTarget = StickTargetKind.Right;
+    [ObservableProperty] private bool _haAdditive = true;
 
     // Head Assist per-range amplitude/duration sliders (flick-only simplified UI)
     [ObservableProperty] private double _haShortAmp = 0.45;
@@ -248,6 +250,13 @@ public partial class MacroEditorViewModel : ViewModelBase
             h.LongRange.AmplitudeNorm = HaLongAmp;
             h.LongRange.DurationMs = HaLongDurMs;
             h.LongRange.DirectionDeg = HaLongDirDeg;
+            // Shared target + additive mode propagate to all 3 presets
+            h.ShortRange.Target  = HaStickTarget;
+            h.MediumRange.Target = HaStickTarget;
+            h.LongRange.Target   = HaStickTarget;
+            h.ShortRange.Additive  = HaAdditive;
+            h.MediumRange.Additive = HaAdditive;
+            h.LongRange.Additive   = HaAdditive;
             SelectedMacro.TriggerSource = TriggerSource;
         }
 
@@ -327,6 +336,8 @@ public partial class MacroEditorViewModel : ViewModelBase
         HaLongAmp = ha.LongRange.AmplitudeNorm;
         HaLongDurMs = ha.LongRange.DurationMs;
         HaLongDirDeg = ha.LongRange.DirectionDeg;
+        HaStickTarget = ha.ShortRange.Target;
+        HaAdditive = ha.ShortRange.Additive;
 
         SaveStatus = "";
         UpdateVisibility();

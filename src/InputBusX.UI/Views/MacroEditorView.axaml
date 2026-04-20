@@ -469,6 +469,26 @@
                                            FontSize="10" Foreground="#4A4F5A" />
                             </StackPanel>
 
+                            <Grid ColumnDefinitions="*,*">
+                                <StackPanel Spacing="4" Margin="0,0,8,0">
+                                    <TextBlock Text="Analógico alvo" Classes="label" />
+                                    <ComboBox ItemsSource="{Binding StickTargetKinds}" SelectedItem="{Binding HaStickTarget}" MinWidth="160" />
+                                    <TextBlock Text="Right = stick de MIRA (padrão FPS). Left = stick de movimento."
+                                               FontSize="10" Foreground="#4A4F5A" TextWrapping="Wrap" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Spacing="4">
+                                    <TextBlock Text="Modo" Classes="label" />
+                                    <CheckBox Content="Aditivo (soma ao input do jogador)" IsChecked="{Binding HaAdditive}" />
+                                    <TextBlock Text="Desmarcado = override total do stick enquanto o flick roda."
+                                               FontSize="10" Foreground="#4A4F5A" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Grid>
+
+                            <Border Background="#1A1D22" CornerRadius="4" Padding="10,8">
+                                <TextBlock FontSize="11" Foreground="#FFD93D" TextWrapping="Wrap"
+                                           Text="Direção: 90° = sobe (padrão). Se seu jogo está com Y invertido e o flick vai pra baixo, mude as 3 direções abaixo para 270°." />
+                            </Border>
+
                             <StackPanel Spacing="4">
                                 <TextBlock Text="Fonte da distância" Classes="label" />
                                 <ComboBox ItemsSource="{Binding DistanceSources}" SelectedItem="{Binding DistanceSource}" MinWidth="200" />

@@ -26,7 +26,7 @@ public sealed class HeadAssistConfig
     public MotionScript ShortRange  { get; set; } = new()
     {
         Shape = ShapeKind.Flick,
-        Target = StickTargetKind.Left,
+        Target = StickTargetKind.Right,
         DirectionDeg = 90,
         AmplitudeNorm = 0.45,
         DurationMs = 90,
@@ -36,7 +36,7 @@ public sealed class HeadAssistConfig
     public MotionScript MediumRange { get; set; } = new()
     {
         Shape = ShapeKind.Flick,
-        Target = StickTargetKind.Left,
+        Target = StickTargetKind.Right,
         DirectionDeg = 90,
         AmplitudeNorm = 0.70,
         DurationMs = 140,
@@ -46,7 +46,7 @@ public sealed class HeadAssistConfig
     public MotionScript LongRange   { get; set; } = new()
     {
         Shape = ShapeKind.Flick,
-        Target = StickTargetKind.Left,
+        Target = StickTargetKind.Right,
         DirectionDeg = 90,
         AmplitudeNorm = 0.90,
         DurationMs = 220,
