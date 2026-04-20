@@ -413,9 +413,12 @@ public sealed class MacroProcessor : IMacroProcessor
             double heldMs = now - runtime.TriggerDownSinceTick;
             bool cooldownOk = (now - runtime.LastHeadAssistTick) >= cfg.ReFireCooldownMs;
             bool minHoldOk = heldMs >= cfg.MinTriggerHoldMs;
-            bool shouldFire =
-                (cfg.FireOnPress && fireEdge && minHoldOk) ||
-                (!cfg.FireOnPress && cooldownOk && minHoldOk);
+            // FireOnPress is the ADS-snap: fire immediately on the press edge.
+            // Requiring minHoldOk on the edge frame (when heldMs=0) would veto it forever —
+            // so minHoldOk is only gated on the cooldown re-fire path.
+            bool pressFire = cfg.FireOnPress && fireEdge;
+            bool cooldownFire = cooldownOk && minHoldOk && !fireEdge;
+            bool shouldFire = pressFire || cooldownFire;
 
             if (shouldFire)
             {
