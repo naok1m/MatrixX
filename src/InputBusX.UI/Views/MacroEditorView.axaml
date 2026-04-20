@@ -625,6 +625,9 @@
                                 </StackPanel>
                             </Grid>
                             <CheckBox Content="Disparar no primeiro frame (ADS snap)" IsChecked="{Binding FireOnPress}" />
+                            <CheckBox Content="Disparar apenas 1 vez por toque (sem re-fire enquanto segurado)"
+                                      IsChecked="{Binding FireOnce}"
+                                      ToolTip.Tip="Desmarque para re-flicar a cada ReFireCooldownMs enquanto o gatilho está segurado (tracking de longa distância)." />
                         </StackPanel>
                     </Border>
 

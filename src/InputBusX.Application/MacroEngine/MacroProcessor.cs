@@ -417,7 +417,9 @@ public sealed class MacroProcessor : IMacroProcessor
             // Requiring minHoldOk on the edge frame (when heldMs=0) would veto it forever —
             // so minHoldOk is only gated on the cooldown re-fire path.
             bool pressFire = cfg.FireOnPress && fireEdge;
-            bool cooldownFire = cooldownOk && minHoldOk && !fireEdge;
+            // Cooldown re-fire is disabled when FireOnce is set — a single flick per
+            // press-and-hold, user must release+press again to fire again.
+            bool cooldownFire = !cfg.FireOnce && cooldownOk && minHoldOk && !fireEdge;
             bool shouldFire = pressFire || cooldownFire;
 
             if (shouldFire)
