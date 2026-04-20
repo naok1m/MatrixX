@@ -130,17 +130,29 @@ public sealed class TemplateWeaponDetectionService : IWeaponDetectionService, ID
                 bool ephemeral = !IsRunning;
                 if (ephemeral) RebuildReferenceCache(settings);
 
-                using var captured = CaptureRegion(settings);
-                using var liveGray = ToGrayscaleMat(captured);
-                using var liveEdges = ToEdgeMat(liveGray);
+                using var globalCapture = CaptureRegion(settings);
+                using var globalGray = ToGrayscaleMat(globalCapture);
+                var globalKey = (settings.CaptureX, settings.CaptureY,
+                                 settings.CaptureWidth, settings.CaptureHeight);
+                var edgeCache = new Dictionary<(int, int, int, int), Mat>
+                {
+                    [globalKey] = ToEdgeMat(globalGray),
+                };
 
-                var scores = ScoreAllWeapons(liveEdges, settings).ToList();
-                var ordered = scores
-                    .OrderByDescending(s => s.BestScore)
-                    .ToList();
+                List<WeaponScore> ordered;
+                try
+                {
+                    ordered = ScoreAllWeapons(settings, edgeCache)
+                        .OrderByDescending(s => s.BestScore)
+                        .ToList();
+                }
+                finally
+                {
+                    foreach (var m in edgeCache.Values) m.Dispose();
+                }
 
                 var sb = new StringBuilder();
-                sb.AppendLine($"Capture: {captured.Width}×{captured.Height}   " +
+                sb.AppendLine($"Capture: {globalCapture.Width}×{globalCapture.Height}   " +
                               $"Threshold: {settings.MatchThreshold:F2}");
                 sb.AppendLine();
 
@@ -185,7 +197,11 @@ public sealed class TemplateWeaponDetectionService : IWeaponDetectionService, ID
     {
         return Task.Run(() =>
         {
-            using var captured = CaptureRegion(settings);
+            // Respect the weapon's own region when one is configured — that way a
+            // reference captured from the UI matches exactly what the detection loop
+            // will feed into MatchTemplate for this weapon.
+            var region = ResolveRegion(settings, weapon);
+            using var captured = CaptureRegionAt(region.X, region.Y, region.W, region.H);
 
             var dir = GetReferencesDirectory(weapon);
             Directory.CreateDirectory(dir);
@@ -248,24 +264,42 @@ public sealed class TemplateWeaponDetectionService : IWeaponDetectionService, ID
                 var settings = _activeSettings;
                 if (settings == null) break;
 
-                using var captured = CaptureRegion(settings);
-                using var liveGray = ToGrayscaleMat(captured);
+                // Frame-diff fast-path: grab the global region (always) and check stability.
+                // When no weapon uses a custom region, stable + locked-in means we can skip
+                // the tick entirely. When custom regions exist we still have to scan them
+                // every tick, since frame-diff only covers the global region here.
+                using var globalCapture = CaptureRegion(settings);
+                using var globalGray = ToGrayscaleMat(globalCapture);
+                bool stable = IsFrameStable(globalGray);
+                bool anyCustom = settings.Weapons.Any(w => w.UseCustomRegion);
 
-                // Skip template matching entirely when the HUD region is unchanged.
-                bool stable = IsFrameStable(liveGray);
-                if (stable && _currentWeapon != null)
+                if (stable && _currentWeapon != null && !anyCustom)
                 {
                     await Task.Delay(settings.IntervalMs, ct);
                     continue;
                 }
 
-                using var liveEdges = ToEdgeMat(liveGray);
-                var (best, bestScore) = FindBestMatch(liveEdges, settings);
+                // Capture each unique region at most once per tick. Seed with the
+                // already-captured global edges so weapons using the global region hit
+                // the cache without a second grab.
+                var globalKey = (settings.CaptureX, settings.CaptureY,
+                                 settings.CaptureWidth, settings.CaptureHeight);
+                var edgeCache = new Dictionary<(int, int, int, int), Mat>
+                {
+                    [globalKey] = ToEdgeMat(globalGray),
+                };
 
-                WeaponProfile? matched = (best != null && bestScore >= settings.MatchThreshold)
-                    ? best : null;
-
-                ApplyStabilityDebounce(matched);
+                try
+                {
+                    var (best, bestScore) = FindBestMatch(settings, edgeCache);
+                    WeaponProfile? matched = (best != null && bestScore >= settings.MatchThreshold)
+                        ? best : null;
+                    ApplyStabilityDebounce(matched);
+                }
+                finally
+                {
+                    foreach (var m in edgeCache.Values) m.Dispose();
+                }
 
                 await Task.Delay(settings.IntervalMs, ct);
             }
@@ -276,6 +310,23 @@ public sealed class TemplateWeaponDetectionService : IWeaponDetectionService, ID
                 try { await Task.Delay(1000, ct); } catch (OperationCanceledException) { break; }
             }
         }
+    }
+
+    /// <summary>
+    /// Ensures the edges Mat for the given region exists in the cache, capturing on demand.
+    /// Multiple weapons sharing a region only pay for one screen grab per tick.
+    /// </summary>
+    private Mat GetOrCaptureEdges(
+        (int X, int Y, int W, int H) region,
+        Dictionary<(int, int, int, int), Mat> cache)
+    {
+        if (cache.TryGetValue(region, out var cached)) return cached;
+
+        using var bmp = CaptureRegionAt(region.X, region.Y, region.W, region.H);
+        using var gray = ToGrayscaleMat(bmp);
+        var edges = ToEdgeMat(gray);
+        cache[region] = edges;
+        return edges;
     }
 
     private void ApplyStabilityDebounce(WeaponProfile? matched)
@@ -307,12 +358,13 @@ public sealed class TemplateWeaponDetectionService : IWeaponDetectionService, ID
     // ─────────────────────────────────────────────────────────────────────────
 
     private (WeaponProfile? Weapon, double Score) FindBestMatch(
-        Mat liveEdges, WeaponDetectionSettings settings)
+        WeaponDetectionSettings settings,
+        Dictionary<(int, int, int, int), Mat> edgeCache)
     {
         WeaponProfile? best = null;
         double bestScore = double.MinValue;
 
-        foreach (var score in ScoreAllWeapons(liveEdges, settings))
+        foreach (var score in ScoreAllWeapons(settings, edgeCache))
         {
             if (score.ReferenceCount == 0) continue;
             if (score.BestScore > bestScore)
@@ -325,12 +377,13 @@ public sealed class TemplateWeaponDetectionService : IWeaponDetectionService, ID
         return (best, bestScore);
     }
 
-    private IEnumerable<WeaponScore> ScoreAllWeapons(Mat liveEdges, WeaponDetectionSettings settings)
+    private IEnumerable<WeaponScore> ScoreAllWeapons(
+        WeaponDetectionSettings settings,
+        Dictionary<(int, int, int, int), Mat> edgeCache)
     {
-        List<CachedReference> snapshotRefs;
-
         foreach (var weapon in settings.Weapons)
         {
+            List<CachedReference> snapshotRefs;
             lock (_refLock)
             {
                 if (!_referenceCache.TryGetValue(weapon.Id, out var refs) || refs.Count == 0)
@@ -341,6 +394,9 @@ public sealed class TemplateWeaponDetectionService : IWeaponDetectionService, ID
                 // Snapshot the list so we can iterate without holding the lock during CV work.
                 snapshotRefs = [.. refs];
             }
+
+            var region   = ResolveRegion(settings, weapon);
+            var liveEdges = GetOrCaptureEdges(region, edgeCache);
 
             double best = double.MinValue;
             foreach (var r in snapshotRefs)
@@ -471,22 +527,39 @@ public sealed class TemplateWeaponDetectionService : IWeaponDetectionService, ID
     //  Screen capture + frame-diff
     // ─────────────────────────────────────────────────────────────────────────
 
-    private GdiBitmap CaptureRegion(WeaponDetectionSettings s)
+    private GdiBitmap CaptureRegion(WeaponDetectionSettings s) =>
+        CaptureRegionAt(s.CaptureX, s.CaptureY, s.CaptureWidth, s.CaptureHeight);
+
+    /// <summary>Captures a rectangle in virtual desktop coordinates, DPI-aware.</summary>
+    private GdiBitmap CaptureRegionAt(int x, int y, int width, int height)
     {
         float dpiScale = GetDpiScale();
         int screenW = Math.Max(1, GetSystemMetrics(0));
         int screenH = Math.Max(1, GetSystemMetrics(1));
 
-        int physW = Math.Clamp((int)(s.CaptureWidth  * dpiScale), 1, screenW);
-        int physH = Math.Clamp((int)(s.CaptureHeight * dpiScale), 1, screenH);
-        int physX = Math.Clamp((int)(s.CaptureX      * dpiScale), 0, screenW - physW);
-        int physY = Math.Clamp((int)(s.CaptureY      * dpiScale), 0, screenH - physH);
+        int physW = Math.Clamp((int)(width  * dpiScale), 1, screenW);
+        int physH = Math.Clamp((int)(height * dpiScale), 1, screenH);
+        int physX = Math.Clamp((int)(x      * dpiScale), 0, screenW - physW);
+        int physY = Math.Clamp((int)(y      * dpiScale), 0, screenH - physH);
 
         var bmp = new GdiBitmap(physW, physH, PixelFormat.Format32bppArgb);
         using var g = Graphics.FromImage(bmp);
         g.CopyFromScreen(physX, physY, 0, 0, new System.Drawing.Size(physW, physH), CopyPixelOperation.SourceCopy);
         return bmp;
     }
+
+    /// <summary>
+    /// Resolves which screen region to capture for the given weapon. Weapons with
+    /// <see cref="WeaponProfile.UseCustomRegion"/>=true get their own rectangle;
+    /// otherwise they fall back to the global settings region. Returns a 4-tuple
+    /// used as a dictionary key so multiple weapons sharing the same region only
+    /// trigger one screen grab per tick.
+    /// </summary>
+    private static (int X, int Y, int W, int H) ResolveRegion(
+        WeaponDetectionSettings s, WeaponProfile w) =>
+        w.UseCustomRegion
+            ? (w.CaptureX, w.CaptureY, w.CaptureWidth, w.CaptureHeight)
+            : (s.CaptureX, s.CaptureY, s.CaptureWidth, s.CaptureHeight);
 
     private static Mat ToGrayscaleMat(GdiBitmap bmp)
     {

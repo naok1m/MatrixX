@@ -30,4 +30,16 @@ public sealed class WeaponProfile
 
     /// <summary>Interval between simulated trigger presses in ms (lower = faster).</summary>
     public int RapidFireIntervalMs { get; set; } = 50;
+
+    // ── Per-weapon capture region (optional override) ─────────────────────────
+    /// <summary>When true the detection loop captures this weapon from its own
+    /// region instead of the global one. Useful when weapon names differ in width
+    /// so a tight crop per weapon improves the signal-to-noise ratio. When false
+    /// (default), the global <c>WeaponDetectionSettings</c> region is used.</summary>
+    public bool UseCustomRegion { get; set; } = false;
+
+    public int CaptureX { get; set; } = 1700;
+    public int CaptureY { get; set; } = 950;
+    public int CaptureWidth { get; set; } = 300;
+    public int CaptureHeight { get; set; } = 60;
 }
