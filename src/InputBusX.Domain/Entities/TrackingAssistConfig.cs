@@ -57,4 +57,13 @@ public sealed class TrackingAssistConfig
 
     /// <summary>Final intensity multiplier stacked on top of the computed radius.</summary>
     public double IntensityMul { get; set; } = 1.0;
+
+    /// <summary>
+    /// When true, the orbital motion runs continuously at <see cref="BaseRadiusNorm"/>
+    /// without requiring any stick deflection. The orbit still scales up if the player
+    /// moves the stick, but the baseline is always active — no trigger or aim input needed.
+    /// Combined with <c>TriggerSource.None</c> and no ActivationButton, this turns the
+    /// macro into a permanent passive aim-assist overlay on the camera stick.
+    /// </summary>
+    public bool FreeOrbit { get; set; }
 }

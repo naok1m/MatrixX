@@ -85,6 +85,7 @@ public partial class MacroEditorViewModel : ViewModelBase
     [ObservableProperty] private double _taScaleCurve = 0.7;
     [ObservableProperty] private EasingKind _taEasing = EasingKind.EaseInOutSine;
     [ObservableProperty] private double _taIntensityMul = 1.0;
+    [ObservableProperty] private bool _taFreeOrbit;
 
     // ── ScriptedShape (single MotionScript) ──────────────────────────────
     [ObservableProperty] private ShapeKind _shape = ShapeKind.Circle;
@@ -462,6 +463,7 @@ public partial class MacroEditorViewModel : ViewModelBase
             ta.ScaleCurve = TaScaleCurve;
             ta.Easing = TaEasing;
             ta.IntensityMul = TaIntensityMul;
+            ta.FreeOrbit = TaFreeOrbit;
             SelectedMacro.TriggerSource = TriggerSource;
         }
 
@@ -569,6 +571,7 @@ public partial class MacroEditorViewModel : ViewModelBase
         TaScaleCurve = ta.ScaleCurve;
         TaEasing = ta.Easing;
         TaIntensityMul = ta.IntensityMul;
+        TaFreeOrbit = ta.FreeOrbit;
 
         SaveStatus = "";
         UpdateVisibility();

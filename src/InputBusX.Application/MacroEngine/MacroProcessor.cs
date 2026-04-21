@@ -683,7 +683,10 @@ public sealed class MacroProcessor : IMacroProcessor
         }
 
         double magnitude = Math.Sqrt(rawX * rawX + rawY * rawY);
-        if (magnitude < cfg.DeflectionThreshold)
+
+        // FreeOrbit: orbit runs even with no stick input (passive aim assist).
+        // Without FreeOrbit the macro is silent while the stick is idle.
+        if (!cfg.FreeOrbit && magnitude < cfg.DeflectionThreshold)
         {
             runtime.TrackingStartTick = 0;
             return state;
@@ -693,10 +696,21 @@ public sealed class MacroProcessor : IMacroProcessor
         if (runtime.TrackingStartTick == 0)
             runtime.TrackingStartTick = now;
 
-        // Compute orbital radius: scales with stick deflection via power curve
-        double normMag = Math.Clamp((magnitude - cfg.DeflectionThreshold) / (1.0 - cfg.DeflectionThreshold), 0, 1);
-        double radiusFactor = Math.Pow(normMag, cfg.ScaleCurve);
-        double radius = Lerp(cfg.BaseRadiusNorm, cfg.MaxRadiusNorm, radiusFactor) * cfg.IntensityMul * macro.Intensity;
+        // Compute orbital radius: scales with stick deflection via power curve.
+        // In FreeOrbit mode, BaseRadiusNorm is the floor even at zero deflection.
+        double radius;
+        if (magnitude >= cfg.DeflectionThreshold)
+        {
+            double normMag = Math.Clamp((magnitude - cfg.DeflectionThreshold) / (1.0 - cfg.DeflectionThreshold), 0, 1);
+            double radiusFactor = Math.Pow(normMag, cfg.ScaleCurve);
+            radius = Lerp(cfg.BaseRadiusNorm, cfg.MaxRadiusNorm, radiusFactor);
+        }
+        else
+        {
+            // FreeOrbit with idle stick → baseline radius
+            radius = cfg.BaseRadiusNorm;
+        }
+        radius *= cfg.IntensityMul * macro.Intensity;
 
         // Compute orbital position
         double periodMs = cfg.PeriodMs > 0 ? cfg.PeriodMs : 120;

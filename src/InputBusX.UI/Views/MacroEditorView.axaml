@@ -814,6 +814,16 @@
                             <StackPanel Orientation="Horizontal" Spacing="16">
                                 <CheckBox Content="Horário" IsChecked="{Binding TaClockwise}" />
                             </StackPanel>
+
+                            <Border Background="#0D2233" CornerRadius="6" Padding="12,10" Margin="0,4,0,0">
+                                <StackPanel Spacing="6">
+                                    <CheckBox Content="Órbita livre (sem precisar mover o stick)"
+                                              IsChecked="{Binding TaFreeOrbit}"
+                                              FontWeight="SemiBold" Foreground="#00CCFF" />
+                                    <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="#8A8F9A"
+                                               Text="Quando ativado, o macro orbita sozinho usando o raio base mesmo sem input no analógico. Combine com TriggerSource=None e sem botão de ativação para um assist passivo permanente na câmera. Se mover o stick, o raio escala normalmente." />
+                                </StackPanel>
+                            </Border>
                         </StackPanel>
                     </Border>
 
