@@ -377,7 +377,20 @@ public sealed class MacroProcessor : IMacroProcessor
             ? state.LeftTrigger.IsPressed()
             : state.RightTrigger.IsPressed();
 
-        // Track press edge + hold duration for the TriggerHoldTime estimator.
+        // Always track LT (ADS) hold time independently of the fire trigger.
+        // TriggerHoldTime estimator uses this — "how long were you aiming before shooting?"
+        bool adsHeld = state.LeftTrigger.IsPressed();
+        if (adsHeld)
+        {
+            if (runtime.AdsDownSinceTick == 0)
+                runtime.AdsDownSinceTick = now;
+        }
+        else
+        {
+            runtime.AdsDownSinceTick = 0;
+        }
+
+        // Track fire trigger press edge + hold duration.
         if (fireHeld)
         {
             if (runtime.TriggerDownSinceTick == 0)
@@ -426,7 +439,12 @@ public sealed class MacroProcessor : IMacroProcessor
 
             if (shouldFire)
             {
-                var level = EstimateDistance(state, cfg, runtime, heldMs);
+                // ADS hold time: how long LT was pressed before RT fired.
+                // Falls back to fire-trigger hold time if LT wasn't tracked (e.g. TriggerSource=LT).
+                double adsHeldMs = runtime.AdsDownSinceTick > 0
+                    ? now - runtime.AdsDownSinceTick
+                    : heldMs;
+                var level = EstimateDistance(state, cfg, runtime, adsHeldMs);
                 runtime.CurrentHeadAssistLevel = level;
                 runtime.HeadAssistActivationTick = now;
                 runtime.LastHeadAssistTick = now;
@@ -812,7 +830,8 @@ public sealed class MacroProcessor : IMacroProcessor
         public long MotionActivationTick;      // ScriptedShape: start of current motion window
         public long HeadAssistActivationTick;  // HeadAssist: start of current flick
         public long LastHeadAssistTick;        // HeadAssist: cooldown anchor
-        public long TriggerDownSinceTick;      // HeadAssist: fire-trigger edge timestamp
+        public long TriggerDownSinceTick;      // HeadAssist: fire-trigger (RT) edge timestamp
+        public long AdsDownSinceTick;          // HeadAssist: LT (ADS) edge timestamp — for TriggerHoldTime estimator
         public bool WasFirePressed;            // HeadAssist: fire-trigger edge detector
         public bool WasCycleButtonPressed;     // HeadAssist: manual cycle edge detector
         public DistanceLevel ManualLevel = DistanceLevel.Medium;
