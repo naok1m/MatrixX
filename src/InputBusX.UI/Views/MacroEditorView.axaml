@@ -827,6 +827,180 @@
                         </StackPanel>
                     </Border>
 
+                    <!-- ============ AUTO FIRE + NO RECOIL ============ -->
+                    <Border Classes="section-panel" BorderBrush="#FF8C42" BorderThickness="3,0,0,0"
+                            IsVisible="{Binding ShowAutoFireNoRecoilSettings}">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="Auto Fire + No Recoil" FontWeight="SemiBold" FontSize="14" Foreground="#FF8C42" />
+                            <TextBlock Classes="label" TextWrapping="Wrap" Foreground="#8A8F9A"
+                                       Text="Disparo rápido automático com compensação de recoil por arma. Configura intervalo de tiro + compensação X/Y." />
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Gatilho" Classes="label" />
+                                <ComboBox ItemsSource="{Binding TriggerSources}" SelectedItem="{Binding TriggerSource}" MinWidth="200" />
+                            </StackPanel>
+                            <Grid ColumnDefinitions="*,*">
+                                <StackPanel Spacing="4" Margin="0,0,8,0">
+                                    <TextBlock Text="Intervalo de tiro (ms)" Classes="label" />
+                                    <NumericUpDown Value="{Binding MacroIntervalMs}" Minimum="10" Maximum="500" Increment="10" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Spacing="4">
+                                    <TextBlock Text="Randomização" Classes="label" />
+                                    <Slider Value="{Binding MacroRandomization}" Minimum="0" Maximum="1" />
+                                </StackPanel>
+                            </Grid>
+                            <Grid ColumnDefinitions="*,*">
+                                <StackPanel Spacing="4" Margin="0,0,8,0">
+                                    <TextBlock Text="Compensação X" Classes="label" />
+                                    <NumericUpDown Value="{Binding RecoilCompensationX}" Minimum="-32767" Maximum="32767" Increment="500" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Spacing="4">
+                                    <TextBlock Text="Compensação Y" Classes="label" />
+                                    <NumericUpDown Value="{Binding RecoilCompensationY}" Minimum="-32767" Maximum="32767" Increment="500" />
+                                </StackPanel>
+                            </Grid>
+                            <TextBlock Text="Se a detecção de arma estiver ativa, os valores da arma detectada substituem os acima."
+                                       FontSize="10" Foreground="#4A4F5A" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ============ INSTA DROP SHOT ============ -->
+                    <Border Classes="section-panel" BorderBrush="#9C27B0" BorderThickness="3,0,0,0"
+                            IsVisible="{Binding ShowInstaDropShotSettings}">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="Insta Drop Shot" FontWeight="SemiBold" FontSize="14" Foreground="#9C27B0" />
+                            <TextBlock Classes="label" TextWrapping="Wrap" Foreground="#8A8F9A"
+                                       Text="Força o boneco a deitar instantaneamente ao ativar — segura o botão de agachar continuamente para pular o delay normal do jogo. Pode ser manual (botão) ou automático (ao atirar)." />
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Botão de agachar/deitar" Classes="label" />
+                                <ComboBox ItemsSource="{Binding ButtonList}" SelectedItem="{Binding CrouchButton}" MinWidth="200" />
+                                <TextBlock Text="Padrão: B (○). Escolha o botão que seu jogo usa para agachar/deitar."
+                                           FontSize="10" Foreground="#4A4F5A" TextWrapping="Wrap" />
+                            </StackPanel>
+                            <TextBlock Text="Configure o botão de ativação acima para manual, ou use Toggle Mode."
+                                       FontSize="11" Foreground="#FFD93D" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ============ JUMP SHOT ============ -->
+                    <Border Classes="section-panel" BorderBrush="#4CAF50" BorderThickness="3,0,0,0"
+                            IsVisible="{Binding ShowJumpShotSettings}">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="Jump Shot" FontWeight="SemiBold" FontSize="14" Foreground="#4CAF50" />
+                            <TextBlock Classes="label" TextWrapping="Wrap" Foreground="#8A8F9A"
+                                       Text="O personagem pula automaticamente quando você mira ou atira. Útil para bunny hop durante combate." />
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Gatilho (quando pular)" Classes="label" />
+                                <ComboBox ItemsSource="{Binding TriggerSources}" SelectedItem="{Binding TriggerSource}" MinWidth="200" />
+                                <TextBlock Text="LT = pula ao mirar. RT = pula ao atirar." FontSize="10" Foreground="#4A4F5A" />
+                            </StackPanel>
+                            <Grid ColumnDefinitions="*,*">
+                                <StackPanel Spacing="4" Margin="0,0,8,0">
+                                    <TextBlock Text="Botão de pulo" Classes="label" />
+                                    <ComboBox ItemsSource="{Binding ButtonList}" SelectedItem="{Binding JumpButton}" MinWidth="140" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Spacing="4">
+                                    <TextBlock Text="Intervalo entre pulos (ms)" Classes="label" />
+                                    <NumericUpDown Value="{Binding JumpIntervalMs}" Minimum="100" Maximum="2000" Increment="50" />
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ============ STRAFE SHOT ============ -->
+                    <Border Classes="section-panel" BorderBrush="#2196F3" BorderThickness="3,0,0,0"
+                            IsVisible="{Binding ShowStrafeShotSettings}">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="Strafe Shot" FontWeight="SemiBold" FontSize="14" Foreground="#2196F3" />
+                            <TextBlock Classes="label" TextWrapping="Wrap" Foreground="#8A8F9A"
+                                       Text="Enquanto atira, o personagem vai para esquerda e direita automaticamente — dificulta o inimigo acertar." />
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Gatilho" Classes="label" />
+                                <ComboBox ItemsSource="{Binding TriggerSources}" SelectedItem="{Binding TriggerSource}" MinWidth="200" />
+                            </StackPanel>
+                            <Grid ColumnDefinitions="*,*">
+                                <StackPanel Spacing="4" Margin="0,0,8,0">
+                                    <TextBlock Text="Amplitude (0..1)" Classes="label" />
+                                    <NumericUpDown Value="{Binding StrafeAmplitude}" Minimum="0.1" Maximum="1.0" Increment="0.05" FormatString="F2" />
+                                    <TextBlock Text="Quanto o stick move pro lado. 0.6 = 60% do máximo." FontSize="10" Foreground="#4A4F5A" TextWrapping="Wrap" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Spacing="4">
+                                    <TextBlock Text="Velocidade (ms por lado)" Classes="label" />
+                                    <NumericUpDown Value="{Binding StrafeIntervalMs}" Minimum="30" Maximum="500" Increment="10" />
+                                    <TextBlock Text="Menor = mais rápido. 120ms = ~4 strafes/s por lado." FontSize="10" Foreground="#4A4F5A" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ============ HOLD BREATH ============ -->
+                    <Border Classes="section-panel" BorderBrush="#607D8B" BorderThickness="3,0,0,0"
+                            IsVisible="{Binding ShowHoldBreathSettings}">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="Hold Breath" FontWeight="SemiBold" FontSize="14" Foreground="#607D8B" />
+                            <TextBlock Classes="label" TextWrapping="Wrap" Foreground="#8A8F9A"
+                                       Text="Segura a respiração da sniper automaticamente enquanto mira — pressiona e segura L3 ou R3 enquanto o gatilho estiver ativo." />
+                            <Grid ColumnDefinitions="*,*">
+                                <StackPanel Spacing="4" Margin="0,0,8,0">
+                                    <TextBlock Text="Botão de segurar respiração" Classes="label" />
+                                    <ComboBox ItemsSource="{Binding ButtonList}" SelectedItem="{Binding BreathButton}" MinWidth="140" />
+                                    <TextBlock Text="L3 (LeftThumb) ou R3 (RightThumb) — depende do jogo." FontSize="10" Foreground="#4A4F5A" TextWrapping="Wrap" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Spacing="4">
+                                    <TextBlock Text="Gatilho (quando segurar)" Classes="label" />
+                                    <ComboBox ItemsSource="{Binding TriggerSources}" SelectedItem="{Binding TriggerSource}" MinWidth="140" />
+                                    <TextBlock Text="LT = segura ao mirar (ADS). RT = segura ao atirar." FontSize="10" Foreground="#4A4F5A" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ============ SLIDE CANCEL ============ -->
+                    <Border Classes="section-panel" BorderBrush="#FF5722" BorderThickness="3,0,0,0"
+                            IsVisible="{Binding ShowSlideCancelSettings}">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="Slide Cancel" FontWeight="SemiBold" FontSize="14" Foreground="#FF5722" />
+                            <TextBlock Classes="label" TextWrapping="Wrap" Foreground="#8A8F9A"
+                                       Text="Detecta quando você fez slide e cancela automaticamente após X ms — re-pressiona o botão de slide/agachar para cancelar a animação." />
+                            <Grid ColumnDefinitions="*,*,*">
+                                <StackPanel Spacing="4" Margin="0,0,8,0">
+                                    <TextBlock Text="Botão de slide" Classes="label" />
+                                    <ComboBox ItemsSource="{Binding ButtonList}" SelectedItem="{Binding SlideButton}" MinWidth="120" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Spacing="4" Margin="0,0,8,0">
+                                    <TextBlock Text="Delay do cancel (ms)" Classes="label" />
+                                    <NumericUpDown Value="{Binding SlideCancelDelayMs}" Minimum="50" Maximum="500" Increment="10" />
+                                    <TextBlock Text="Tempo entre o slide e o cancel." FontSize="10" Foreground="#4A4F5A" TextWrapping="Wrap" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2" Spacing="4">
+                                    <TextBlock Text="Botão de cancel" Classes="label" />
+                                    <ComboBox ItemsSource="{Binding ButtonList}" SelectedItem="{Binding SlideCancelButton}" MinWidth="120" />
+                                    <TextBlock Text="Mesmo botão = re-press." FontSize="10" Foreground="#4A4F5A" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ============ FAST DROP ============ -->
+                    <Border Classes="section-panel" BorderBrush="#E91E63" BorderThickness="3,0,0,0"
+                            IsVisible="{Binding ShowFastDropSettings}">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="Fast Drop" FontWeight="SemiBold" FontSize="14" Foreground="#E91E63" />
+                            <TextBlock Classes="label" TextWrapping="Wrap" Foreground="#8A8F9A"
+                                       Text="Ao mirar/atirar, segura o botão de agachar ao mesmo tempo — o boneco deita enquanto atira. Soltar o gatilho = para de agachar." />
+                            <Grid ColumnDefinitions="*,*">
+                                <StackPanel Spacing="4" Margin="0,0,8,0">
+                                    <TextBlock Text="Botão de agachar" Classes="label" />
+                                    <ComboBox ItemsSource="{Binding ButtonList}" SelectedItem="{Binding CrouchButton}" MinWidth="160" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Spacing="4">
+                                    <TextBlock Text="Gatilho" Classes="label" />
+                                    <ComboBox ItemsSource="{Binding TriggerSources}" SelectedItem="{Binding TriggerSource}" MinWidth="160" />
+                                    <TextBlock Text="LT = deita ao mirar. RT = deita ao atirar." FontSize="10" Foreground="#4A4F5A" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
                     <!-- ============ TIMING (shared) ============ -->
                     <Border Classes="section-panel" BorderBrush="#4A4F5A" BorderThickness="3,0,0,0"
                             IsVisible="{Binding ShowTimingSettings}">
