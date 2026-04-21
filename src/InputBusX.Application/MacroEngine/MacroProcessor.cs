@@ -43,6 +43,8 @@ public sealed class MacroProcessor : IMacroProcessor
                 MacroType.AimAssistBuff => ProcessAimAssistBuff(state, macro),
                 MacroType.HeadAssist => ProcessHeadAssist(state, macro),
                 MacroType.ScriptedShape => ProcessScriptedShape(state, macro),
+                MacroType.ProgressiveRecoil => ProcessProgressiveRecoil(state, macro),
+                MacroType.TrackingAssist => ProcessTrackingAssist(state, macro),
                 _ => state
             };
         }
@@ -523,6 +525,209 @@ public sealed class MacroProcessor : IMacroProcessor
         return ws > 0 ? ss / ws : 0.5;
     }
 
+    // ─────────────────────────────────────────────────────────────────────
+    //  Progressive Recoil — 3-phase ammo-based compensation with smoothstep
+    // ─────────────────────────────────────────────────────────────────────
+
+    private GamepadState ProcessProgressiveRecoil(GamepadState state, MacroDefinition macro)
+    {
+        var runtime = GetRuntime(macro);
+        var cfg = macro.ProgressiveRecoil;
+        long now = Environment.TickCount64;
+
+        bool isShooting = macro.TriggerSource switch
+        {
+            TriggerSource.LeftTrigger  => state.LeftTrigger.IsPressed(),
+            TriggerSource.RightTrigger => state.RightTrigger.IsPressed(),
+            _ => false,
+        };
+
+        // Activation gate (same as NoRecoil)
+        bool isActive;
+        if (macro.ToggleMode && macro.ActivationButton.HasValue)
+        {
+            bool pressed = state.IsButtonPressed(macro.ActivationButton.Value);
+            if (pressed && !runtime.WasPressed)
+                runtime.ToggleState = !runtime.ToggleState;
+            runtime.WasPressed = pressed;
+            isActive = runtime.ToggleState;
+        }
+        else
+        {
+            isActive = !macro.ActivationButton.HasValue
+                || state.IsButtonPressed(macro.ActivationButton.Value);
+        }
+
+        if (!isActive || !isShooting)
+        {
+            runtime.ProgressiveFireStartTick = 0;
+            return state;
+        }
+
+        // Start timer on fire edge
+        if (runtime.ProgressiveFireStartTick == 0)
+            runtime.ProgressiveFireStartTick = now;
+
+        // Sensitivity: scales duration inversely and compensation inversely
+        double sensMul = cfg.SensitivityScale > 0 ? cfg.SensitivityScale : 1.0;
+        double effectiveDuration = cfg.FullMagDurationMs / sensMul;
+        double compScale = 1.0 / sensMul;
+
+        double elapsedMs = now - runtime.ProgressiveFireStartTick;
+        double progress = Math.Clamp(elapsedMs / effectiveDuration, 0.0, 1.0);
+
+        // Phase boundaries (split by ammo thirds)
+        int total = Math.Max(cfg.TotalAmmo, 3);
+        int startCount = total / 3;
+        int midCount = (total - startCount) / 2;
+        // Phase time boundaries (proportional to ammo split)
+        double p1 = (double)startCount / total;           // ~0.333
+        double p2 = (double)(startCount + midCount) / total; // ~0.667
+
+        // Interpolate compensation X/Y based on progress through phases
+        double compX, compY;
+        if (progress <= p1)
+        {
+            // Phase 1 — pure start values
+            double t = progress / p1;
+            double eased = ApplyPhaseEasing(cfg.PhaseEasing, t);
+            compX = Lerp(0, cfg.StartCompX, eased);
+            compY = Lerp(0, cfg.StartCompY, eased);
+        }
+        else if (progress <= p2)
+        {
+            // Phase 2 — blend start → mid
+            double t = (progress - p1) / (p2 - p1);
+            double eased = ApplyPhaseEasing(cfg.PhaseEasing, t);
+            compX = Lerp(cfg.StartCompX, cfg.MidCompX, eased);
+            compY = Lerp(cfg.StartCompY, cfg.MidCompY, eased);
+        }
+        else
+        {
+            // Phase 3 — blend mid → end
+            double t = (progress - p2) / (1.0 - p2);
+            double eased = ApplyPhaseEasing(cfg.PhaseEasing, t);
+            compX = Lerp(cfg.MidCompX, cfg.EndCompX, eased);
+            compY = Lerp(cfg.MidCompY, cfg.EndCompY, eased);
+        }
+
+        // Apply sensitivity scaling to compensation
+        compX *= compScale * macro.Intensity;
+        compY *= compScale * macro.Intensity;
+
+        // Add noise
+        if (cfg.NoiseFactor > 0)
+        {
+            double noiseRange = cfg.NoiseFactor * 100.0;
+            compX += _random.NextDouble() * noiseRange * 2 - noiseRange;
+            compY += _random.NextDouble() * noiseRange * 2 - noiseRange;
+        }
+
+        state.RightStick = new StickPosition(
+            (short)Math.Clamp(state.RightStick.X + (int)compX, short.MinValue, short.MaxValue),
+            (short)Math.Clamp(state.RightStick.Y + (int)compY, short.MinValue, short.MaxValue));
+
+        return state;
+    }
+
+    private static double ApplyPhaseEasing(EasingKind kind, double t)
+    {
+        t = Math.Clamp(t, 0, 1);
+        return kind switch
+        {
+            EasingKind.Smoothstep    => t * t * (3.0 - 2.0 * t),
+            EasingKind.EaseInOutSine => 0.5 - 0.5 * Math.Cos(Math.PI * t),
+            EasingKind.EaseOutCubic  => 1.0 - Math.Pow(1.0 - t, 3.0),
+            EasingKind.Linear        => t,
+            _ => t * t * (3.0 - 2.0 * t), // default to smoothstep
+        };
+    }
+
+    private static double Lerp(double a, double b, double t) => a + (b - a) * t;
+
+    // ─────────────────────────────────────────────────────────────────────
+    //  Tracking Assist — orbital aim-assist overlay that follows stick input
+    // ─────────────────────────────────────────────────────────────────────
+
+    private GamepadState ProcessTrackingAssist(GamepadState state, MacroDefinition macro)
+    {
+        var runtime = GetRuntime(macro);
+        var cfg = macro.TrackingAssist;
+        long now = Environment.TickCount64;
+
+        // Trigger gate (same as AimAssistBuff)
+        bool isShooting = macro.TriggerSource switch
+        {
+            TriggerSource.LeftTrigger  => state.LeftTrigger.IsPressed(),
+            TriggerSource.RightTrigger => state.RightTrigger.IsPressed(),
+            _ => true, // None = always active when activation held
+        };
+
+        if (!isShooting)
+        {
+            runtime.TrackingStartTick = 0;
+            return state;
+        }
+
+        // Read current stick deflection from the TARGET stick
+        double rawX, rawY;
+        if (cfg.Target == StickTargetKind.Left)
+        {
+            rawX = state.LeftStick.X / 32767.0;
+            rawY = state.LeftStick.Y / 32767.0;
+        }
+        else
+        {
+            rawX = state.RightStick.X / 32767.0;
+            rawY = state.RightStick.Y / 32767.0;
+        }
+
+        double magnitude = Math.Sqrt(rawX * rawX + rawY * rawY);
+        if (magnitude < cfg.DeflectionThreshold)
+        {
+            runtime.TrackingStartTick = 0;
+            return state;
+        }
+
+        // Start orbital timer on activation edge
+        if (runtime.TrackingStartTick == 0)
+            runtime.TrackingStartTick = now;
+
+        // Compute orbital radius: scales with stick deflection via power curve
+        double normMag = Math.Clamp((magnitude - cfg.DeflectionThreshold) / (1.0 - cfg.DeflectionThreshold), 0, 1);
+        double radiusFactor = Math.Pow(normMag, cfg.ScaleCurve);
+        double radius = Lerp(cfg.BaseRadiusNorm, cfg.MaxRadiusNorm, radiusFactor) * cfg.IntensityMul * macro.Intensity;
+
+        // Compute orbital position
+        double periodMs = cfg.PeriodMs > 0 ? cfg.PeriodMs : 120;
+        double elapsedMs = now - runtime.TrackingStartTick;
+        double sign = cfg.Clockwise ? 1.0 : -1.0;
+        double theta = sign * (elapsedMs / periodMs) * 2.0 * Math.PI;
+
+        double orbitX = radius * Math.Cos(theta);
+        double orbitY = radius * Math.Sin(theta);
+
+        // Always additive — overlay on top of player input
+        double scale = 32767.0;
+        short dx = (short)Math.Clamp(orbitX * scale, short.MinValue, short.MaxValue);
+        short dy = (short)Math.Clamp(orbitY * scale, short.MinValue, short.MaxValue);
+
+        if (cfg.Target == StickTargetKind.Left)
+        {
+            state.LeftStick = new StickPosition(
+                (short)Math.Clamp(state.LeftStick.X + dx, short.MinValue, short.MaxValue),
+                (short)Math.Clamp(state.LeftStick.Y + dy, short.MinValue, short.MaxValue));
+        }
+        else
+        {
+            state.RightStick = new StickPosition(
+                (short)Math.Clamp(state.RightStick.X + dx, short.MinValue, short.MaxValue),
+                (short)Math.Clamp(state.RightStick.Y + dy, short.MinValue, short.MaxValue));
+        }
+
+        return state;
+    }
+
     /// <summary>
     /// Resolves whether a scripted macro is active right now: respects
     /// toggle-mode, trigger source, and activation button just like NoRecoil.
@@ -598,5 +803,11 @@ public sealed class MacroProcessor : IMacroProcessor
         public bool WasCycleButtonPressed;     // HeadAssist: manual cycle edge detector
         public DistanceLevel ManualLevel = DistanceLevel.Medium;
         public DistanceLevel CurrentHeadAssistLevel = DistanceLevel.Medium;
+
+        // ProgressiveRecoil — fire-start timestamp
+        public long ProgressiveFireStartTick;
+
+        // TrackingAssist — orbital timer
+        public long TrackingStartTick;
     }
 }

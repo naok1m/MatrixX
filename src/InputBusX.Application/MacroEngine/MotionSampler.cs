@@ -113,9 +113,13 @@ public static class MotionSampler
             EasingKind.EaseOutCubic  => 1.0 - Math.Pow(1.0 - t, 3.0),
             EasingKind.EaseInOutSine => 0.5 - 0.5 * Math.Cos(Math.PI * t),
             EasingKind.EaseOutBack   => EaseOutBack(t),
+            EasingKind.Smoothstep    => t * t * (3.0 - 2.0 * t),
             _ => t,
         };
     }
+
+    /// <summary>Public smoothstep for reuse by progressive recoil phase blending.</summary>
+    public static double Smoothstep(double t) => Math.Clamp(t, 0, 1) is var c ? c * c * (3.0 - 2.0 * c) : 0;
 
     private static double EaseOutBack(double t)
     {

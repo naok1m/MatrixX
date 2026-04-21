@@ -55,9 +55,36 @@ public partial class MacroEditorViewModel : ViewModelBase
     [ObservableProperty] private bool _showAimAssistBuffSettings;
     [ObservableProperty] private bool _showScriptedShapeSettings;
     [ObservableProperty] private bool _showHeadAssistSettings;
+    [ObservableProperty] private bool _showProgressiveRecoilSettings;
+    [ObservableProperty] private bool _showTrackingAssistSettings;
 
     [ObservableProperty] private string _saveStatus = "";
     [ObservableProperty] private GamepadButton _pingButton;
+
+    // ── Progressive Recoil ───────────────────────────────────────────────
+    [ObservableProperty] private int _prTotalAmmo = 60;
+    [ObservableProperty] private double _prFullMagDurationMs = 2500;
+    [ObservableProperty] private int _prStartCompX;
+    [ObservableProperty] private int _prStartCompY = -3000;
+    [ObservableProperty] private int _prMidCompX;
+    [ObservableProperty] private int _prMidCompY = -5000;
+    [ObservableProperty] private int _prEndCompX;
+    [ObservableProperty] private int _prEndCompY = -7000;
+    [ObservableProperty] private EasingKind _prPhaseEasing = EasingKind.Smoothstep;
+    [ObservableProperty] private double _prNoiseFactor = 0.15;
+    [ObservableProperty] private double _prSensitivityScale = 1.0;
+
+    // ── Tracking Assist ─────────────────────────────────────────────────
+    [ObservableProperty] private ShapeKind _taShape = ShapeKind.Circle;
+    [ObservableProperty] private StickTargetKind _taTarget = StickTargetKind.Right;
+    [ObservableProperty] private double _taBaseRadius = 0.08;
+    [ObservableProperty] private double _taMaxRadius = 0.25;
+    [ObservableProperty] private double _taPeriodMs = 120;
+    [ObservableProperty] private bool _taClockwise = true;
+    [ObservableProperty] private double _taDeflectionThreshold = 0.10;
+    [ObservableProperty] private double _taScaleCurve = 0.7;
+    [ObservableProperty] private EasingKind _taEasing = EasingKind.EaseInOutSine;
+    [ObservableProperty] private double _taIntensityMul = 1.0;
 
     // ── ScriptedShape (single MotionScript) ──────────────────────────────
     [ObservableProperty] private ShapeKind _shape = ShapeKind.Circle;
@@ -133,6 +160,8 @@ public partial class MacroEditorViewModel : ViewModelBase
         ShowAimAssistBuffSettings = SelectedMacroType == MacroType.AimAssistBuff;
         ShowScriptedShapeSettings = SelectedMacroType == MacroType.ScriptedShape;
         ShowHeadAssistSettings = SelectedMacroType == MacroType.HeadAssist;
+        ShowProgressiveRecoilSettings = SelectedMacroType == MacroType.ProgressiveRecoil;
+        ShowTrackingAssistSettings = SelectedMacroType == MacroType.TrackingAssist;
         ShowTimingSettings = SelectedMacroType is MacroType.AutoFire or MacroType.AutoPing or MacroType.Sequence;
     }
 
@@ -401,6 +430,41 @@ public partial class MacroEditorViewModel : ViewModelBase
             SelectedMacro.TriggerSource = TriggerSource;
         }
 
+        // ProgressiveRecoil
+        if (SelectedMacroType == MacroType.ProgressiveRecoil)
+        {
+            var pr = SelectedMacro.ProgressiveRecoil;
+            pr.TotalAmmo = PrTotalAmmo;
+            pr.FullMagDurationMs = PrFullMagDurationMs;
+            pr.StartCompX = PrStartCompX;
+            pr.StartCompY = PrStartCompY;
+            pr.MidCompX = PrMidCompX;
+            pr.MidCompY = PrMidCompY;
+            pr.EndCompX = PrEndCompX;
+            pr.EndCompY = PrEndCompY;
+            pr.PhaseEasing = PrPhaseEasing;
+            pr.NoiseFactor = PrNoiseFactor;
+            pr.SensitivityScale = PrSensitivityScale;
+            SelectedMacro.TriggerSource = TriggerSource;
+        }
+
+        // TrackingAssist
+        if (SelectedMacroType == MacroType.TrackingAssist)
+        {
+            var ta = SelectedMacro.TrackingAssist;
+            ta.Shape = TaShape;
+            ta.Target = TaTarget;
+            ta.BaseRadiusNorm = TaBaseRadius;
+            ta.MaxRadiusNorm = TaMaxRadius;
+            ta.PeriodMs = TaPeriodMs;
+            ta.Clockwise = TaClockwise;
+            ta.DeflectionThreshold = TaDeflectionThreshold;
+            ta.ScaleCurve = TaScaleCurve;
+            ta.Easing = TaEasing;
+            ta.IntensityMul = TaIntensityMul;
+            SelectedMacro.TriggerSource = TriggerSource;
+        }
+
         _profileManager.SaveProfile(_profileManager.ActiveProfile);
         SaveStatus = "Saved!";
         _logger.LogInformation("Saved macro: {Name} (Type: {Type}, Activation: {Activation})",
@@ -425,9 +489,7 @@ public partial class MacroEditorViewModel : ViewModelBase
         ToggleMode = value.ToggleMode;
         ActivationButton = value.ActivationButton ?? GamepadButton.None;
         PingButton = value.PingButton ?? GamepadButton.DPadUp;
-        TriggerSource = (value.TriggerSource != TriggerSource.LeftTrigger && value.TriggerSource != TriggerSource.RightTrigger)
-            ? TriggerSource.RightTrigger
-            : value.TriggerSource;
+        TriggerSource = value.TriggerSource;
         ActionButton = value.TargetButton ?? GamepadButton.None;
         SourceButton = value.SourceButton ?? GamepadButton.None;
         TargetButton = value.TargetButton ?? GamepadButton.None;
@@ -480,6 +542,33 @@ public partial class MacroEditorViewModel : ViewModelBase
         HaLongDirDeg = ha.LongRange.DirectionDeg;
         HaStickTarget = ha.ShortRange.Target;
         HaAdditive = ha.ShortRange.Additive;
+
+        // ProgressiveRecoil
+        var pr = value.ProgressiveRecoil;
+        PrTotalAmmo = pr.TotalAmmo;
+        PrFullMagDurationMs = pr.FullMagDurationMs;
+        PrStartCompX = pr.StartCompX;
+        PrStartCompY = pr.StartCompY;
+        PrMidCompX = pr.MidCompX;
+        PrMidCompY = pr.MidCompY;
+        PrEndCompX = pr.EndCompX;
+        PrEndCompY = pr.EndCompY;
+        PrPhaseEasing = pr.PhaseEasing;
+        PrNoiseFactor = pr.NoiseFactor;
+        PrSensitivityScale = pr.SensitivityScale;
+
+        // TrackingAssist
+        var ta = value.TrackingAssist;
+        TaShape = ta.Shape;
+        TaTarget = ta.Target;
+        TaBaseRadius = ta.BaseRadiusNorm;
+        TaMaxRadius = ta.MaxRadiusNorm;
+        TaPeriodMs = ta.PeriodMs;
+        TaClockwise = ta.Clockwise;
+        TaDeflectionThreshold = ta.DeflectionThreshold;
+        TaScaleCurve = ta.ScaleCurve;
+        TaEasing = ta.Easing;
+        TaIntensityMul = ta.IntensityMul;
 
         SaveStatus = "";
         UpdateVisibility();

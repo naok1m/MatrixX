@@ -53,6 +53,14 @@ public sealed class MacroDefinition
     // ── Head Assist (HeadAssist macro type) ──────────────────────────────
     /// <summary>Distance-adaptive flick configuration for <see cref="MacroType.HeadAssist"/>.</summary>
     public HeadAssistConfig HeadAssist { get; set; } = new();
+
+    // ── Progressive Recoil (ProgressiveRecoil macro type) ───────────────
+    /// <summary>3-phase recoil compensation for <see cref="MacroType.ProgressiveRecoil"/>.</summary>
+    public ProgressiveRecoilConfig ProgressiveRecoil { get; set; } = new();
+
+    // ── Tracking Assist (TrackingAssist macro type) ─────────────────────
+    /// <summary>Orbital tracking overlay for <see cref="MacroType.TrackingAssist"/>.</summary>
+    public TrackingAssistConfig TrackingAssist { get; set; } = new();
 }
 
 public sealed class MacroStep

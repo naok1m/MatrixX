@@ -14,4 +14,7 @@ public enum EasingKind
     EaseOutCubic,
     EaseInOutSine,
     EaseOutBack,
+
+    /// <summary>Hermite smoothstep — smooth transition ideal for progressive recoil phase blending.</summary>
+    Smoothstep,
 }

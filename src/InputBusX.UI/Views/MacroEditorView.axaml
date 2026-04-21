@@ -653,6 +653,170 @@
                         </StackPanel>
                     </Border>
 
+                    <!-- ============ PROGRESSIVE RECOIL ============ -->
+                    <Border Classes="section-panel" BorderBrush="#FF4444" BorderThickness="3,0,0,0"
+                            IsVisible="{Binding ShowProgressiveRecoilSettings}">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="Progressive No-Recoil" FontWeight="SemiBold" FontSize="14" Foreground="#FF4444" />
+                            <TextBlock Classes="label" TextWrapping="Wrap" Foreground="#8A8F9A"
+                                       Text="Compensação em 3 fases (início/meio/fim) baseada nas munições da arma. Transições usam smoothstep para não 'pular' entre fases." />
+
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Gatilho de tiro" Classes="label" />
+                                <ComboBox ItemsSource="{Binding TriggerSources}" SelectedItem="{Binding TriggerSource}" MinWidth="200" />
+                            </StackPanel>
+
+                            <Grid ColumnDefinitions="*,*">
+                                <StackPanel Spacing="4" Margin="0,0,8,0">
+                                    <TextBlock Text="Munições totais" Classes="label" />
+                                    <NumericUpDown Value="{Binding PrTotalAmmo}" Minimum="3" Maximum="300" Increment="1" />
+                                    <TextBlock Text="Ex: M4=30, RPD=100, SMG=47" FontSize="10" Foreground="#4A4F5A" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Spacing="4">
+                                    <TextBlock Text="Tempo do pente cheio (ms)" Classes="label" />
+                                    <NumericUpDown Value="{Binding PrFullMagDurationMs}" Minimum="500" Maximum="10000" Increment="100" />
+                                    <TextBlock Text="2000–2500ms para rifles, 3000+ para LMGs" FontSize="10" Foreground="#4A4F5A" />
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Phase 1 - Start -->
+                            <Border Classes="section-panel" BorderBrush="#00FF9C" BorderThickness="2,0,0,0">
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="Fase 1 — Início (primeiro 1/3 do pente)" FontWeight="SemiBold" Foreground="#00FF9C" />
+                                    <Grid ColumnDefinitions="*,*">
+                                        <StackPanel Spacing="4" Margin="0,0,8,0">
+                                            <TextBlock Text="Compensação X (horizontal)" Classes="label" />
+                                            <NumericUpDown Value="{Binding PrStartCompX}" Minimum="-32767" Maximum="32767" Increment="500" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" Spacing="4">
+                                            <TextBlock Text="Compensação Y (vertical)" Classes="label" />
+                                            <NumericUpDown Value="{Binding PrStartCompY}" Minimum="-32767" Maximum="32767" Increment="500" />
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Phase 2 - Mid -->
+                            <Border Classes="section-panel" BorderBrush="#FFD93D" BorderThickness="2,0,0,0">
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="Fase 2 — Meio (segundo 1/3)" FontWeight="SemiBold" Foreground="#FFD93D" />
+                                    <Grid ColumnDefinitions="*,*">
+                                        <StackPanel Spacing="4" Margin="0,0,8,0">
+                                            <TextBlock Text="Compensação X" Classes="label" />
+                                            <NumericUpDown Value="{Binding PrMidCompX}" Minimum="-32767" Maximum="32767" Increment="500" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" Spacing="4">
+                                            <TextBlock Text="Compensação Y" Classes="label" />
+                                            <NumericUpDown Value="{Binding PrMidCompY}" Minimum="-32767" Maximum="32767" Increment="500" />
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Phase 3 - End -->
+                            <Border Classes="section-panel" BorderBrush="#FF6B6B" BorderThickness="2,0,0,0">
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="Fase 3 — Fim (último 1/3)" FontWeight="SemiBold" Foreground="#FF6B6B" />
+                                    <Grid ColumnDefinitions="*,*">
+                                        <StackPanel Spacing="4" Margin="0,0,8,0">
+                                            <TextBlock Text="Compensação X" Classes="label" />
+                                            <NumericUpDown Value="{Binding PrEndCompX}" Minimum="-32767" Maximum="32767" Increment="500" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" Spacing="4">
+                                            <TextBlock Text="Compensação Y" Classes="label" />
+                                            <NumericUpDown Value="{Binding PrEndCompY}" Minimum="-32767" Maximum="32767" Increment="500" />
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <Grid ColumnDefinitions="*,*,*">
+                                <StackPanel Spacing="4" Margin="0,0,8,0">
+                                    <TextBlock Text="Easing entre fases" Classes="label" />
+                                    <ComboBox ItemsSource="{Binding EasingKinds}" SelectedItem="{Binding PrPhaseEasing}" MinWidth="140" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Spacing="4" Margin="0,0,8,0">
+                                    <TextBlock Text="Ruído anti-padrão" Classes="label" />
+                                    <NumericUpDown Value="{Binding PrNoiseFactor}" Minimum="0" Maximum="1" Increment="0.05" FormatString="F2" />
+                                    <TextBlock Text="0.15 = 15% recomendado" FontSize="10" Foreground="#4A4F5A" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2" Spacing="4">
+                                    <TextBlock Text="Escala de sensibilidade" Classes="label" />
+                                    <NumericUpDown Value="{Binding PrSensitivityScale}" Minimum="0.1" Maximum="5" Increment="0.1" FormatString="F1" />
+                                    <TextBlock Text="2.0 = alta sens (metade comp, metade tempo)" FontSize="10" Foreground="#4A4F5A" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Grid>
+
+                            <Border Background="#1A1D22" CornerRadius="4" Padding="10,8">
+                                <TextBlock FontSize="11" Foreground="#FFD93D" TextWrapping="Wrap"
+                                           Text="Y negativo = puxa pra baixo (compensa recoil subindo). Comece com -3000/-5000/-7000 e ajuste. O smoothstep mistura suavemente entre as fases." />
+                            </Border>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ============ TRACKING ASSIST ============ -->
+                    <Border Classes="section-panel" BorderBrush="#00CCFF" BorderThickness="3,0,0,0"
+                            IsVisible="{Binding ShowTrackingAssistSettings}">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="Tracking Assist" FontWeight="SemiBold" FontSize="14" Foreground="#00CCFF" />
+                            <TextBlock Classes="label" TextWrapping="Wrap" Foreground="#8A8F9A"
+                                       Text="Enquanto você tracka um inimigo, adiciona movimentos orbitais no stick de mira que 'magnetizam' o aim assist do jogo ao alvo. Mais movimento = órbita maior = mais aim assist." />
+
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Gatilho de ativação" Classes="label" />
+                                <ComboBox ItemsSource="{Binding TriggerSources}" SelectedItem="{Binding TriggerSource}" MinWidth="200" />
+                                <TextBlock Text="LT = ativa na mira (ADS). RT = ativa atirando. None = sempre." FontSize="10" Foreground="#4A4F5A" />
+                            </StackPanel>
+
+                            <Grid ColumnDefinitions="*,*">
+                                <StackPanel Spacing="4" Margin="0,0,8,0">
+                                    <TextBlock Text="Analógico alvo" Classes="label" />
+                                    <ComboBox ItemsSource="{Binding StickTargetKinds}" SelectedItem="{Binding TaTarget}" MinWidth="140" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Spacing="4">
+                                    <TextBlock Text="Shape orbital" Classes="label" />
+                                    <ComboBox ItemsSource="{Binding ShapeKinds}" SelectedItem="{Binding TaShape}" MinWidth="140" />
+                                </StackPanel>
+                            </Grid>
+
+                            <Grid ColumnDefinitions="*,*,*">
+                                <StackPanel Spacing="4" Margin="0,0,8,0">
+                                    <TextBlock Text="Raio base (parado)" Classes="label" />
+                                    <NumericUpDown Value="{Binding TaBaseRadius}" Minimum="0.01" Maximum="0.5" Increment="0.01" FormatString="F2" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Spacing="4" Margin="0,0,8,0">
+                                    <TextBlock Text="Raio máximo (full deflection)" Classes="label" />
+                                    <NumericUpDown Value="{Binding TaMaxRadius}" Minimum="0.05" Maximum="1.0" Increment="0.05" FormatString="F2" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2" Spacing="4">
+                                    <TextBlock Text="Período orbital (ms)" Classes="label" />
+                                    <NumericUpDown Value="{Binding TaPeriodMs}" Minimum="30" Maximum="1000" Increment="10" />
+                                </StackPanel>
+                            </Grid>
+
+                            <Grid ColumnDefinitions="*,*,*">
+                                <StackPanel Spacing="4" Margin="0,0,8,0">
+                                    <TextBlock Text="Threshold mínimo" Classes="label" />
+                                    <NumericUpDown Value="{Binding TaDeflectionThreshold}" Minimum="0" Maximum="0.5" Increment="0.05" FormatString="F2" />
+                                    <TextBlock Text="Abaixo disso = sem wobble" FontSize="10" Foreground="#4A4F5A" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Spacing="4" Margin="0,0,8,0">
+                                    <TextBlock Text="Curva de escala" Classes="label" />
+                                    <NumericUpDown Value="{Binding TaScaleCurve}" Minimum="0.1" Maximum="3.0" Increment="0.1" FormatString="F1" />
+                                    <TextBlock Text="&lt;1 = agressivo, &gt;1 = gradual" FontSize="10" Foreground="#4A4F5A" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2" Spacing="4">
+                                    <TextBlock Text="Intensidade" Classes="label" />
+                                    <NumericUpDown Value="{Binding TaIntensityMul}" Minimum="0.1" Maximum="3.0" Increment="0.1" FormatString="F1" />
+                                </StackPanel>
+                            </Grid>
+
+                            <StackPanel Orientation="Horizontal" Spacing="16">
+                                <CheckBox Content="Horário" IsChecked="{Binding TaClockwise}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
                     <!-- ============ TIMING (shared) ============ -->
                     <Border Classes="section-panel" BorderBrush="#4A4F5A" BorderThickness="3,0,0,0"
                             IsVisible="{Binding ShowTimingSettings}">
