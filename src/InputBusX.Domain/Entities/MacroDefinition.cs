@@ -61,6 +61,34 @@ public sealed class MacroDefinition
     // ── Tracking Assist (TrackingAssist macro type) ─────────────────────
     /// <summary>Orbital tracking overlay for <see cref="MacroType.TrackingAssist"/>.</summary>
     public TrackingAssistConfig TrackingAssist { get; set; } = new();
+
+    // ── InstaDropShot / FastDrop ─────────────────────────────────────────
+    /// <summary>Button used to crouch/prone (default B). Used by InstaDropShot and FastDrop.</summary>
+    public GamepadButton CrouchButton { get; set; } = GamepadButton.B;
+
+    // ── JumpShot ─────────────────────────────────────────────────────────
+    /// <summary>Button used to jump (default A). Used by JumpShot.</summary>
+    public GamepadButton JumpButton { get; set; } = GamepadButton.A;
+    /// <summary>Interval between jumps in ms (prevents spam). Used by JumpShot.</summary>
+    public int JumpIntervalMs { get; set; } = 500;
+
+    // ── StrafeShot ───────────────────────────────────────────────────────
+    /// <summary>How far the left stick strafes (0..1, normalised). Used by StrafeShot.</summary>
+    public double StrafeAmplitude { get; set; } = 0.60;
+    /// <summary>How fast the strafe oscillates in ms per side. Used by StrafeShot.</summary>
+    public int StrafeIntervalMs { get; set; } = 120;
+
+    // ── HoldBreath ───────────────────────────────────────────────────────
+    /// <summary>Stick button to press for holding breath (L3 or R3). Used by HoldBreath.</summary>
+    public GamepadButton BreathButton { get; set; } = GamepadButton.LeftThumb;
+
+    // ── SlideCancel ──────────────────────────────────────────────────────
+    /// <summary>Button that initiates the slide (default B). Used by SlideCancel.</summary>
+    public GamepadButton SlideButton { get; set; } = GamepadButton.B;
+    /// <summary>Delay in ms after the slide button press before the cancel re-press fires.</summary>
+    public int SlideCancelDelayMs { get; set; } = 180;
+    /// <summary>Button to cancel the slide (default B again, or crouch). Leave same as SlideButton for a re-press cancel.</summary>
+    public GamepadButton SlideCancelButton { get; set; } = GamepadButton.B;
 }
 
 public sealed class MacroStep

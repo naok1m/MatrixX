@@ -22,5 +22,26 @@ public enum MacroType
     /// <summary>Additive orbital motion that follows stick movement — simulates tracking for aim assist buff.</summary>
     TrackingAssist,
 
+    /// <summary>Auto-fire + no-recoil combined — rapid trigger presses with per-weapon recoil compensation.</summary>
+    AutoFireNoRecoil,
+
+    /// <summary>Instantly goes prone (crouch button held) on activation — bypasses the normal crouch→prone delay.</summary>
+    InstaDropShot,
+
+    /// <summary>Player jumps automatically when shooting or aiming — user configures the trigger.</summary>
+    JumpShot,
+
+    /// <summary>Strafes left/right while shooting — alternating left stick X input.</summary>
+    StrafeShot,
+
+    /// <summary>Auto-holds breath (L3/R3) when aiming with a sniper — presses and holds the chosen stick button while ADS.</summary>
+    HoldBreath,
+
+    /// <summary>Detects a slide and auto-cancels it after a configurable delay by re-pressing the slide button.</summary>
+    SlideCancel,
+
+    /// <summary>ADS + quick crouch tap = instant drop-shot while firing — combines aim and prone in one press.</summary>
+    FastDrop,
+
     Custom
 }
