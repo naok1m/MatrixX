@@ -10,7 +10,7 @@
             <DockPanel>
                 <TextBlock Text="Macros" Classes="section-header" DockPanel.Dock="Top" />
 
-                <StackPanel DockPanel.Dock="Bottom" Spacing="6" Margin="0,8,0,0">
+                <StackPanel DockPanel.Dock="Bottom" Spacing="4" Margin="0,8,0,0">
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <Button Content="+ Add" Command="{Binding AddMacroCommand}" Classes="accent"
                                 ToolTip.Tip="Criar novo macro  (Ctrl+N)"
@@ -18,17 +18,17 @@
                         <Button Content="Delete" Command="{Binding DeleteMacroCommand}" Classes="danger"
                                 ToolTip.Tip="Deletar macro selecionado  (Del)"
                                 AutomationProperties.Name="Delete selected macro" />
+                        <Button Content="⬇ Importar" Command="{Binding ImportMacrosCommand}" Classes="accent"
+                                ToolTip.Tip="Importa macros de um arquivo .matrixmacros exportado anteriormente"
+                                AutomationProperties.Name="Import macros" />
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <Button Content="⬆ Exportar" Command="{Binding ExportSelectedMacroCommand}"
-                                ToolTip.Tip="Exporta o macro selecionado para um arquivo .json"
+                                ToolTip.Tip="Exporta o macro selecionado para .matrixmacros"
                                 AutomationProperties.Name="Export selected macro" />
-                        <Button Content="⬆⬆ Exportar Todos" Command="{Binding ExportAllMacrosCommand}"
-                                ToolTip.Tip="Exporta todos os macros do perfil para um arquivo .json"
+                        <Button Content="⬆⬆ Todos" Command="{Binding ExportAllMacrosCommand}"
+                                ToolTip.Tip="Exporta todos os macros do perfil"
                                 AutomationProperties.Name="Export all macros" />
-                        <Button Content="⬇ Importar" Command="{Binding ImportMacrosCommand}" Classes="accent"
-                                ToolTip.Tip="Importa macros de um arquivo .json exportado anteriormente"
-                                AutomationProperties.Name="Import macros" />
                     </StackPanel>
                 </StackPanel>
 
