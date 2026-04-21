@@ -772,6 +772,9 @@ public sealed class MacroProcessor : IMacroProcessor
     // ═══════════════════════════════════════════════════════════════════════
     private GamepadState ProcessAutoFireNoRecoil(GamepadState state, MacroDefinition macro)
     {
+        var runtime = GetRuntime(macro);
+        if (!IsMacroActive(state, macro, runtime)) return state;
+
         bool isShooting = macro.TriggerSource switch
         {
             TriggerSource.LeftTrigger  => state.LeftTrigger.IsPressed(),
@@ -780,7 +783,6 @@ public sealed class MacroProcessor : IMacroProcessor
         };
         if (!isShooting) return state;
 
-        var runtime = GetRuntime(macro);
         long now = Environment.TickCount64;
         int interval = macro.IntervalMs > 0 ? macro.IntervalMs : 40;
 
@@ -841,6 +843,9 @@ public sealed class MacroProcessor : IMacroProcessor
     // ═══════════════════════════════════════════════════════════════════════
     private GamepadState ProcessJumpShot(GamepadState state, MacroDefinition macro)
     {
+        var runtime = GetRuntime(macro);
+        if (!IsMacroActive(state, macro, runtime)) return state;
+
         bool triggerHeld = macro.TriggerSource switch
         {
             TriggerSource.LeftTrigger  => state.LeftTrigger.IsPressed(),
@@ -848,8 +853,6 @@ public sealed class MacroProcessor : IMacroProcessor
             _ => false,
         };
         if (!triggerHeld) return state;
-
-        var runtime = GetRuntime(macro);
         long now = Environment.TickCount64;
         int interval = macro.JumpIntervalMs > 0 ? macro.JumpIntervalMs : 500;
 
@@ -870,6 +873,9 @@ public sealed class MacroProcessor : IMacroProcessor
     // ═══════════════════════════════════════════════════════════════════════
     private GamepadState ProcessStrafeShot(GamepadState state, MacroDefinition macro)
     {
+        var runtime = GetRuntime(macro);
+        if (!IsMacroActive(state, macro, runtime)) return state;
+
         bool triggerHeld = macro.TriggerSource switch
         {
             TriggerSource.LeftTrigger  => state.LeftTrigger.IsPressed(),
@@ -877,8 +883,6 @@ public sealed class MacroProcessor : IMacroProcessor
             _ => false,
         };
         if (!triggerHeld) return state;
-
-        var runtime = GetRuntime(macro);
         long now = Environment.TickCount64;
         int interval = macro.StrafeIntervalMs > 0 ? macro.StrafeIntervalMs : 120;
 
@@ -903,6 +907,9 @@ public sealed class MacroProcessor : IMacroProcessor
     // ═══════════════════════════════════════════════════════════════════════
     private GamepadState ProcessHoldBreath(GamepadState state, MacroDefinition macro)
     {
+        var runtime = GetRuntime(macro);
+        if (!IsMacroActive(state, macro, runtime)) return state;
+
         bool isAiming = macro.TriggerSource switch
         {
             TriggerSource.LeftTrigger  => state.LeftTrigger.IsPressed(),
@@ -922,15 +929,17 @@ public sealed class MacroProcessor : IMacroProcessor
     private GamepadState ProcessSlideCancel(GamepadState state, MacroDefinition macro)
     {
         var runtime = GetRuntime(macro);
+        if (!IsMacroActive(state, macro, runtime)) return state;
+
         long now = Environment.TickCount64;
         bool slidePressed = state.IsButtonPressed(macro.SlideButton);
 
         // Detect slide edge (user presses slide button)
-        if (slidePressed && !runtime.WasPressed)
+        if (slidePressed && !runtime.WasSlidePressed)
         {
             runtime.SlideStartTick = now;
         }
-        runtime.WasPressed = slidePressed;
+        runtime.WasSlidePressed = slidePressed;
 
         // After the configured delay, inject the cancel button press for ~80ms
         if (runtime.SlideStartTick > 0)
@@ -957,6 +966,8 @@ public sealed class MacroProcessor : IMacroProcessor
     private GamepadState ProcessFastDrop(GamepadState state, MacroDefinition macro)
     {
         var runtime = GetRuntime(macro);
+        if (!IsMacroActive(state, macro, runtime)) return state;
+
         long now = Environment.TickCount64;
 
         bool triggerHeld = macro.TriggerSource switch
@@ -1068,6 +1079,7 @@ public sealed class MacroProcessor : IMacroProcessor
 
         // SlideCancel — slide start timestamp
         public long SlideStartTick;
+        public bool WasSlidePressed;
 
         // FastDrop — ADS+prone start timestamp
         public long FastDropStartTick;
