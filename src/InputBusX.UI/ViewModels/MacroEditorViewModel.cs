@@ -57,8 +57,26 @@ public partial class MacroEditorViewModel : ViewModelBase
     [ObservableProperty] private bool _showHeadAssistSettings;
     [ObservableProperty] private bool _showProgressiveRecoilSettings;
     [ObservableProperty] private bool _showTrackingAssistSettings;
+    [ObservableProperty] private bool _showAutoFireNoRecoilSettings;
+    [ObservableProperty] private bool _showInstaDropShotSettings;
+    [ObservableProperty] private bool _showJumpShotSettings;
+    [ObservableProperty] private bool _showStrafeShotSettings;
+    [ObservableProperty] private bool _showHoldBreathSettings;
+    [ObservableProperty] private bool _showSlideCancelSettings;
+    [ObservableProperty] private bool _showFastDropSettings;
 
     [ObservableProperty] private string _saveStatus = "";
+
+    // ── New macro fields ─────────────────────────────────────────────────
+    [ObservableProperty] private GamepadButton _crouchButton = GamepadButton.B;
+    [ObservableProperty] private GamepadButton _jumpButton = GamepadButton.A;
+    [ObservableProperty] private int _jumpIntervalMs = 500;
+    [ObservableProperty] private double _strafeAmplitude = 0.60;
+    [ObservableProperty] private int _strafeIntervalMs = 120;
+    [ObservableProperty] private GamepadButton _breathButton = GamepadButton.LeftThumb;
+    [ObservableProperty] private GamepadButton _slideButton = GamepadButton.B;
+    [ObservableProperty] private int _slideCancelDelayMs = 180;
+    [ObservableProperty] private GamepadButton _slideCancelButton = GamepadButton.B;
     [ObservableProperty] private GamepadButton _pingButton;
 
     // ── Progressive Recoil ───────────────────────────────────────────────
@@ -163,6 +181,13 @@ public partial class MacroEditorViewModel : ViewModelBase
         ShowHeadAssistSettings = SelectedMacroType == MacroType.HeadAssist;
         ShowProgressiveRecoilSettings = SelectedMacroType == MacroType.ProgressiveRecoil;
         ShowTrackingAssistSettings = SelectedMacroType == MacroType.TrackingAssist;
+        ShowAutoFireNoRecoilSettings = SelectedMacroType == MacroType.AutoFireNoRecoil;
+        ShowInstaDropShotSettings = SelectedMacroType == MacroType.InstaDropShot;
+        ShowJumpShotSettings = SelectedMacroType == MacroType.JumpShot;
+        ShowStrafeShotSettings = SelectedMacroType == MacroType.StrafeShot;
+        ShowHoldBreathSettings = SelectedMacroType == MacroType.HoldBreath;
+        ShowSlideCancelSettings = SelectedMacroType == MacroType.SlideCancel;
+        ShowFastDropSettings = SelectedMacroType == MacroType.FastDrop;
         ShowTimingSettings = SelectedMacroType is MacroType.AutoFire or MacroType.AutoPing or MacroType.Sequence;
     }
 
@@ -467,6 +492,52 @@ public partial class MacroEditorViewModel : ViewModelBase
             SelectedMacro.TriggerSource = TriggerSource;
         }
 
+        // AutoFireNoRecoil — uses existing RecoilCompensation + TriggerSource fields
+        if (SelectedMacroType == MacroType.AutoFireNoRecoil)
+            SelectedMacro.TriggerSource = TriggerSource;
+
+        // InstaDropShot
+        if (SelectedMacroType == MacroType.InstaDropShot)
+            SelectedMacro.CrouchButton = CrouchButton;
+
+        // JumpShot
+        if (SelectedMacroType == MacroType.JumpShot)
+        {
+            SelectedMacro.JumpButton = JumpButton;
+            SelectedMacro.JumpIntervalMs = JumpIntervalMs;
+            SelectedMacro.TriggerSource = TriggerSource;
+        }
+
+        // StrafeShot
+        if (SelectedMacroType == MacroType.StrafeShot)
+        {
+            SelectedMacro.StrafeAmplitude = StrafeAmplitude;
+            SelectedMacro.StrafeIntervalMs = StrafeIntervalMs;
+            SelectedMacro.TriggerSource = TriggerSource;
+        }
+
+        // HoldBreath
+        if (SelectedMacroType == MacroType.HoldBreath)
+        {
+            SelectedMacro.BreathButton = BreathButton;
+            SelectedMacro.TriggerSource = TriggerSource;
+        }
+
+        // SlideCancel
+        if (SelectedMacroType == MacroType.SlideCancel)
+        {
+            SelectedMacro.SlideButton = SlideButton;
+            SelectedMacro.SlideCancelDelayMs = SlideCancelDelayMs;
+            SelectedMacro.SlideCancelButton = SlideCancelButton;
+        }
+
+        // FastDrop
+        if (SelectedMacroType == MacroType.FastDrop)
+        {
+            SelectedMacro.CrouchButton = CrouchButton;
+            SelectedMacro.TriggerSource = TriggerSource;
+        }
+
         _profileManager.SaveProfile(_profileManager.ActiveProfile);
         SaveStatus = "Saved!";
         _logger.LogInformation("Saved macro: {Name} (Type: {Type}, Activation: {Activation})",
@@ -572,6 +643,17 @@ public partial class MacroEditorViewModel : ViewModelBase
         TaEasing = ta.Easing;
         TaIntensityMul = ta.IntensityMul;
         TaFreeOrbit = ta.FreeOrbit;
+
+        // New macros
+        CrouchButton = value.CrouchButton;
+        JumpButton = value.JumpButton;
+        JumpIntervalMs = value.JumpIntervalMs > 0 ? value.JumpIntervalMs : 500;
+        StrafeAmplitude = value.StrafeAmplitude > 0 ? value.StrafeAmplitude : 0.60;
+        StrafeIntervalMs = value.StrafeIntervalMs > 0 ? value.StrafeIntervalMs : 120;
+        BreathButton = value.BreathButton;
+        SlideButton = value.SlideButton;
+        SlideCancelDelayMs = value.SlideCancelDelayMs > 0 ? value.SlideCancelDelayMs : 180;
+        SlideCancelButton = value.SlideCancelButton;
 
         SaveStatus = "";
         UpdateVisibility();

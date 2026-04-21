@@ -45,6 +45,13 @@ public sealed class MacroProcessor : IMacroProcessor
                 MacroType.ScriptedShape => ProcessScriptedShape(state, macro),
                 MacroType.ProgressiveRecoil => ProcessProgressiveRecoil(state, macro),
                 MacroType.TrackingAssist => ProcessTrackingAssist(state, macro),
+                MacroType.AutoFireNoRecoil => ProcessAutoFireNoRecoil(state, macro),
+                MacroType.InstaDropShot => ProcessInstaDropShot(state, macro),
+                MacroType.JumpShot => ProcessJumpShot(state, macro),
+                MacroType.StrafeShot => ProcessStrafeShot(state, macro),
+                MacroType.HoldBreath => ProcessHoldBreath(state, macro),
+                MacroType.SlideCancel => ProcessSlideCancel(state, macro),
+                MacroType.FastDrop => ProcessFastDrop(state, macro),
                 _ => state
             };
         }
@@ -760,6 +767,222 @@ public sealed class MacroProcessor : IMacroProcessor
         return state;
     }
 
+    // ═══════════════════════════════════════════════════════════════════════
+    //  AutoFireNoRecoil — rapid fire + recoil compensation per weapon
+    // ═══════════════════════════════════════════════════════════════════════
+    private GamepadState ProcessAutoFireNoRecoil(GamepadState state, MacroDefinition macro)
+    {
+        bool isShooting = macro.TriggerSource switch
+        {
+            TriggerSource.LeftTrigger  => state.LeftTrigger.IsPressed(),
+            TriggerSource.RightTrigger => state.RightTrigger.IsPressed(),
+            _ => false,
+        };
+        if (!isShooting) return state;
+
+        var runtime = GetRuntime(macro);
+        long now = Environment.TickCount64;
+        int interval = macro.IntervalMs > 0 ? macro.IntervalMs : 40;
+
+        // Rapid-fire toggle
+        if (now - runtime.LastFireTick >= interval)
+        {
+            runtime.ToggleState = !runtime.ToggleState;
+            runtime.LastFireTick = now;
+        }
+
+        // Press/release the fire trigger rapidly
+        if (macro.TriggerSource == TriggerSource.RightTrigger)
+            state.RightTrigger = runtime.ToggleState ? TriggerValue.Full : TriggerValue.Zero;
+        else
+            state.LeftTrigger = runtime.ToggleState ? TriggerValue.Full : TriggerValue.Zero;
+
+        // No-recoil compensation while "pressing"
+        if (runtime.ToggleState)
+        {
+            int compX = _weaponProfile != null
+                ? (int)(_weaponProfile.RecoilCompensationX * _weaponProfile.Intensity)
+                : macro.RecoilCompensationX;
+            int compY = _weaponProfile != null
+                ? (int)(_weaponProfile.RecoilCompensationY * _weaponProfile.Intensity)
+                : macro.RecoilCompensationY;
+
+            double rand = macro.RandomizationFactor > 0
+                ? 1.0 + (_random.NextDouble() * 2.0 - 1.0) * macro.RandomizationFactor
+                : 1.0;
+
+            int finalX = (int)(compX * macro.Intensity * rand);
+            int finalY = (int)(compY * macro.Intensity * rand);
+
+            state.RightStick = new StickPosition(
+                (short)Math.Clamp(state.RightStick.X + finalX, short.MinValue, short.MaxValue),
+                (short)Math.Clamp(state.RightStick.Y + finalY, short.MinValue, short.MaxValue));
+        }
+
+        return state;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    //  InstaDropShot — instantly goes prone on button press
+    // ═══════════════════════════════════════════════════════════════════════
+    private GamepadState ProcessInstaDropShot(GamepadState state, MacroDefinition macro)
+    {
+        var runtime = GetRuntime(macro);
+        bool active = IsMacroActive(state, macro, runtime);
+        if (!active) return state;
+
+        // Hold the crouch/prone button to force prone instantly
+        state.SetButton(macro.CrouchButton, true);
+        return state;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    //  JumpShot — auto-jump when shooting or aiming
+    // ═══════════════════════════════════════════════════════════════════════
+    private GamepadState ProcessJumpShot(GamepadState state, MacroDefinition macro)
+    {
+        bool triggerHeld = macro.TriggerSource switch
+        {
+            TriggerSource.LeftTrigger  => state.LeftTrigger.IsPressed(),
+            TriggerSource.RightTrigger => state.RightTrigger.IsPressed(),
+            _ => false,
+        };
+        if (!triggerHeld) return state;
+
+        var runtime = GetRuntime(macro);
+        long now = Environment.TickCount64;
+        int interval = macro.JumpIntervalMs > 0 ? macro.JumpIntervalMs : 500;
+
+        if (now - runtime.LastFireTick >= interval)
+        {
+            runtime.LastFireTick = now;
+            runtime.PulseUntilTick = now + 80; // press for 80ms
+        }
+
+        if (now <= runtime.PulseUntilTick)
+            state.SetButton(macro.JumpButton, true);
+
+        return state;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    //  StrafeShot — oscillate left stick X while shooting
+    // ═══════════════════════════════════════════════════════════════════════
+    private GamepadState ProcessStrafeShot(GamepadState state, MacroDefinition macro)
+    {
+        bool triggerHeld = macro.TriggerSource switch
+        {
+            TriggerSource.LeftTrigger  => state.LeftTrigger.IsPressed(),
+            TriggerSource.RightTrigger => state.RightTrigger.IsPressed(),
+            _ => false,
+        };
+        if (!triggerHeld) return state;
+
+        var runtime = GetRuntime(macro);
+        long now = Environment.TickCount64;
+        int interval = macro.StrafeIntervalMs > 0 ? macro.StrafeIntervalMs : 120;
+
+        if (now - runtime.LastFireTick >= interval)
+        {
+            runtime.ToggleState = !runtime.ToggleState;
+            runtime.LastFireTick = now;
+        }
+
+        double amp = macro.StrafeAmplitude * 32767.0;
+        short strafeX = (short)(runtime.ToggleState ? amp : -amp);
+
+        state.LeftStick = new StickPosition(
+            (short)Math.Clamp(state.LeftStick.X + strafeX, short.MinValue, short.MaxValue),
+            state.LeftStick.Y);
+
+        return state;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    //  HoldBreath — auto-press L3/R3 while ADS
+    // ═══════════════════════════════════════════════════════════════════════
+    private GamepadState ProcessHoldBreath(GamepadState state, MacroDefinition macro)
+    {
+        bool isAiming = macro.TriggerSource switch
+        {
+            TriggerSource.LeftTrigger  => state.LeftTrigger.IsPressed(),
+            TriggerSource.RightTrigger => state.RightTrigger.IsPressed(),
+            _ => state.LeftTrigger.IsPressed(), // default LT = ADS
+        };
+
+        if (isAiming)
+            state.SetButton(macro.BreathButton, true);
+
+        return state;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    //  SlideCancel — detect slide and auto-cancel after delay
+    // ═══════════════════════════════════════════════════════════════════════
+    private GamepadState ProcessSlideCancel(GamepadState state, MacroDefinition macro)
+    {
+        var runtime = GetRuntime(macro);
+        long now = Environment.TickCount64;
+        bool slidePressed = state.IsButtonPressed(macro.SlideButton);
+
+        // Detect slide edge (user presses slide button)
+        if (slidePressed && !runtime.WasPressed)
+        {
+            runtime.SlideStartTick = now;
+        }
+        runtime.WasPressed = slidePressed;
+
+        // After the configured delay, inject the cancel button press for ~80ms
+        if (runtime.SlideStartTick > 0)
+        {
+            long elapsed = now - runtime.SlideStartTick;
+            int delay = macro.SlideCancelDelayMs > 0 ? macro.SlideCancelDelayMs : 180;
+
+            if (elapsed >= delay && elapsed < delay + 80)
+            {
+                state.SetButton(macro.SlideCancelButton, true);
+            }
+            else if (elapsed >= delay + 80)
+            {
+                runtime.SlideStartTick = 0; // reset, ready for next slide
+            }
+        }
+
+        return state;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    //  FastDrop — ADS + crouch tap = drop-shot while aiming/firing
+    // ═══════════════════════════════════════════════════════════════════════
+    private GamepadState ProcessFastDrop(GamepadState state, MacroDefinition macro)
+    {
+        var runtime = GetRuntime(macro);
+        long now = Environment.TickCount64;
+
+        bool triggerHeld = macro.TriggerSource switch
+        {
+            TriggerSource.LeftTrigger  => state.LeftTrigger.IsPressed(),
+            TriggerSource.RightTrigger => state.RightTrigger.IsPressed(),
+            _ => state.LeftTrigger.IsPressed(),
+        };
+
+        bool fireEdge = triggerHeld && !runtime.WasFirePressed;
+        runtime.WasFirePressed = triggerHeld;
+
+        // On ADS/fire edge, start holding the crouch button
+        if (fireEdge)
+            runtime.FastDropStartTick = now;
+
+        // Hold crouch button for the duration of ADS (forces prone)
+        if (triggerHeld && runtime.FastDropStartTick > 0)
+            state.SetButton(macro.CrouchButton, true);
+
+        if (!triggerHeld)
+            runtime.FastDropStartTick = 0;
+
+        return state;
+    }
+
     /// <summary>
     /// Resolves whether a scripted macro is active right now: respects
     /// toggle-mode, trigger source, and activation button just like NoRecoil.
@@ -842,5 +1065,11 @@ public sealed class MacroProcessor : IMacroProcessor
 
         // TrackingAssist — orbital timer
         public long TrackingStartTick;
+
+        // SlideCancel — slide start timestamp
+        public long SlideStartTick;
+
+        // FastDrop — ADS+prone start timestamp
+        public long FastDropStartTick;
     }
 }
