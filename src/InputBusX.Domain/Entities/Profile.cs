@@ -1,4 +1,6 @@
 using System.Collections.ObjectModel;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace InputBusX.Domain.Entities;
 
@@ -13,54 +15,39 @@ public sealed class Profile
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime ModifiedAt { get; set; } = DateTime.UtcNow;
 
-    public Profile Duplicate(string newName) => new()
+    // JSON options for deep-clone (handles all enums and nested types automatically)
+    private static readonly JsonSerializerOptions _cloneOptions = new()
     {
-        Name = newName,
-        AssociatedProcesses = new ObservableCollection<string>(AssociatedProcesses),
-        Macros = Macros.Select(m => new MacroDefinition
-        {
-            Name = m.Name,
-            Type = m.Type,
-            Enabled = m.Enabled,
-            Priority = m.Priority,
-            ActivationButton = m.ActivationButton,
-            ActivationAxis = m.ActivationAxis,
-            ToggleMode = m.ToggleMode,
-            DelayMs = m.DelayMs,
-            IntervalMs = m.IntervalMs,
-            DurationMs = m.DurationMs,
-            Loop = m.Loop,
-            Intensity = m.Intensity,
-            RandomizationFactor = m.RandomizationFactor,
-            PingButton = m.PingButton,
-            SourceButton = m.SourceButton,
-            TargetButton = m.TargetButton,
-            SourceAxis = m.SourceAxis,
-            TargetAxis = m.TargetAxis,
-            TriggerSource = m.TriggerSource,
-            RecoilCompensationX = m.RecoilCompensationX,
-            RecoilCompensationY = m.RecoilCompensationY,
-            FlickStrength = m.FlickStrength,
-            FlickIntervalMs = m.FlickIntervalMs,
-            Steps = m.Steps.Select(s => new MacroStep
-            {
-                ButtonPress = s.ButtonPress,
-                ButtonRelease = s.ButtonRelease,
-                Axis = s.Axis,
-                AxisValue = s.AxisValue,
-                DelayAfterMs = s.DelayAfterMs
-            }).ToList()
-        }).ToList(),
-        Filters = new FilterSettings
-        {
-            LeftStickDeadzone = Filters.LeftStickDeadzone,
-            RightStickDeadzone = Filters.RightStickDeadzone,
-            LeftStickAntiDeadzone = Filters.LeftStickAntiDeadzone,
-            RightStickAntiDeadzone = Filters.RightStickAntiDeadzone,
-            TriggerDeadzone = Filters.TriggerDeadzone,
-            ResponseCurveExponent = Filters.ResponseCurveExponent,
-            SmoothingFactor = Filters.SmoothingFactor,
-            SmoothingEnabled = Filters.SmoothingEnabled
-        }
+        Converters = { new JsonStringEnumConverter() },
     };
+
+    public Profile Duplicate(string newName)
+    {
+        // Deep clone macros via JSON round-trip to capture ALL fields (including
+        // Motion, HeadAssist, ProgressiveRecoil, TrackingAssist, CrowBar, Script, etc.)
+        var macrosJson = JsonSerializer.Serialize(Macros, _cloneOptions);
+        var clonedMacros = JsonSerializer.Deserialize<List<MacroDefinition>>(macrosJson, _cloneOptions) ?? [];
+
+        // Regenerate IDs so the duplicated macros are distinct
+        foreach (var m in clonedMacros)
+            m.Id = Guid.NewGuid().ToString("N")[..8];
+
+        return new Profile
+        {
+            Name = newName,
+            AssociatedProcesses = new ObservableCollection<string>(AssociatedProcesses),
+            Macros = clonedMacros,
+            Filters = new FilterSettings
+            {
+                LeftStickDeadzone = Filters.LeftStickDeadzone,
+                RightStickDeadzone = Filters.RightStickDeadzone,
+                LeftStickAntiDeadzone = Filters.LeftStickAntiDeadzone,
+                RightStickAntiDeadzone = Filters.RightStickAntiDeadzone,
+                TriggerDeadzone = Filters.TriggerDeadzone,
+                ResponseCurveExponent = Filters.ResponseCurveExponent,
+                SmoothingFactor = Filters.SmoothingFactor,
+                SmoothingEnabled = Filters.SmoothingEnabled
+            }
+        };
+    }
 }

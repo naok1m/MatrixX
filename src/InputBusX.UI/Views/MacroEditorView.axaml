@@ -1001,6 +1001,257 @@
                         </StackPanel>
                     </Border>
 
+                    <!-- ============ CROWBAR ============ -->
+                    <Border Classes="section-panel" BorderBrush="#FF9800" BorderThickness="3,0,0,0"
+                            IsVisible="{Binding ShowCrowBarSettings}">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="CrowBar — Anti-Recoil Cooperativo" FontWeight="SemiBold" FontSize="14" Foreground="#FF9800" />
+                            <Border Background="#1A1500" CornerRadius="6" Padding="10" BorderBrush="#332A00" BorderThickness="1">
+                                <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="#FFB74D"
+                                           Text="Mecânica CrowBar: amplifica o controle manual de recoil do jogador com um valor fixo HTG. Quanto mais você puxa o analógico para baixo, mais a compensação aumenta automaticamente. Modo Rapido = 40% assist (você faz 60%). Modo Padrao = 90% assist (sistema faz quase tudo)." />
+                            </Border>
+
+                            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto">
+                                <!-- Row 0: Mode + HTG -->
+                                <StackPanel Spacing="4" Margin="0,0,8,0">
+                                    <TextBlock Text="Modo" Classes="label" />
+                                    <ComboBox ItemsSource="{Binding CrowBarModes}" SelectedItem="{Binding CrowBarMode}" MinWidth="140" />
+                                    <TextBlock Text="Rapido = 40% assist | Padrao = 90% assist" FontSize="10" Foreground="#4A4F5A" TextWrapping="Wrap" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Spacing="4">
+                                    <TextBlock Text="Valor HTG Base" Classes="label" />
+                                    <NumericUpDown Value="{Binding CrowBarBaseHtg}" Minimum="1" Maximum="50" Increment="1" />
+                                    <TextBlock Text="Valor fixo de compensação (padrão 16)." FontSize="10" Foreground="#4A4F5A" TextWrapping="Wrap" />
+                                </StackPanel>
+
+                                <!-- Row 1: Assist Factor + Deflection Threshold -->
+                                <StackPanel Grid.Row="1" Spacing="4" Margin="0,8,8,0">
+                                    <TextBlock Text="Fator de Assist" Classes="label" />
+                                    <NumericUpDown Value="{Binding CrowBarAssistFactor}" Minimum="0.05" Maximum="1.0" Increment="0.05" FormatString="P0" />
+                                    <TextBlock Text="% da compensação automática (0.40 = 40%)." FontSize="10" Foreground="#4A4F5A" TextWrapping="Wrap" />
+                                </StackPanel>
+                                <StackPanel Grid.Row="1" Grid.Column="1" Spacing="4" Margin="0,8,0,0">
+                                    <TextBlock Text="Limiar de Deflexão" Classes="label" />
+                                    <NumericUpDown Value="{Binding CrowBarDeflectionThreshold}" Minimum="0.0" Maximum="0.5" Increment="0.01" FormatString="F2" />
+                                    <TextBlock Text="Movimento mínimo do stick para ativar." FontSize="10" Foreground="#4A4F5A" TextWrapping="Wrap" />
+                                </StackPanel>
+
+                                <!-- Row 2: Curve + Max Comp -->
+                                <StackPanel Grid.Row="2" Spacing="4" Margin="0,8,8,0">
+                                    <TextBlock Text="Curva de Deflexão" Classes="label" />
+                                    <NumericUpDown Value="{Binding CrowBarDeflectionCurve}" Minimum="0.1" Maximum="3.0" Increment="0.1" FormatString="F1" />
+                                    <TextBlock Text="1.0 = linear. &lt;1.0 = mais forte no início." FontSize="10" Foreground="#4A4F5A" TextWrapping="Wrap" />
+                                </StackPanel>
+                                <StackPanel Grid.Row="2" Grid.Column="1" Spacing="4" Margin="0,8,0,0">
+                                    <TextBlock Text="Compensação Máxima" Classes="label" />
+                                    <NumericUpDown Value="{Binding CrowBarMaxCompensation}" Minimum="1000" Maximum="32767" Increment="500" />
+                                    <TextBlock Text="Limite da compensação por frame." FontSize="10" Foreground="#4A4F5A" TextWrapping="Wrap" />
+                                </StackPanel>
+
+                                <!-- Row 3: Noise + HTG Scale Padrao -->
+                                <StackPanel Grid.Row="3" Spacing="4" Margin="0,8,8,0">
+                                    <TextBlock Text="Fator de Ruído" Classes="label" />
+                                    <NumericUpDown Value="{Binding CrowBarNoiseFactor}" Minimum="0.0" Maximum="1.0" Increment="0.05" FormatString="F2" />
+                                    <TextBlock Text="Variação aleatória para naturalidade." FontSize="10" Foreground="#4A4F5A" TextWrapping="Wrap" />
+                                </StackPanel>
+                                <StackPanel Grid.Row="3" Grid.Column="1" Spacing="4" Margin="0,8,0,0">
+                                    <TextBlock Text="Escala HTG (Padrao)" Classes="label" />
+                                    <NumericUpDown Value="{Binding CrowBarHtgScalePadrao}" Minimum="1.0" Maximum="2.0" Increment="0.025" FormatString="F3" />
+                                    <TextBlock Text="16 x 1.125 = 18 efetivo. Só no modo Padrao." FontSize="10" Foreground="#4A4F5A" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Trigger Source -->
+                            <StackPanel Spacing="4" Margin="0,4,0,0">
+                                <TextBlock Text="Gatilho (disparo)" Classes="label" />
+                                <ComboBox ItemsSource="{Binding TriggerSources}" SelectedItem="{Binding TriggerSource}" MinWidth="160" />
+                                <TextBlock Text="CrowBar só ativa quando este gatilho está pressionado (atirando)." FontSize="10" Foreground="#4A4F5A" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ============ CUSTOM SCRIPT EDITOR ============ -->
+                    <Border Classes="section-panel" BorderBrush="#00E5FF" BorderThickness="3,0,0,0"
+                            IsVisible="{Binding ShowCustomScriptSettings}">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="Script Editor (Cronus Zen-Style)" FontWeight="SemiBold" FontSize="16" Foreground="#00E5FF" />
+                            <Border Background="#001A1F" CornerRadius="6" Padding="10" BorderBrush="#003340" BorderThickness="1">
+                                <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="#4DD0E1"
+                                           Text="Crie macros personalizados passo a passo, como no Cronus Zen. Cada step executa uma ação: pressionar/soltar botão, mover eixo, aguardar, ou repetir. Steps sem Wait entre eles executam no mesmo frame (botões simultâneos)." />
+                            </Border>
+
+                            <!-- Script-level settings -->
+                            <Grid ColumnDefinitions="*,*,*,*" Margin="0,4,0,0">
+                                <StackPanel Spacing="4" Margin="0,0,8,0">
+                                    <TextBlock Text="Modo de Ativação" Classes="label" />
+                                    <ComboBox ItemsSource="{Binding ScriptTriggerKinds}" SelectedItem="{Binding ScriptTriggerMode}" MinWidth="120" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Spacing="4" Margin="0,0,8,0">
+                                    <TextBlock Text="Velocidade" Classes="label" />
+                                    <NumericUpDown Value="{Binding ScriptSpeedMultiplier}" Minimum="0.1" Maximum="10.0" Increment="0.1" FormatString="F1" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2" Spacing="4" Margin="0,0,8,0">
+                                    <CheckBox IsChecked="{Binding ScriptAutoLoop}" Content="Auto Loop" Margin="0,18,0,0" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="3" Spacing="4">
+                                    <TextBlock Text="Descrição" Classes="label" />
+                                    <TextBox Text="{Binding ScriptDescription}" Watermark="Ex: Rapid Fire + DropShot" />
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Step toolbar -->
+                            <Border Background="#0D1B1F" CornerRadius="4" Padding="6">
+                                <StackPanel Spacing="4">
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <Button Content="+ Press" Command="{Binding AddPressStepCommand}" Classes="accent" FontSize="11" Padding="8,4"
+                                                ToolTip.Tip="Adicionar step: Pressionar botão" />
+                                        <Button Content="- Release" Command="{Binding AddReleaseStepCommand}" FontSize="11" Padding="8,4"
+                                                ToolTip.Tip="Adicionar step: Soltar botão" />
+                                        <Button Content="~ Eixo" Command="{Binding AddAxisStepCommand}" FontSize="11" Padding="8,4"
+                                                ToolTip.Tip="Adicionar step: Mover eixo analógico" />
+                                        <Button Content="Wait" Command="{Binding AddScriptStepCommand}" FontSize="11" Padding="8,4"
+                                                ToolTip.Tip="Adicionar step: Aguardar X ms" />
+                                        <Border Width="1" Background="#1A3040" Margin="4,2" />
+                                        <Button Content="Duplicar" Command="{Binding DuplicateScriptStepCommand}" FontSize="11" Padding="8,4" />
+                                        <Button Content="Deletar" Command="{Binding DeleteScriptStepCommand}" Classes="danger" FontSize="11" Padding="8,4" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <Button Content="Rapid Fire" Command="{Binding InsertRapidFireComboCommand}" FontSize="10" Padding="6,3"
+                                                ToolTip.Tip="Inserir combo de rapid fire (RT press/release loop)" />
+                                        <Button Content="DropShot" Command="{Binding InsertDropShotComboCommand}" FontSize="10" Padding="6,3"
+                                                ToolTip.Tip="Inserir combo de drop shot (RT + B simultâneo)" />
+                                        <Button Content="Y-Y Cancel" Command="{Binding InsertYYCancelComboCommand}" FontSize="10" Padding="6,3"
+                                                ToolTip.Tip="Inserir combo Y-Y weapon swap cancel" />
+                                        <Border Width="1" Background="#1A3040" Margin="4,2" />
+                                        <Button Content="Limpar Tudo" Command="{Binding ClearAllScriptStepsCommand}" Classes="danger" FontSize="10" Padding="6,3" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Step list + detail editor side by side -->
+                            <Grid ColumnDefinitions="*,280" MinHeight="250">
+                                <!-- Left: Step list -->
+                                <Border Background="#080E12" CornerRadius="4" Padding="4" Margin="0,0,6,0">
+                                    <DockPanel>
+                                        <!-- Move up/down -->
+                                        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="4" Margin="0,4,0,0" HorizontalAlignment="Center">
+                                            <Button Content="Move Up" Command="{Binding MoveScriptStepUpCommand}" FontSize="10" Padding="10,3" />
+                                            <Button Content="Move Down" Command="{Binding MoveScriptStepDownCommand}" FontSize="10" Padding="10,3" />
+                                            <TextBlock Text="{Binding ScriptSteps.Count, StringFormat='{}{0} steps'}"
+                                                       Foreground="#4A4F5A" FontSize="10" VerticalAlignment="Center" Margin="8,0,0,0" />
+                                        </StackPanel>
+
+                                        <!-- Empty state -->
+                                        <TextBlock Text="Nenhum step ainda.&#x0A;Use os botões acima para adicionar."
+                                                   Foreground="#2A3A40" FontSize="11" TextAlignment="Center"
+                                                   VerticalAlignment="Center" HorizontalAlignment="Center"
+                                                   IsVisible="{Binding !ScriptSteps.Count}" />
+
+                                        <ListBox ItemsSource="{Binding ScriptSteps}"
+                                                 SelectedItem="{Binding SelectedScriptStep}"
+                                                 Background="Transparent">
+                                            <ListBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border Padding="6,4" CornerRadius="3" Margin="0,1"
+                                                            Opacity="1">
+                                                        <Grid ColumnDefinitions="24,Auto,*">
+                                                            <TextBlock Text="{Binding Index, StringFormat='#{0}'}"
+                                                                       Foreground="#4A4F5A" FontSize="10"
+                                                                       FontFamily="Cascadia Code,Consolas,Courier New"
+                                                                       VerticalAlignment="Center" />
+                                                            <Border Grid.Column="1" Width="4" Height="14" CornerRadius="2" Margin="4,0,8,0"
+                                                                    VerticalAlignment="Center">
+                                                                <Border.Background>
+                                                                    <SolidColorBrush Color="{Binding ActionColor}" />
+                                                                </Border.Background>
+                                                            </Border>
+                                                            <TextBlock Grid.Column="2" Text="{Binding Summary}"
+                                                                       FontSize="12" VerticalAlignment="Center" />
+                                                        </Grid>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ListBox.ItemTemplate>
+                                        </ListBox>
+                                    </DockPanel>
+                                </Border>
+
+                                <!-- Right: Selected step editor -->
+                                <Border Grid.Column="1" Background="#0A1418" CornerRadius="4" Padding="10">
+                                    <StackPanel Spacing="8"
+                                                IsVisible="{Binding SelectedScriptStep, Converter={x:Static ObjectConverters.IsNotNull}}">
+                                        <TextBlock Text="Editar Step" FontWeight="SemiBold" FontSize="13" Foreground="#00E5FF" />
+
+                                        <!-- Action type -->
+                                        <StackPanel Spacing="3">
+                                            <TextBlock Text="Ação" Classes="label" FontSize="11" />
+                                            <ComboBox ItemsSource="{Binding ScriptActionKinds}"
+                                                      SelectedItem="{Binding SelectedScriptStep.Action}" MinWidth="160" />
+                                        </StackPanel>
+
+                                        <!-- Button picker (for Press/Release) -->
+                                        <StackPanel Spacing="3" IsVisible="{Binding SelectedScriptStep.ShowButton}">
+                                            <TextBlock Text="Botão" Classes="label" FontSize="11" />
+                                            <ComboBox ItemsSource="{Binding ButtonList}"
+                                                      SelectedItem="{Binding SelectedScriptStep.Button}" MinWidth="160" />
+                                        </StackPanel>
+
+                                        <!-- Axis picker (for SetAxis/SetTrigger) -->
+                                        <StackPanel Spacing="3" IsVisible="{Binding SelectedScriptStep.ShowAxis}">
+                                            <TextBlock Text="Eixo" Classes="label" FontSize="11" />
+                                            <ComboBox ItemsSource="{Binding AxisList}"
+                                                      SelectedItem="{Binding SelectedScriptStep.Axis}" MinWidth="160" />
+                                        </StackPanel>
+
+                                        <!-- Value (for SetAxis/SetTrigger) -->
+                                        <StackPanel Spacing="3" IsVisible="{Binding SelectedScriptStep.ShowValue}">
+                                            <TextBlock Text="Valor" Classes="label" FontSize="11" />
+                                            <NumericUpDown Value="{Binding SelectedScriptStep.Value}"
+                                                           Minimum="-32767" Maximum="32767" Increment="1000" />
+                                            <TextBlock Text="Eixo: -32767..32767 | Trigger: 0..255"
+                                                       FontSize="9" Foreground="#3A4A50" />
+                                        </StackPanel>
+
+                                        <!-- Duration (for Wait) -->
+                                        <StackPanel Spacing="3" IsVisible="{Binding SelectedScriptStep.ShowDuration}">
+                                            <TextBlock Text="Duração (ms)" Classes="label" FontSize="11" />
+                                            <NumericUpDown Value="{Binding SelectedScriptStep.DurationMs}"
+                                                           Minimum="1" Maximum="10000" Increment="10" />
+                                            <TextBlock Text="Tempo de espera antes do próximo step."
+                                                       FontSize="9" Foreground="#3A4A50" />
+                                        </StackPanel>
+
+                                        <!-- Loop target (for LoopBack) -->
+                                        <StackPanel Spacing="3" IsVisible="{Binding SelectedScriptStep.ShowLoopTarget}">
+                                            <TextBlock Text="Voltar para Step #" Classes="label" FontSize="11" />
+                                            <NumericUpDown Value="{Binding SelectedScriptStep.LoopTargetIndex}"
+                                                           Minimum="0" Maximum="999" Increment="1" />
+                                        </StackPanel>
+
+                                        <!-- Repeat count (for LoopBack/LoopStart) -->
+                                        <StackPanel Spacing="3" IsVisible="{Binding SelectedScriptStep.ShowRepeatCount}">
+                                            <TextBlock Text="Repetições" Classes="label" FontSize="11" />
+                                            <NumericUpDown Value="{Binding SelectedScriptStep.RepeatCount}"
+                                                           Minimum="0" Maximum="9999" Increment="1" />
+                                            <TextBlock Text="0 = infinito (enquanto botão pressionado)"
+                                                       FontSize="9" Foreground="#3A4A50" />
+                                        </StackPanel>
+
+                                        <!-- Label -->
+                                        <StackPanel Spacing="3">
+                                            <TextBlock Text="Comentário" Classes="label" FontSize="11" />
+                                            <TextBox Text="{Binding SelectedScriptStep.Label}"
+                                                     Watermark="opcional" FontSize="11" />
+                                        </StackPanel>
+
+                                        <!-- Disabled toggle -->
+                                        <CheckBox IsChecked="{Binding SelectedScriptStep.Disabled}"
+                                                  Content="Desativado (pular este step)" FontSize="11" Margin="0,4,0,0" />
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
                     <!-- ============ TIMING (shared) ============ -->
                     <Border Classes="section-panel" BorderBrush="#4A4F5A" BorderThickness="3,0,0,0"
                             IsVisible="{Binding ShowTimingSettings}">
