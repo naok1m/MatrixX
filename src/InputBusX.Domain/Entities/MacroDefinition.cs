@@ -62,6 +62,14 @@ public sealed class MacroDefinition
     /// <summary>Orbital tracking overlay for <see cref="MacroType.TrackingAssist"/>.</summary>
     public TrackingAssistConfig TrackingAssist { get; set; } = new();
 
+    // ── CrowBar (CrowBar macro type) ────────────────────────────────────
+    /// <summary>Cooperative anti-recoil configuration for <see cref="MacroType.CrowBar"/>.</summary>
+    public CrowBarConfig CrowBar { get; set; } = new();
+
+    // ── Custom Script (Custom macro type) ───────────────────────────────
+    /// <summary>Cronus Zen-style step-by-step script for <see cref="MacroType.Custom"/>.</summary>
+    public ScriptDefinition Script { get; set; } = new();
+
     // ── InstaDropShot / FastDrop ─────────────────────────────────────────
     /// <summary>Button used to crouch/prone (default B). Used by InstaDropShot and FastDrop.</summary>
     public GamepadButton CrouchButton { get; set; } = GamepadButton.B;

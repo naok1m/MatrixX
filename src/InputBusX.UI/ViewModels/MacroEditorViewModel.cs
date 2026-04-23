@@ -11,6 +11,7 @@ using InputBusX.Domain.Entities;
 using InputBusX.Domain.Enums;
 using InputBusX.Domain.Interfaces;
 using Microsoft.Extensions.Logging;
+using ScriptStep = InputBusX.Domain.Entities.ScriptStep;
 
 namespace InputBusX.UI.ViewModels;
 
@@ -64,8 +65,27 @@ public partial class MacroEditorViewModel : ViewModelBase
     [ObservableProperty] private bool _showHoldBreathSettings;
     [ObservableProperty] private bool _showSlideCancelSettings;
     [ObservableProperty] private bool _showFastDropSettings;
+    [ObservableProperty] private bool _showCrowBarSettings;
+    [ObservableProperty] private bool _showCustomScriptSettings;
 
     [ObservableProperty] private string _saveStatus = "";
+
+    // ── CrowBar ─────────────────────────────────────────────────────────
+    [ObservableProperty] private CrowBarMode _crowBarMode = CrowBarMode.Padrao;
+    [ObservableProperty] private int _crowBarBaseHtg = 16;
+    [ObservableProperty] private double _crowBarAssistFactor = 0.90;
+    [ObservableProperty] private double _crowBarDeflectionThreshold = 0.05;
+    [ObservableProperty] private double _crowBarDeflectionCurve = 1.0;
+    [ObservableProperty] private int _crowBarMaxCompensation = 10000;
+    [ObservableProperty] private double _crowBarNoiseFactor = 0.10;
+    [ObservableProperty] private double _crowBarHtgScalePadrao = 1.125;
+
+    // ── Custom Script ───────────────────────────────────────────────────
+    [ObservableProperty] private ScriptTriggerKind _scriptTriggerMode = ScriptTriggerKind.WhileHeld;
+    [ObservableProperty] private bool _scriptAutoLoop = true;
+    [ObservableProperty] private double _scriptSpeedMultiplier = 1.0;
+    [ObservableProperty] private string _scriptDescription = "";
+    [ObservableProperty] private ScriptStepViewModel? _selectedScriptStep;
 
     // ── New macro fields ─────────────────────────────────────────────────
     [ObservableProperty] private GamepadButton _crouchButton = GamepadButton.B;
@@ -159,6 +179,11 @@ public partial class MacroEditorViewModel : ViewModelBase
     public Array EasingKinds => Enum.GetValues(typeof(EasingKind));
     public Array StickTargetKinds => Enum.GetValues(typeof(StickTargetKind));
     public Array DistanceSources => Enum.GetValues(typeof(DistanceSource));
+    public Array CrowBarModes => Enum.GetValues(typeof(CrowBarMode));
+    public Array ScriptActionKinds => Enum.GetValues(typeof(ScriptActionKind));
+    public Array ScriptTriggerKinds => Enum.GetValues(typeof(ScriptTriggerKind));
+    public AnalogAxis[] AxisList { get; } = (AnalogAxis[])Enum.GetValues(typeof(AnalogAxis));
+    public ObservableCollection<ScriptStepViewModel> ScriptSteps { get; } = [];
 
     public MacroEditorViewModel(IProfileManager profileManager, ILogger<MacroEditorViewModel> logger)
     {
@@ -188,6 +213,8 @@ public partial class MacroEditorViewModel : ViewModelBase
         ShowHoldBreathSettings = SelectedMacroType == MacroType.HoldBreath;
         ShowSlideCancelSettings = SelectedMacroType == MacroType.SlideCancel;
         ShowFastDropSettings = SelectedMacroType == MacroType.FastDrop;
+        ShowCrowBarSettings = SelectedMacroType == MacroType.CrowBar;
+        ShowCustomScriptSettings = SelectedMacroType == MacroType.Custom;
         ShowTimingSettings = SelectedMacroType is MacroType.AutoFire or MacroType.AutoPing or MacroType.Sequence;
     }
 
@@ -538,6 +565,32 @@ public partial class MacroEditorViewModel : ViewModelBase
             SelectedMacro.TriggerSource = TriggerSource;
         }
 
+        // CrowBar
+        if (SelectedMacroType == MacroType.CrowBar)
+        {
+            var cb = SelectedMacro.CrowBar;
+            cb.Mode = CrowBarMode;
+            cb.BaseHtgValue = CrowBarBaseHtg;
+            cb.AssistFactor = CrowBarAssistFactor;
+            cb.DeflectionThreshold = CrowBarDeflectionThreshold;
+            cb.DeflectionCurve = CrowBarDeflectionCurve;
+            cb.MaxCompensation = CrowBarMaxCompensation;
+            cb.NoiseFactor = CrowBarNoiseFactor;
+            cb.HtgScalePadrao = CrowBarHtgScalePadrao;
+            SelectedMacro.TriggerSource = TriggerSource;
+        }
+
+        // Custom Script
+        if (SelectedMacroType == MacroType.Custom)
+        {
+            var script = SelectedMacro.Script;
+            script.TriggerMode = ScriptTriggerMode;
+            script.AutoLoop = ScriptAutoLoop;
+            script.SpeedMultiplier = ScriptSpeedMultiplier;
+            script.Description = ScriptDescription;
+            script.Steps = ScriptSteps.Select(s => s.ToModel()).ToList();
+        }
+
         _profileManager.SaveProfile(_profileManager.ActiveProfile);
         SaveStatus = "Saved!";
         _logger.LogInformation("Saved macro: {Name} (Type: {Type}, Activation: {Activation})",
@@ -655,8 +708,167 @@ public partial class MacroEditorViewModel : ViewModelBase
         SlideCancelDelayMs = value.SlideCancelDelayMs > 0 ? value.SlideCancelDelayMs : 180;
         SlideCancelButton = value.SlideCancelButton;
 
+        // CrowBar
+        var cb = value.CrowBar;
+        CrowBarMode = cb.Mode;
+        CrowBarBaseHtg = cb.BaseHtgValue;
+        CrowBarAssistFactor = cb.AssistFactor;
+        CrowBarDeflectionThreshold = cb.DeflectionThreshold;
+        CrowBarDeflectionCurve = cb.DeflectionCurve;
+        CrowBarMaxCompensation = cb.MaxCompensation;
+        CrowBarNoiseFactor = cb.NoiseFactor;
+        CrowBarHtgScalePadrao = cb.HtgScalePadrao;
+
+        // Custom Script
+        ScriptTriggerMode = value.Script.TriggerMode;
+        ScriptAutoLoop = value.Script.AutoLoop;
+        ScriptSpeedMultiplier = value.Script.SpeedMultiplier;
+        ScriptDescription = value.Script.Description;
+        ScriptSteps.Clear();
+        for (int i = 0; i < value.Script.Steps.Count; i++)
+            ScriptSteps.Add(ScriptStepViewModel.FromModel(value.Script.Steps[i], i));
+
         SaveStatus = "";
         UpdateVisibility();
+    }
+
+    partial void OnCrowBarModeChanged(CrowBarMode value)
+    {
+        if (value == CrowBarMode.Rapido)
+            CrowBarAssistFactor = 0.40;
+        else
+            CrowBarAssistFactor = 0.90;
+    }
+
+    // ── Custom Script step commands ─────────────────────────────────────
+
+    [RelayCommand]
+    private void AddScriptStep()
+    {
+        var step = new ScriptStepViewModel { Index = ScriptSteps.Count, Action = ScriptActionKind.Wait, DurationMs = 50 };
+        ScriptSteps.Add(step);
+        SelectedScriptStep = step;
+        ReindexScriptSteps();
+    }
+
+    [RelayCommand]
+    private void AddPressStep()
+    {
+        var step = new ScriptStepViewModel { Index = ScriptSteps.Count, Action = ScriptActionKind.PressButton, Button = GamepadButton.A };
+        ScriptSteps.Add(step);
+        SelectedScriptStep = step;
+        ReindexScriptSteps();
+    }
+
+    [RelayCommand]
+    private void AddReleaseStep()
+    {
+        var step = new ScriptStepViewModel { Index = ScriptSteps.Count, Action = ScriptActionKind.ReleaseButton, Button = GamepadButton.A };
+        ScriptSteps.Add(step);
+        SelectedScriptStep = step;
+        ReindexScriptSteps();
+    }
+
+    [RelayCommand]
+    private void AddAxisStep()
+    {
+        var step = new ScriptStepViewModel { Index = ScriptSteps.Count, Action = ScriptActionKind.SetAxis, Axis = AnalogAxis.RightStickY };
+        ScriptSteps.Add(step);
+        SelectedScriptStep = step;
+        ReindexScriptSteps();
+    }
+
+    [RelayCommand]
+    private void DeleteScriptStep()
+    {
+        if (SelectedScriptStep is null) return;
+        ScriptSteps.Remove(SelectedScriptStep);
+        ReindexScriptSteps();
+        SelectedScriptStep = ScriptSteps.LastOrDefault();
+    }
+
+    [RelayCommand]
+    private void MoveScriptStepUp()
+    {
+        if (SelectedScriptStep is null) return;
+        int idx = ScriptSteps.IndexOf(SelectedScriptStep);
+        if (idx > 0)
+        {
+            ScriptSteps.Move(idx, idx - 1);
+            ReindexScriptSteps();
+        }
+    }
+
+    [RelayCommand]
+    private void MoveScriptStepDown()
+    {
+        if (SelectedScriptStep is null) return;
+        int idx = ScriptSteps.IndexOf(SelectedScriptStep);
+        if (idx < ScriptSteps.Count - 1)
+        {
+            ScriptSteps.Move(idx, idx + 1);
+            ReindexScriptSteps();
+        }
+    }
+
+    [RelayCommand]
+    private void DuplicateScriptStep()
+    {
+        if (SelectedScriptStep is null) return;
+        var clone = ScriptStepViewModel.FromModel(SelectedScriptStep.ToModel(), ScriptSteps.Count);
+        ScriptSteps.Insert(ScriptSteps.IndexOf(SelectedScriptStep) + 1, clone);
+        ReindexScriptSteps();
+        SelectedScriptStep = clone;
+    }
+
+    [RelayCommand]
+    private void InsertRapidFireCombo()
+    {
+        // Press RT → Wait 40ms → Release RT → Wait 30ms (classic rapid fire)
+        ScriptSteps.Add(new ScriptStepViewModel { Action = ScriptActionKind.LoopStart, RepeatCount = 0 });
+        ScriptSteps.Add(new ScriptStepViewModel { Action = ScriptActionKind.PressButton, Button = GamepadButton.None }); // RT via trigger
+        ScriptSteps.Add(new ScriptStepViewModel { Action = ScriptActionKind.SetTrigger, Axis = AnalogAxis.RightTrigger, Value = 255 });
+        ScriptSteps.Add(new ScriptStepViewModel { Action = ScriptActionKind.Wait, DurationMs = 40 });
+        ScriptSteps.Add(new ScriptStepViewModel { Action = ScriptActionKind.SetTrigger, Axis = AnalogAxis.RightTrigger, Value = 0 });
+        ScriptSteps.Add(new ScriptStepViewModel { Action = ScriptActionKind.Wait, DurationMs = 30 });
+        ScriptSteps.Add(new ScriptStepViewModel { Action = ScriptActionKind.LoopBack, LoopTargetIndex = ScriptSteps.Count - 6 });
+        ReindexScriptSteps();
+    }
+
+    [RelayCommand]
+    private void InsertDropShotCombo()
+    {
+        // Press RT + Press B (crouch) simultaneously → Wait 50ms
+        ScriptSteps.Add(new ScriptStepViewModel { Action = ScriptActionKind.SetTrigger, Axis = AnalogAxis.RightTrigger, Value = 255 });
+        ScriptSteps.Add(new ScriptStepViewModel { Action = ScriptActionKind.PressButton, Button = GamepadButton.B });
+        ScriptSteps.Add(new ScriptStepViewModel { Action = ScriptActionKind.Wait, DurationMs = 50 });
+        ReindexScriptSteps();
+    }
+
+    [RelayCommand]
+    private void InsertYYCancelCombo()
+    {
+        // Y → Wait 80ms → Y → Wait 80ms (weapon swap cancel)
+        ScriptSteps.Add(new ScriptStepViewModel { Action = ScriptActionKind.PressButton, Button = GamepadButton.Y });
+        ScriptSteps.Add(new ScriptStepViewModel { Action = ScriptActionKind.Wait, DurationMs = 80 });
+        ScriptSteps.Add(new ScriptStepViewModel { Action = ScriptActionKind.ReleaseButton, Button = GamepadButton.Y });
+        ScriptSteps.Add(new ScriptStepViewModel { Action = ScriptActionKind.Wait, DurationMs = 40 });
+        ScriptSteps.Add(new ScriptStepViewModel { Action = ScriptActionKind.PressButton, Button = GamepadButton.Y });
+        ScriptSteps.Add(new ScriptStepViewModel { Action = ScriptActionKind.Wait, DurationMs = 80 });
+        ScriptSteps.Add(new ScriptStepViewModel { Action = ScriptActionKind.ReleaseButton, Button = GamepadButton.Y });
+        ReindexScriptSteps();
+    }
+
+    [RelayCommand]
+    private void ClearAllScriptSteps()
+    {
+        ScriptSteps.Clear();
+    }
+
+    private void ReindexScriptSteps()
+    {
+        for (int i = 0; i < ScriptSteps.Count; i++)
+            ScriptSteps[i].Index = i;
     }
 
     private void RefreshMacros()

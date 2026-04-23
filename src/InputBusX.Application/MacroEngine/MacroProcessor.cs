@@ -52,6 +52,8 @@ public sealed class MacroProcessor : IMacroProcessor
                 MacroType.HoldBreath => ProcessHoldBreath(state, macro),
                 MacroType.SlideCancel => ProcessSlideCancel(state, macro),
                 MacroType.FastDrop => ProcessFastDrop(state, macro),
+                MacroType.CrowBar => ProcessCrowBar(state, macro),
+                MacroType.Custom => ProcessCustomScript(state, macro),
                 _ => state
             };
         }
@@ -1026,6 +1028,260 @@ public sealed class MacroProcessor : IMacroProcessor
         return triggerActive && buttonActive;
     }
 
+    // ═══════════════════════════════════════════════════════════════════════
+    //  CrowBar — cooperative anti-recoil that amplifies manual stick-down
+    //  input with a fixed HTG value. Two modes: Rapido (40%) / Padrao (90%).
+    // ═══════════════════════════════════════════════════════════════════════
+    private GamepadState ProcessCrowBar(GamepadState state, MacroDefinition macro)
+    {
+        var runtime = GetRuntime(macro);
+        if (!IsMacroActive(state, macro, runtime)) return state;
+
+        // CrowBar requires the player to be shooting (trigger held)
+        bool isShooting = macro.TriggerSource switch
+        {
+            TriggerSource.LeftTrigger  => state.LeftTrigger.IsPressed(),
+            TriggerSource.RightTrigger => state.RightTrigger.IsPressed(),
+            _ => state.RightTrigger.IsPressed(),
+        };
+        if (!isShooting) return state;
+
+        var cfg = macro.CrowBar;
+
+        // Read the player's current right stick Y (normalised [-1, 1])
+        // XInput convention: negative Y = stick pushed DOWN
+        double playerY = state.RightStick.Y / 32767.0;
+
+        // Only compensate when the player is actively pulling DOWN past the threshold
+        if (playerY >= -cfg.DeflectionThreshold) return state;
+
+        // deflectionMag: how much the player is pulling down (0..1, positive)
+        double deflectionMag = Math.Clamp(Math.Abs(playerY) - cfg.DeflectionThreshold, 0, 1.0);
+        double maxRange = 1.0 - cfg.DeflectionThreshold;
+        double normalizedDeflection = maxRange > 0 ? deflectionMag / maxRange : 0;
+
+        // Apply deflection curve (power curve for tuning feel)
+        double curvedDeflection = Math.Pow(normalizedDeflection, Math.Max(cfg.DeflectionCurve, 0.1));
+
+        // Calculate effective HTG based on mode
+        double effectiveHtg = cfg.BaseHtgValue;
+        if (cfg.Mode == CrowBarMode.Padrao)
+            effectiveHtg *= cfg.HtgScalePadrao; // 16 * 1.125 = 18
+
+        // Compensation = HTG * assist factor * curved deflection * scale
+        // Multiply by 100 to convert HTG game-units to stick-axis units
+        double compensation = effectiveHtg * cfg.AssistFactor * curvedDeflection * 100.0;
+        compensation = Math.Clamp(compensation, 0, cfg.MaxCompensation);
+
+        // Apply noise for natural feel
+        if (cfg.NoiseFactor > 0)
+        {
+            double noiseRange = cfg.NoiseFactor * compensation * 0.1;
+            compensation += (_random.NextDouble() * 2.0 - 1.0) * noiseRange;
+        }
+
+        // Apply macro intensity
+        compensation *= macro.Intensity;
+
+        // Compensation pushes stick DOWN (negative Y) to counter upward recoil
+        int compY = -(int)compensation;
+
+        state.RightStick = new StickPosition(
+            state.RightStick.X,
+            (short)Math.Clamp(state.RightStick.Y + compY, short.MinValue, short.MaxValue));
+
+        return state;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    //  Custom Script — Cronus Zen-style step sequencer
+    //  Executes ScriptDefinition steps frame-by-frame with precise timing.
+    // ═══════════════════════════════════════════════════════════════════════
+    private GamepadState ProcessCustomScript(GamepadState state, MacroDefinition macro)
+    {
+        var runtime = GetRuntime(macro);
+        var script = macro.Script;
+        if (script.Steps.Count == 0) return state;
+
+        long now = Environment.TickCount64;
+
+        // --- Trigger mode evaluation ---
+        bool shouldRun;
+        switch (script.TriggerMode)
+        {
+            case ScriptTriggerKind.WhileHeld:
+                shouldRun = IsMacroActive(state, macro, runtime);
+                if (!shouldRun)
+                {
+                    ResetScript(runtime);
+                    return state;
+                }
+                break;
+
+            case ScriptTriggerKind.OnPress:
+            {
+                bool active = IsMacroActive(state, macro, runtime);
+                bool edge = active && !runtime.ScriptWasTriggered;
+                runtime.ScriptWasTriggered = active;
+                if (edge)
+                    ResetScript(runtime);
+                else if (runtime.ScriptCompleted)
+                    return state;
+                shouldRun = !runtime.ScriptCompleted;
+                break;
+            }
+
+            case ScriptTriggerKind.Toggle:
+            default:
+                shouldRun = IsMacroActive(state, macro, runtime);
+                if (!shouldRun)
+                {
+                    ResetScript(runtime);
+                    return state;
+                }
+                break;
+        }
+
+        if (!shouldRun || runtime.ScriptCompleted) return state;
+
+        // Initialize loop counters if needed
+        if (runtime.LoopCounters == null || runtime.LoopCounters.Length != script.Steps.Count)
+            runtime.LoopCounters = new int[script.Steps.Count];
+
+        double speedMul = script.SpeedMultiplier > 0 ? script.SpeedMultiplier : 1.0;
+
+        // Process steps — non-blocking steps execute immediately in the same frame
+        int safetyCounter = 0;
+        while (runtime.ScriptStepIndex < script.Steps.Count && safetyCounter++ < 256)
+        {
+            // Clamp index (Steps may have been modified by UI)
+            if (runtime.ScriptStepIndex >= script.Steps.Count)
+            {
+                runtime.ScriptStepIndex = 0;
+                break;
+            }
+
+            var step = script.Steps[runtime.ScriptStepIndex];
+
+            if (step.Disabled)
+            {
+                runtime.ScriptStepIndex++;
+                continue;
+            }
+
+            switch (step.Action)
+            {
+                case ScriptActionKind.PressButton:
+                    if (step.Button.HasValue)
+                        state.SetButton(step.Button.Value, true);
+                    runtime.ScriptStepIndex++;
+                    continue; // instant — next step same frame
+
+                case ScriptActionKind.ReleaseButton:
+                    if (step.Button.HasValue)
+                        state.SetButton(step.Button.Value, false);
+                    runtime.ScriptStepIndex++;
+                    continue;
+
+                case ScriptActionKind.SetAxis:
+                    if (step.Axis.HasValue)
+                        ApplyScriptAxisValue(state, step.Axis.Value, step.Value);
+                    runtime.ScriptStepIndex++;
+                    continue;
+
+                case ScriptActionKind.SetTrigger:
+                    if (step.Axis.HasValue)
+                        ApplyScriptTriggerValue(state, step.Axis.Value, (byte)Math.Clamp((int)step.Value, 0, 255));
+                    runtime.ScriptStepIndex++;
+                    continue;
+
+                case ScriptActionKind.Wait:
+                    if (runtime.ScriptStepStartTick == 0)
+                        runtime.ScriptStepStartTick = now;
+                    int waitMs = (int)(step.DurationMs / speedMul);
+                    if (now - runtime.ScriptStepStartTick >= waitMs)
+                    {
+                        runtime.ScriptStepStartTick = 0;
+                        runtime.ScriptStepIndex++;
+                        continue;
+                    }
+                    return state; // still waiting — yield
+
+                case ScriptActionKind.LoopStart:
+                    runtime.ScriptStepIndex++;
+                    continue; // marker only
+
+                case ScriptActionKind.LoopBack:
+                    int target = Math.Clamp(step.LoopTargetIndex, 0, script.Steps.Count - 1);
+                    if (step.RepeatCount <= 0)
+                    {
+                        // Infinite loop
+                        runtime.ScriptStepIndex = target;
+                        return state; // yield to prevent infinite spin
+                    }
+                    runtime.LoopCounters[runtime.ScriptStepIndex]++;
+                    if (runtime.LoopCounters[runtime.ScriptStepIndex] < step.RepeatCount)
+                    {
+                        runtime.ScriptStepIndex = target;
+                        return state; // yield
+                    }
+                    // Loop exhausted
+                    runtime.LoopCounters[runtime.ScriptStepIndex] = 0;
+                    runtime.ScriptStepIndex++;
+                    continue;
+            }
+        }
+
+        // Reached end of script
+        if (script.AutoLoop)
+        {
+            runtime.ScriptStepIndex = 0;
+            runtime.ScriptStepStartTick = 0;
+            if (runtime.LoopCounters != null) Array.Clear(runtime.LoopCounters);
+        }
+        else
+        {
+            runtime.ScriptCompleted = true;
+        }
+
+        return state;
+    }
+
+    private static void ResetScript(MacroRuntime runtime)
+    {
+        runtime.ScriptStepIndex = 0;
+        runtime.ScriptStepStartTick = 0;
+        runtime.ScriptCompleted = false;
+        if (runtime.LoopCounters != null)
+            Array.Clear(runtime.LoopCounters);
+    }
+
+    private static void ApplyScriptAxisValue(GamepadState state, AnalogAxis axis, short value)
+    {
+        switch (axis)
+        {
+            case AnalogAxis.LeftStickX:
+                state.LeftStick = new StickPosition(value, state.LeftStick.Y); break;
+            case AnalogAxis.LeftStickY:
+                state.LeftStick = new StickPosition(state.LeftStick.X, value); break;
+            case AnalogAxis.RightStickX:
+                state.RightStick = new StickPosition(value, state.RightStick.Y); break;
+            case AnalogAxis.RightStickY:
+                state.RightStick = new StickPosition(state.RightStick.X, value); break;
+        }
+    }
+
+    private static void ApplyScriptTriggerValue(GamepadState state, AnalogAxis axis, byte value)
+    {
+        switch (axis)
+        {
+            case AnalogAxis.LeftTrigger:
+                state.LeftTrigger = new TriggerValue(value); break;
+            case AnalogAxis.RightTrigger:
+                state.RightTrigger = new TriggerValue(value); break;
+        }
+    }
+
     /// <summary>Writes a motion sample to the target stick, additive or override per the script.</summary>
     private static void ApplyMotionSample(
         GamepadState state, MotionScript motion, MotionSampler.Sample sample, double macroIntensity)
@@ -1083,5 +1339,12 @@ public sealed class MacroProcessor : IMacroProcessor
 
         // FastDrop — ADS+prone start timestamp
         public long FastDropStartTick;
+
+        // Custom Script — step sequencer state
+        public int ScriptStepIndex;
+        public long ScriptStepStartTick;
+        public bool ScriptCompleted;
+        public int[]? LoopCounters;
+        public bool ScriptWasTriggered;
     }
 }

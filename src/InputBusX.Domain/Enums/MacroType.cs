@@ -43,5 +43,9 @@ public enum MacroType
     /// <summary>ADS + quick crouch tap = instant drop-shot while firing — combines aim and prone in one press.</summary>
     FastDrop,
 
+    /// <summary>Cooperative anti-recoil (CrowBar mechanic) — amplifies manual stick-down input with a fixed HTG value. Rapido (40%) or Padrao (90%) modes.</summary>
+    CrowBar,
+
+    /// <summary>Cronus Zen-style custom scripted macro — step-by-step sequencer with button presses, axis control, timing, and loops.</summary>
     Custom
 }
