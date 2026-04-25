@@ -15,6 +15,11 @@ public sealed class ViGEmOutputController : IOutputController
     private IXbox360Controller? _controller;
     private int? _virtualSlot;
 
+    // Last submitted state — skip SubmitReport when nothing changed
+    private GamepadButton _lastButtons;
+    private short _lastLX, _lastLY, _lastRX, _lastRY;
+    private byte _lastLT, _lastRT;
+
     public bool IsConnected => _controller is not null;
     public int? VirtualXInputSlot => _virtualSlot;
 
@@ -98,6 +103,25 @@ public sealed class ViGEmOutputController : IOutputController
     {
         if (_controller is null) return;
 
+        var buttons = state.Buttons;
+        short lx = state.LeftStick.X,  ly = state.LeftStick.Y;
+        short rx = state.RightStick.X, ry = state.RightStick.Y;
+        byte  lt = state.LeftTrigger.Value, rt = state.RightTrigger.Value;
+
+        // Only push a HID report when something actually changed.
+        // SubmitReport() is a kernel call (~0.5–2 ms); skipping it when idle
+        // eliminates constant USB bus traffic and frees up the game's XInput polling.
+        if (buttons == _lastButtons &&
+            lx == _lastLX && ly == _lastLY &&
+            rx == _lastRX && ry == _lastRY &&
+            lt == _lastLT && rt == _lastRT)
+            return;
+
+        _lastButtons = buttons;
+        _lastLX = lx; _lastLY = ly;
+        _lastRX = rx; _lastRY = ry;
+        _lastLT = lt; _lastRT = rt;
+
         _controller.SetButtonState(Xbox360Button.A,            state.IsButtonPressed(GamepadButton.A));
         _controller.SetButtonState(Xbox360Button.B,            state.IsButtonPressed(GamepadButton.B));
         _controller.SetButtonState(Xbox360Button.X,            state.IsButtonPressed(GamepadButton.X));
@@ -114,13 +138,13 @@ public sealed class ViGEmOutputController : IOutputController
         _controller.SetButtonState(Xbox360Button.Left,         state.IsButtonPressed(GamepadButton.DPadLeft));
         _controller.SetButtonState(Xbox360Button.Right,        state.IsButtonPressed(GamepadButton.DPadRight));
 
-        _controller.SetAxisValue(Xbox360Axis.LeftThumbX,  state.LeftStick.X);
-        _controller.SetAxisValue(Xbox360Axis.LeftThumbY,  state.LeftStick.Y);
-        _controller.SetAxisValue(Xbox360Axis.RightThumbX, state.RightStick.X);
-        _controller.SetAxisValue(Xbox360Axis.RightThumbY, state.RightStick.Y);
+        _controller.SetAxisValue(Xbox360Axis.LeftThumbX,  lx);
+        _controller.SetAxisValue(Xbox360Axis.LeftThumbY,  ly);
+        _controller.SetAxisValue(Xbox360Axis.RightThumbX, rx);
+        _controller.SetAxisValue(Xbox360Axis.RightThumbY, ry);
 
-        _controller.SetSliderValue(Xbox360Slider.LeftTrigger,  state.LeftTrigger.Value);
-        _controller.SetSliderValue(Xbox360Slider.RightTrigger, state.RightTrigger.Value);
+        _controller.SetSliderValue(Xbox360Slider.LeftTrigger,  lt);
+        _controller.SetSliderValue(Xbox360Slider.RightTrigger, rt);
 
         _controller.SubmitReport();
     }

@@ -16,6 +16,10 @@ public sealed class InputPipeline : IInputPipeline
     private CancellationTokenSource? _cts;
     private bool _vigemAvailable;
 
+    // Cached sorted-enabled macros — rebuilt only when the profile changes or macros are saved
+    private List<MacroDefinition> _activeMacrosCache = [];
+    private volatile bool _macroCacheDirty = true;
+
     public event Action<GamepadState>? InputProcessed;
     public event Action<GamepadState>? RawInputReceived;
 
@@ -37,6 +41,8 @@ public sealed class InputPipeline : IInputPipeline
         _inputFilter      = inputFilter;
         _profileManager   = profileManager;
         _logger           = logger;
+
+        _profileManager.ActiveProfileChanged += _ => _macroCacheDirty = true;
     }
 
     public async Task StartAsync(CancellationToken ct)
@@ -90,6 +96,8 @@ public sealed class InputPipeline : IInputPipeline
         _logger.LogInformation("Input pipeline stopped");
     }
 
+    public void InvalidateMacroCache() => _macroCacheDirty = true;
+
     private void OnStateUpdated(string deviceId, GamepadState rawState)
     {
         try
@@ -101,12 +109,18 @@ public sealed class InputPipeline : IInputPipeline
             // Step 1: Apply input filters
             var filtered = _inputFilter.Apply(rawState, profile.Filters);
 
-            // Step 2: Process macros
-            var activeMacros = profile.Macros
-                .Where(m => m.Enabled)
-                .OrderByDescending(m => m.Priority)
-                .ToList();
-            var processed = _macroProcessor.Process(filtered, activeMacros);
+            // Step 2: Rebuild macro list only when the profile changed or macros were saved.
+            // Avoids allocating a new list and running LINQ on every input frame (~1000x/sec).
+            if (_macroCacheDirty)
+            {
+                _activeMacrosCache = profile.Macros
+                    .Where(m => m.Enabled)
+                    .OrderByDescending(m => m.Priority)
+                    .ToList();
+                _macroCacheDirty = false;
+            }
+
+            var processed = _macroProcessor.Process(filtered, _activeMacrosCache);
 
             // Step 3: Send to virtual controller (if available)
             if (_vigemAvailable)
