@@ -7,6 +7,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using InputBusX.Application.Interfaces;
 using InputBusX.Domain.Entities;
 using InputBusX.Domain.Enums;
 using InputBusX.Domain.Interfaces;
@@ -18,6 +19,7 @@ namespace InputBusX.UI.ViewModels;
 public partial class MacroEditorViewModel : ViewModelBase
 {
     private readonly IProfileManager _profileManager;
+    private readonly IInputPipeline _pipeline;
     private readonly ILogger<MacroEditorViewModel> _logger;
 
     [ObservableProperty] private MacroDefinition? _selectedMacro;
@@ -185,9 +187,10 @@ public partial class MacroEditorViewModel : ViewModelBase
     public AnalogAxis[] AxisList { get; } = (AnalogAxis[])Enum.GetValues(typeof(AnalogAxis));
     public ObservableCollection<ScriptStepViewModel> ScriptSteps { get; } = [];
 
-    public MacroEditorViewModel(IProfileManager profileManager, ILogger<MacroEditorViewModel> logger)
+    public MacroEditorViewModel(IProfileManager profileManager, IInputPipeline pipeline, ILogger<MacroEditorViewModel> logger)
     {
         _profileManager = profileManager;
+        _pipeline = pipeline;
         _logger = logger;
         _profileManager.ActiveProfileChanged += _ => RefreshMacros();
         RefreshMacros();
@@ -286,6 +289,7 @@ public partial class MacroEditorViewModel : ViewModelBase
             }
 
             _profileManager.SaveProfile(profile);
+            _pipeline.InvalidateMacroCache();
             SaveStatus = $"{added} macro(s) importado(s)!";
             SelectedMacro = Macros.LastOrDefault();
             _logger.LogInformation("Imported {Count} macros from file", added);
@@ -362,6 +366,7 @@ public partial class MacroEditorViewModel : ViewModelBase
         var profile = _profileManager.ActiveProfile;
         profile.Macros.Add(macro);
         _profileManager.SaveProfile(profile);
+        _pipeline.InvalidateMacroCache();
         Macros.Add(macro);
         SelectedMacro = macro;
         _logger.LogInformation("Created macro: {Name}", macro.Name);
@@ -375,6 +380,7 @@ public partial class MacroEditorViewModel : ViewModelBase
         var profile = _profileManager.ActiveProfile;
         profile.Macros.RemoveAll(m => m.Id == SelectedMacro.Id);
         _profileManager.SaveProfile(profile);
+        _pipeline.InvalidateMacroCache();
         Macros.Remove(SelectedMacro);
         SelectedMacro = Macros.FirstOrDefault();
         _logger.LogInformation("Deleted macro");
@@ -589,9 +595,12 @@ public partial class MacroEditorViewModel : ViewModelBase
             script.SpeedMultiplier = ScriptSpeedMultiplier;
             script.Description = ScriptDescription;
             script.Steps = ScriptSteps.Select(s => s.ToModel()).ToList();
+            // TriggerSource controls WHICH trigger (RT/LT/None) is required alongside the ActivationButton
+            SelectedMacro.TriggerSource = TriggerSource;
         }
 
         _profileManager.SaveProfile(_profileManager.ActiveProfile);
+        _pipeline.InvalidateMacroCache();
         SaveStatus = "Saved!";
         _logger.LogInformation("Saved macro: {Name} (Type: {Type}, Activation: {Activation})",
             SelectedMacro.Name, SelectedMacro.Type, SelectedMacro.ActivationButton);

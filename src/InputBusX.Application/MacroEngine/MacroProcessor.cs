@@ -10,7 +10,7 @@ public sealed class MacroProcessor : IMacroProcessor
 {
     private readonly ILogger<MacroProcessor> _logger;
     private readonly Dictionary<string, MacroRuntime> _runtimes = new();
-    private readonly Random _random = new();
+    private static readonly Random _random = Random.Shared;
 
     // When non-null, all NoRecoil macros use this weapon's compensation values
     private WeaponProfile? _weaponProfile;
