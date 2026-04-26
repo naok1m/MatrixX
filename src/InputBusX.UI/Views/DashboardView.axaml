@@ -32,7 +32,7 @@
                                        VerticalAlignment="Center"
                                        TextWrapping="Wrap"
                                        FontSize="11"
-                                       Foreground="#CACACA" />
+                                       Foreground="#A0AACE" />
                         </StackPanel>
                         <Button Content="{Binding IsRunning, Converter={StaticResource ConnectLabel}}"
                                 Command="{Binding ToggleConnectionCommand}"
@@ -74,7 +74,7 @@
                         </ItemsControl>
                         <TextBlock Text="No devices connected"
                                    IsVisible="{Binding !ConnectedDevices.Count}"
-                                   Foreground="#4A4F5A" FontStyle="Italic" FontSize="11" />
+                                   Foreground="#3D4560" FontStyle="Italic" FontSize="11" />
                     </StackPanel>
                 </Border>
             </Grid>
@@ -93,16 +93,16 @@
                         <StackPanel Grid.Column="0" HorizontalAlignment="Center" Spacing="6">
                             <TextBlock Text="Left Stick" Classes="label" HorizontalAlignment="Center" />
                             <Border Width="106" Height="106" CornerRadius="53"
-                                    Background="#1E2228" BorderBrush="#2A2D34" BorderThickness="2">
+                                    Background="#0E1118" BorderBrush="#1D2235" BorderThickness="2">
                                 <Canvas Width="96" Height="96">
-                                    <Line StartPoint="48,0" EndPoint="48,96" Stroke="#2A2D34" StrokeThickness="1" />
-                                    <Line StartPoint="0,48" EndPoint="96,48" Stroke="#2A2D34" StrokeThickness="1" />
+                                    <Line StartPoint="48,0" EndPoint="48,96" Stroke="#1D2235" StrokeThickness="1" />
+                                    <Line StartPoint="0,48" EndPoint="96,48" Stroke="#1D2235" StrokeThickness="1" />
                                     <Ellipse Width="12" Height="12" Fill="#00FF9C"
                                              Canvas.Left="{Binding LeftStickX, Converter={StaticResource StickToCanvas}}"
                                              Canvas.Top="{Binding LeftStickY, Converter={StaticResource StickToCanvas}, ConverterParameter=invert}" />
                                 </Canvas>
                             </Border>
-                            <TextBlock HorizontalAlignment="Center" Foreground="#4A4F5A" FontSize="10">
+                            <TextBlock HorizontalAlignment="Center" Foreground="#3D4560" FontSize="10">
                                 <TextBlock.Text>
                                     <MultiBinding StringFormat="X:{0:F2} Y:{1:F2}">
                                         <Binding Path="LeftStickX" />
@@ -117,21 +117,21 @@
                                     HorizontalAlignment="Center" VerticalAlignment="Center">
                             <StackPanel Spacing="4" HorizontalAlignment="Center">
                                 <TextBlock Text="LT" Classes="label" HorizontalAlignment="Center" />
-                                <Border Width="26" Height="80" Background="#1E2228" CornerRadius="4">
+                                <Border Width="26" Height="80" Background="#0E1118" CornerRadius="4">
                                     <Border VerticalAlignment="Bottom" Background="#FFD93D" CornerRadius="4"
                                             Height="{Binding LeftTrigger, Converter={StaticResource TriggerHeight}}" />
                                 </Border>
                                 <TextBlock Text="{Binding LeftTrigger, StringFormat={}{0:P0}}"
-                                           FontSize="10" Foreground="#4A4F5A" HorizontalAlignment="Center" />
+                                           FontSize="10" Foreground="#3D4560" HorizontalAlignment="Center" />
                             </StackPanel>
                             <StackPanel Spacing="4" HorizontalAlignment="Center">
                                 <TextBlock Text="RT" Classes="label" HorizontalAlignment="Center" />
-                                <Border Width="26" Height="80" Background="#1E2228" CornerRadius="4">
+                                <Border Width="26" Height="80" Background="#0E1118" CornerRadius="4">
                                     <Border VerticalAlignment="Bottom" Background="#FFD93D" CornerRadius="4"
                                             Height="{Binding RightTrigger, Converter={StaticResource TriggerHeight}}" />
                                 </Border>
                                 <TextBlock Text="{Binding RightTrigger, StringFormat={}{0:P0}}"
-                                           FontSize="10" Foreground="#4A4F5A" HorizontalAlignment="Center" />
+                                           FontSize="10" Foreground="#3D4560" HorizontalAlignment="Center" />
                             </StackPanel>
                         </StackPanel>
 
@@ -139,16 +139,16 @@
                         <StackPanel Grid.Column="2" HorizontalAlignment="Center" Spacing="6">
                             <TextBlock Text="Right Stick" Classes="label" HorizontalAlignment="Center" />
                             <Border Width="106" Height="106" CornerRadius="53"
-                                    Background="#1E2228" BorderBrush="#2A2D34" BorderThickness="2">
+                                    Background="#0E1118" BorderBrush="#1D2235" BorderThickness="2">
                                 <Canvas Width="96" Height="96">
-                                    <Line StartPoint="48,0" EndPoint="48,96" Stroke="#2A2D34" StrokeThickness="1" />
-                                    <Line StartPoint="0,48" EndPoint="96,48" Stroke="#2A2D34" StrokeThickness="1" />
+                                    <Line StartPoint="48,0" EndPoint="48,96" Stroke="#1D2235" StrokeThickness="1" />
+                                    <Line StartPoint="0,48" EndPoint="96,48" Stroke="#1D2235" StrokeThickness="1" />
                                     <Ellipse Width="12" Height="12" Fill="#00DDFF"
                                              Canvas.Left="{Binding RightStickX, Converter={StaticResource StickToCanvas}}"
                                              Canvas.Top="{Binding RightStickY, Converter={StaticResource StickToCanvas}, ConverterParameter=invert}" />
                                 </Canvas>
                             </Border>
-                            <TextBlock HorizontalAlignment="Center" Foreground="#4A4F5A" FontSize="10">
+                            <TextBlock HorizontalAlignment="Center" Foreground="#3D4560" FontSize="10">
                                 <TextBlock.Text>
                                     <MultiBinding StringFormat="X:{0:F2} Y:{1:F2}">
                                         <Binding Path="RightStickX" />
@@ -162,7 +162,7 @@
                     <!-- RAW / OUTPUT labels -->
                     <Grid ColumnDefinitions="*,*" Margin="0,4,0,0">
                         <TextBlock Grid.Column="0" Text="RAW IN"
-                                   FontSize="10" Foreground="#4A4F5A" HorizontalAlignment="Center" />
+                                   FontSize="10" Foreground="#3D4560" HorizontalAlignment="Center" />
                         <TextBlock Grid.Column="1" Text="OUTPUT (after macros)"
                                    FontSize="10" Foreground="#00FF9C" HorizontalAlignment="Center" />
                     </Grid>

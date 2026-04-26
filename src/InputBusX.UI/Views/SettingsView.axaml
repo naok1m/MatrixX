@@ -30,7 +30,7 @@
                             <TextBlock Text="Polling Rate (ms)"
                                        Classes="label" />
                             <TextBlock Text="Lower = more responsive (1ms = ~1000Hz). Requires ≥1ms Windows timer resolution."
-                                       FontSize="11" Foreground="#4A4F5A" TextWrapping="Wrap" />
+                                       FontSize="11" Foreground="#3D4560" TextWrapping="Wrap" />
                         </StackPanel>
                         <NumericUpDown Grid.Column="1"
                                        Value="{Binding PollingRateMs}"
@@ -60,7 +60,7 @@
                             <TextBlock Text="Auto-connect on startup"
                                        FontSize="13" Foreground="#EAEAEA" />
                             <TextBlock Text="Automatically start the input pipeline when the app opens."
-                                       FontSize="11" Foreground="#4A4F5A" />
+                                       FontSize="11" Foreground="#3D4560" />
                         </StackPanel>
                     </CheckBox>
 
@@ -69,7 +69,7 @@
                             <TextBlock Text="Start minimized"
                                        FontSize="13" Foreground="#EAEAEA" />
                             <TextBlock Text="Open the app in the background without showing the window."
-                                       FontSize="11" Foreground="#4A4F5A" />
+                                       FontSize="11" Foreground="#3D4560" />
                         </StackPanel>
                     </CheckBox>
 
@@ -92,7 +92,7 @@
                             <TextBlock Text="Minimize to system tray"
                                        FontSize="13" Foreground="#EAEAEA" />
                             <TextBlock Text="Closing the window sends it to the tray instead of exiting."
-                                       FontSize="11" Foreground="#4A4F5A" />
+                                       FontSize="11" Foreground="#3D4560" />
                         </StackPanel>
                     </CheckBox>
 
@@ -101,7 +101,7 @@
                             <TextBlock Text="Show tray notifications"
                                        FontSize="13" Foreground="#EAEAEA" />
                             <TextBlock Text="Display Windows notifications for connection events and weapon detection."
-                                       FontSize="11" Foreground="#4A4F5A" />
+                                       FontSize="11" Foreground="#3D4560" />
                         </StackPanel>
                     </CheckBox>
 
@@ -124,7 +124,7 @@
                             <TextBlock Text="Log Level"
                                        Classes="label" />
                             <TextBlock Text="Controls how much detail is written to the log file."
-                                       FontSize="11" Foreground="#4A4F5A" />
+                                       FontSize="11" Foreground="#3D4560" />
                         </StackPanel>
                         <ComboBox Grid.Column="1"
                                   ItemsSource="{Binding LogLevels}"

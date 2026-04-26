@@ -27,11 +27,11 @@
         <!-- Empty state -->
         <TextBlock DockPanel.Dock="Top"
                    Text="No log entries yet. Start a connection to see activity."
-                   Foreground="#4A4F5A" FontStyle="Italic" HorizontalAlignment="Center"
+                   Foreground="#3D4560" FontStyle="Italic" HorizontalAlignment="Center"
                    Margin="0,40,0,0"
                    IsVisible="{Binding !LogEntries.Count}" />
 
-        <Border Classes="card" Background="#0A0A0A">
+        <Border Classes="card" Background="#0E1118">
             <ListBox x:Name="LogListBox"
                      ItemsSource="{Binding LogEntries}"
                      AutomationProperties.Name="Log entries list">
@@ -41,7 +41,7 @@
                             <TextBlock Grid.Column="0"
                                        Text="{Binding Timestamp, StringFormat={}{0:HH:mm:ss.fff}}"
                                        FontFamily="Consolas,Courier New" FontSize="11"
-                                       Foreground="#4A4F5A" />
+                                       Foreground="#3D4560" />
                             <TextBlock Grid.Column="1"
                                        Text="{Binding Level}"
                                        FontFamily="Consolas,Courier New" FontSize="11" FontWeight="Bold"
