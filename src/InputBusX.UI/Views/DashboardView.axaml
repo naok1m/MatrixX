@@ -7,104 +7,158 @@
 
     <UserControl.Resources>
         <conv:BoolToBrushConverter x:Key="StatusBrush" />
+        <conv:BoolToBrushConverter x:Key="GreenGrayBrush"
+                                   TrueBrush="#00FF95"
+                                   FalseBrush="#2A3345" />
         <conv:StickToCanvasConverter x:Key="StickToCanvas" CanvasSize="96" />
-        <conv:PercentageConverter x:Key="TriggerHeight" MaxHeight="80" />
+        <conv:PercentageConverter x:Key="TriggerHeight" MaxHeight="88" />
         <conv:BoolToStringConverter x:Key="ConnectLabel" TrueValue="Stop" FalseValue="Start" />
     </UserControl.Resources>
 
     <ScrollViewer>
-        <StackPanel Spacing="10" Margin="4">
-            <!-- Header -->
-            <TextBlock Text="Dashboard" Classes="section-header" FontSize="18" />
+        <StackPanel Spacing="16" Margin="0">
 
-            <!-- Connection & Status Row -->
-            <Grid ColumnDefinitions="*,*,*" Margin="0,0,0,6">
-                <Border Classes="card" Grid.Column="0" Padding="12,10">
-                    <StackPanel Spacing="6">
-                        <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,0,0,6">
-                            <Ellipse Width="7" Height="7" Fill="#00FF9C" VerticalAlignment="Center" />
-                            <TextBlock Text="Connection" FontSize="13" FontWeight="SemiBold" Foreground="#EAEAEA" />
+            <!-- ═══ Page header ═══════════════════════════════════════════════ -->
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Grid.Column="0" Spacing="2">
+                    <TextBlock Text="HOME" Classes="eyebrow" />
+                    <TextBlock Text="Dashboard" Classes="h1" />
+                </StackPanel>
+                <!-- Connection badge top-right -->
+                <Border Grid.Column="1" Classes="pill" VerticalAlignment="Bottom">
+                    <StackPanel Orientation="Horizontal" Spacing="7">
+                        <Ellipse Width="8" Height="8" VerticalAlignment="Center"
+                                 Fill="{Binding IsRunning, Converter={StaticResource GreenGrayBrush}}" />
+                        <TextBlock Text="{Binding ConnectionStatus}"
+                                   FontSize="11" Foreground="#F0F2F8"
+                                   VerticalAlignment="Center"
+                                   MaxWidth="220" TextWrapping="NoWrap"
+                                   TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- ═══ Stat row ═══════════════════════════════════════════════════ -->
+            <Grid ColumnDefinitions="*,*,*" Margin="0" HorizontalAlignment="Stretch">
+                <Grid.Styles>
+                    <Style Selector="Border.stat-card">
+                        <Setter Property="Background" Value="#0F1218" />
+                        <Setter Property="CornerRadius" Value="14" />
+                        <Setter Property="Padding" Value="18,16" />
+                        <Setter Property="BorderBrush" Value="#1F2533" />
+                        <Setter Property="BorderThickness" Value="1" />
+                        <Setter Property="BoxShadow" Value="0 4 24 0 #50000000" />
+                    </Style>
+                </Grid.Styles>
+
+                <!-- Connection card -->
+                <Border Classes="stat-card" Grid.Column="0" Margin="0,0,8,0">
+                    <StackPanel Spacing="12">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Ellipse Width="8" Height="8" VerticalAlignment="Center"
+                                     Fill="{Binding IsRunning, Converter={StaticResource GreenGrayBrush}}" />
+                            <TextBlock Text="CONEXÃO" Classes="eyebrow" VerticalAlignment="Center" />
                         </StackPanel>
-                        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                            <Ellipse Classes="status-dot"
-                                     Fill="{Binding IsRunning, Converter={StaticResource StatusBrush}}" />
-                            <TextBlock Text="{Binding ConnectionStatus}"
-                                       VerticalAlignment="Center"
-                                       TextWrapping="Wrap"
-                                       FontSize="11"
-                                       Foreground="#A0AACE" />
-                        </StackPanel>
+                        <TextBlock Text="{Binding ConnectionStatus}"
+                                   FontSize="12" Foreground="#8B92A8"
+                                   TextWrapping="Wrap" />
                         <Button Content="{Binding IsRunning, Converter={StaticResource ConnectLabel}}"
                                 Command="{Binding ToggleConnectionCommand}"
                                 IsEnabled="{Binding !IsConnecting}"
                                 Classes="accent"
-                                FontSize="12"
                                 HorizontalAlignment="Stretch"
                                 AutomationProperties.Name="Toggle controller connection" />
                     </StackPanel>
                 </Border>
 
-                <Border Classes="card" Grid.Column="1" Padding="12,10">
-                    <StackPanel Spacing="6">
-                        <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,0,0,6">
-                            <Ellipse Width="7" Height="7" Fill="#00DDFF" VerticalAlignment="Center" />
-                            <TextBlock Text="Profile" FontSize="13" FontWeight="SemiBold" Foreground="#EAEAEA" />
+                <!-- Profile card -->
+                <Border Classes="stat-card" Grid.Column="1" Margin="0,0,8,0">
+                    <StackPanel Spacing="12">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Ellipse Width="8" Height="8" VerticalAlignment="Center" Fill="#00B7FF" />
+                            <TextBlock Text="PERFIL ATIVO" Classes="eyebrow" VerticalAlignment="Center" />
                         </StackPanel>
                         <TextBlock Text="{Binding ActiveProfileName}"
-                                   FontSize="16" FontWeight="Bold"
-                                   Foreground="#00FF9C"
+                                   FontSize="18" FontWeight="Bold"
+                                   Foreground="#00FF95"
                                    TextWrapping="Wrap" />
                     </StackPanel>
                 </Border>
 
-                <Border Classes="card" Grid.Column="2" Padding="12,10">
-                    <StackPanel Spacing="6">
-                        <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,0,0,6">
-                            <Ellipse Width="7" Height="7" Fill="#B388FF" VerticalAlignment="Center" />
-                            <TextBlock Text="Devices" FontSize="13" FontWeight="SemiBold" Foreground="#EAEAEA" />
+                <!-- Devices card -->
+                <Border Classes="stat-card" Grid.Column="2">
+                    <StackPanel Spacing="12">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Ellipse Width="8" Height="8" VerticalAlignment="Center" Fill="#FFB547" />
+                            <TextBlock Text="DISPOSITIVOS" Classes="eyebrow" VerticalAlignment="Center" />
                         </StackPanel>
                         <ItemsControl ItemsSource="{Binding ConnectedDevices}"
                                       AutomationProperties.Name="Connected devices list">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding}" Foreground="#EAEAEA"
-                                               FontSize="11" TextWrapping="Wrap" Margin="0,1" />
+                                    <TextBlock Text="{Binding}" Foreground="#F0F2F8"
+                                               FontSize="12" TextWrapping="Wrap" Margin="0,1" />
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
-                        <TextBlock Text="No devices connected"
+                        <TextBlock Text="Nenhum dispositivo"
                                    IsVisible="{Binding !ConnectedDevices.Count}"
-                                   Foreground="#3D4560" FontStyle="Italic" FontSize="11" />
+                                   Foreground="#4A5066" FontStyle="Italic" FontSize="12" />
                     </StackPanel>
                 </Border>
             </Grid>
 
-            <!-- Input Visualizer -->
-            <Border Classes="card" Padding="14,12">
-                <StackPanel Spacing="12">
-                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,4">
-                        <Ellipse Width="7" Height="7" Fill="#FFD93D" VerticalAlignment="Center" />
-                        <TextBlock Text="Real-Time Input" FontSize="13" FontWeight="SemiBold" Foreground="#EAEAEA" />
-                    </StackPanel>
+            <!-- ═══ Live Input Visualizer ══════════════════════════════════════ -->
+            <Border Classes="card" Padding="20">
+                <StackPanel Spacing="18">
 
-                    <!-- Sticks + Triggers -->
+                    <!-- Section title -->
+                    <Grid ColumnDefinitions="Auto,*,Auto">
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
+                            <Ellipse Width="8" Height="8" Fill="#FFB547" VerticalAlignment="Center" />
+                            <TextBlock Text="Input em Tempo Real" FontWeight="SemiBold" FontSize="14" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="16">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <Ellipse Width="6" Height="6" Fill="#4A5066" VerticalAlignment="Center" />
+                                <TextBlock Text="RAW IN" FontSize="10" Foreground="#4A5066" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <Ellipse Width="6" Height="6" Fill="#00FF95" VerticalAlignment="Center" />
+                                <TextBlock Text="OUTPUT" FontSize="10" Foreground="#00FF95" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Sticks + Triggers row -->
                     <Grid ColumnDefinitions="*,Auto,*">
+
                         <!-- Left Stick -->
-                        <StackPanel Grid.Column="0" HorizontalAlignment="Center" Spacing="6">
+                        <StackPanel Grid.Column="0" HorizontalAlignment="Center" Spacing="8">
                             <TextBlock Text="Left Stick" Classes="label" HorizontalAlignment="Center" />
-                            <Border Width="106" Height="106" CornerRadius="53"
-                                    Background="#0E1118" BorderBrush="#1D2235" BorderThickness="2">
+                            <Border Width="114" Height="114" CornerRadius="57"
+                                    Background="#080B11"
+                                    BorderBrush="#1F2533" BorderThickness="2"
+                                    BoxShadow="inset 0 2 12 0 #40000000">
                                 <Canvas Width="96" Height="96">
-                                    <Line StartPoint="48,0" EndPoint="48,96" Stroke="#1D2235" StrokeThickness="1" />
-                                    <Line StartPoint="0,48" EndPoint="96,48" Stroke="#1D2235" StrokeThickness="1" />
-                                    <Ellipse Width="12" Height="12" Fill="#00FF9C"
+                                    <!-- Crosshairs -->
+                                    <Line StartPoint="48,4" EndPoint="48,92" Stroke="#1F2533" StrokeThickness="1" />
+                                    <Line StartPoint="4,48" EndPoint="92,48" Stroke="#1F2533" StrokeThickness="1" />
+                                    <!-- Center ring -->
+                                    <Ellipse Width="8" Height="8" Fill="Transparent"
+                                             Stroke="#2A3345" StrokeThickness="1"
+                                             Canvas.Left="44" Canvas.Top="44" />
+                                    <!-- Stick dot with glow -->
+                                    <Ellipse Width="14" Height="14"
+                                             Fill="#00FF95"
                                              Canvas.Left="{Binding LeftStickX, Converter={StaticResource StickToCanvas}}"
                                              Canvas.Top="{Binding LeftStickY, Converter={StaticResource StickToCanvas}, ConverterParameter=invert}" />
                                 </Canvas>
                             </Border>
-                            <TextBlock HorizontalAlignment="Center" Foreground="#3D4560" FontSize="10">
+                            <TextBlock HorizontalAlignment="Center" FontSize="10"
+                                       Classes="mono" Foreground="#4A5066">
                                 <TextBlock.Text>
-                                    <MultiBinding StringFormat="X:{0:F2} Y:{1:F2}">
+                                    <MultiBinding StringFormat="X:{0:F2}  Y:{1:F2}">
                                         <Binding Path="LeftStickX" />
                                         <Binding Path="LeftStickY" />
                                     </MultiBinding>
@@ -112,45 +166,77 @@
                             </TextBlock>
                         </StackPanel>
 
-                        <!-- Triggers -->
-                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="16"
-                                    HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <StackPanel Spacing="4" HorizontalAlignment="Center">
+                        <!-- Triggers (center) -->
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="20"
+                                    VerticalAlignment="Center" Margin="24,0">
+                            <!-- LT -->
+                            <StackPanel Spacing="6" HorizontalAlignment="Center">
                                 <TextBlock Text="LT" Classes="label" HorizontalAlignment="Center" />
-                                <Border Width="26" Height="80" Background="#0E1118" CornerRadius="4">
-                                    <Border VerticalAlignment="Bottom" Background="#FFD93D" CornerRadius="4"
-                                            Height="{Binding LeftTrigger, Converter={StaticResource TriggerHeight}}" />
+                                <Border Width="28" Height="88" CornerRadius="6"
+                                        Background="#080B11" BorderBrush="#1F2533" BorderThickness="1">
+                                    <Border VerticalAlignment="Bottom" CornerRadius="5">
+                                        <Border.Background>
+                                            <LinearGradientBrush StartPoint="0%,100%" EndPoint="0%,0%">
+                                                <GradientStop Color="#FFB547" Offset="0" />
+                                                <GradientStop Color="#FFCF80" Offset="1" />
+                                            </LinearGradientBrush>
+                                        </Border.Background>
+                                        <Border.Height>
+                                            <Binding Path="LeftTrigger" Converter="{StaticResource TriggerHeight}" />
+                                        </Border.Height>
+                                    </Border>
                                 </Border>
                                 <TextBlock Text="{Binding LeftTrigger, StringFormat={}{0:P0}}"
-                                           FontSize="10" Foreground="#3D4560" HorizontalAlignment="Center" />
+                                           FontSize="10" Classes="mono" Foreground="#4A5066"
+                                           HorizontalAlignment="Center" />
                             </StackPanel>
-                            <StackPanel Spacing="4" HorizontalAlignment="Center">
+                            <!-- RT -->
+                            <StackPanel Spacing="6" HorizontalAlignment="Center">
                                 <TextBlock Text="RT" Classes="label" HorizontalAlignment="Center" />
-                                <Border Width="26" Height="80" Background="#0E1118" CornerRadius="4">
-                                    <Border VerticalAlignment="Bottom" Background="#FFD93D" CornerRadius="4"
-                                            Height="{Binding RightTrigger, Converter={StaticResource TriggerHeight}}" />
+                                <Border Width="28" Height="88" CornerRadius="6"
+                                        Background="#080B11" BorderBrush="#1F2533" BorderThickness="1">
+                                    <Border VerticalAlignment="Bottom" CornerRadius="5">
+                                        <Border.Background>
+                                            <LinearGradientBrush StartPoint="0%,100%" EndPoint="0%,0%">
+                                                <GradientStop Color="#FFB547" Offset="0" />
+                                                <GradientStop Color="#FFCF80" Offset="1" />
+                                            </LinearGradientBrush>
+                                        </Border.Background>
+                                        <Border.Height>
+                                            <Binding Path="RightTrigger" Converter="{StaticResource TriggerHeight}" />
+                                        </Border.Height>
+                                    </Border>
                                 </Border>
                                 <TextBlock Text="{Binding RightTrigger, StringFormat={}{0:P0}}"
-                                           FontSize="10" Foreground="#3D4560" HorizontalAlignment="Center" />
+                                           FontSize="10" Classes="mono" Foreground="#4A5066"
+                                           HorizontalAlignment="Center" />
                             </StackPanel>
                         </StackPanel>
 
                         <!-- Right Stick -->
-                        <StackPanel Grid.Column="2" HorizontalAlignment="Center" Spacing="6">
+                        <StackPanel Grid.Column="2" HorizontalAlignment="Center" Spacing="8">
                             <TextBlock Text="Right Stick" Classes="label" HorizontalAlignment="Center" />
-                            <Border Width="106" Height="106" CornerRadius="53"
-                                    Background="#0E1118" BorderBrush="#1D2235" BorderThickness="2">
+                            <Border Width="114" Height="114" CornerRadius="57"
+                                    Background="#080B11"
+                                    BorderBrush="#1F2533" BorderThickness="2"
+                                    BoxShadow="inset 0 2 12 0 #40000000">
                                 <Canvas Width="96" Height="96">
-                                    <Line StartPoint="48,0" EndPoint="48,96" Stroke="#1D2235" StrokeThickness="1" />
-                                    <Line StartPoint="0,48" EndPoint="96,48" Stroke="#1D2235" StrokeThickness="1" />
-                                    <Ellipse Width="12" Height="12" Fill="#00DDFF"
+                                    <Line StartPoint="48,4" EndPoint="48,92" Stroke="#1F2533" StrokeThickness="1" />
+                                    <Line StartPoint="4,48" EndPoint="92,48" Stroke="#1F2533" StrokeThickness="1" />
+                                    <Ellipse Width="8" Height="8" Fill="Transparent"
+                                             Stroke="#2A3345" StrokeThickness="1"
+                                             Canvas.Left="44" Canvas.Top="44" />
+                                    <!-- Cyan dot for right stick -->
+                                    <Ellipse Width="14" Height="14"
+                                             Fill="#00B7FF"
                                              Canvas.Left="{Binding RightStickX, Converter={StaticResource StickToCanvas}}"
                                              Canvas.Top="{Binding RightStickY, Converter={StaticResource StickToCanvas}, ConverterParameter=invert}" />
                                 </Canvas>
                             </Border>
-                            <TextBlock HorizontalAlignment="Center" Foreground="#3D4560" FontSize="10">
+                            <TextBlock HorizontalAlignment="Center" FontSize="10"
+                                       Classes="mono" Foreground="#4A5066">
                                 <TextBlock.Text>
-                                    <MultiBinding StringFormat="X:{0:F2} Y:{1:F2}">
+                                    <MultiBinding StringFormat="X:{0:F2}  Y:{1:F2}">
                                         <Binding Path="RightStickX" />
                                         <Binding Path="RightStickY" />
                                     </MultiBinding>
@@ -159,106 +245,115 @@
                         </StackPanel>
                     </Grid>
 
-                    <!-- RAW / OUTPUT labels -->
-                    <Grid ColumnDefinitions="*,*" Margin="0,4,0,0">
-                        <TextBlock Grid.Column="0" Text="RAW IN"
-                                   FontSize="10" Foreground="#3D4560" HorizontalAlignment="Center" />
-                        <TextBlock Grid.Column="1" Text="OUTPUT (after macros)"
-                                   FontSize="10" Foreground="#00FF9C" HorizontalAlignment="Center" />
+                    <!-- Divider -->
+                    <Border Height="1" Background="#1F2533" />
+
+                    <!-- Button matrix: RAW | divider | OUTPUT -->
+                    <Grid ColumnDefinitions="*,1,*">
+
+                        <!-- RAW buttons -->
+                        <StackPanel Grid.Column="0" Orientation="Horizontal"
+                                    HorizontalAlignment="Center" Spacing="16">
+                            <!-- D-Pad RAW -->
+                            <StackPanel Spacing="6">
+                                <TextBlock Text="D-PAD" Classes="eyebrow" HorizontalAlignment="Center" />
+                                <Grid RowDefinitions="22,22,22" ColumnDefinitions="22,22,22">
+                                    <Ellipse Grid.Row="0" Grid.Column="1" Classes="btn-indicator"
+                                             Fill="{Binding DpadUp, Converter={StaticResource StatusBrush}}" />
+                                    <Ellipse Grid.Row="1" Grid.Column="0" Classes="btn-indicator"
+                                             Fill="{Binding DpadLeft, Converter={StaticResource StatusBrush}}" />
+                                    <Ellipse Grid.Row="1" Grid.Column="2" Classes="btn-indicator"
+                                             Fill="{Binding DpadRight, Converter={StaticResource StatusBrush}}" />
+                                    <Ellipse Grid.Row="2" Grid.Column="1" Classes="btn-indicator"
+                                             Fill="{Binding DpadDown, Converter={StaticResource StatusBrush}}" />
+                                </Grid>
+                            </StackPanel>
+
+                            <!-- Face Buttons RAW -->
+                            <StackPanel Spacing="6">
+                                <TextBlock Text="BUTTONS" Classes="eyebrow" HorizontalAlignment="Center" />
+                                <Grid RowDefinitions="22,22,22" ColumnDefinitions="22,22,22">
+                                    <Ellipse Grid.Row="0" Grid.Column="1" Classes="btn-indicator"
+                                             Fill="{Binding ButtonY, Converter={StaticResource StatusBrush}}" />
+                                    <Ellipse Grid.Row="1" Grid.Column="0" Classes="btn-indicator"
+                                             Fill="{Binding ButtonX, Converter={StaticResource StatusBrush}}" />
+                                    <Ellipse Grid.Row="1" Grid.Column="2" Classes="btn-indicator"
+                                             Fill="{Binding ButtonB, Converter={StaticResource StatusBrush}}" />
+                                    <Ellipse Grid.Row="2" Grid.Column="1" Classes="btn-indicator"
+                                             Fill="{Binding ButtonA, Converter={StaticResource StatusBrush}}" />
+                                </Grid>
+                            </StackPanel>
+
+                            <!-- Shoulders RAW -->
+                            <StackPanel Spacing="6" VerticalAlignment="Center">
+                                <TextBlock Text="SHOULDER" Classes="eyebrow" HorizontalAlignment="Center" />
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <Border Padding="8,5" CornerRadius="6"
+                                            Background="{Binding ButtonLB, Converter={StaticResource StatusBrush}}">
+                                        <TextBlock Text="LB" FontSize="10" Foreground="#06070C" FontWeight="Bold" />
+                                    </Border>
+                                    <Border Padding="8,5" CornerRadius="6"
+                                            Background="{Binding ButtonRB, Converter={StaticResource StatusBrush}}">
+                                        <TextBlock Text="RB" FontSize="10" Foreground="#06070C" FontWeight="Bold" />
+                                    </Border>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <Border Padding="6,4" CornerRadius="5"
+                                            Background="{Binding ButtonBack, Converter={StaticResource StatusBrush}}">
+                                        <TextBlock Text="Back" FontSize="9" Foreground="#06070C" />
+                                    </Border>
+                                    <Border Padding="6,4" CornerRadius="5"
+                                            Background="{Binding ButtonStart, Converter={StaticResource StatusBrush}}">
+                                        <TextBlock Text="Start" FontSize="9" Foreground="#06070C" />
+                                    </Border>
+                                </StackPanel>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- Divider -->
+                        <Border Grid.Column="1" Width="1" Background="#1F2533" Margin="12,0" />
+
+                        <!-- OUTPUT buttons -->
+                        <StackPanel Grid.Column="2" Orientation="Horizontal"
+                                    HorizontalAlignment="Center" Spacing="16">
+
+                            <!-- D-Pad OUT -->
+                            <StackPanel Spacing="6">
+                                <TextBlock Text="D-PAD OUT" Classes="eyebrow" Foreground="#00FF95"
+                                           HorizontalAlignment="Center" />
+                                <Grid RowDefinitions="22,22,22" ColumnDefinitions="22,22,22">
+                                    <Ellipse Grid.Row="0" Grid.Column="1" Classes="btn-indicator"
+                                             Fill="{Binding OutDpadUp, Converter={StaticResource GreenGrayBrush}}" />
+                                    <Ellipse Grid.Row="1" Grid.Column="0" Classes="btn-indicator"
+                                             Fill="{Binding OutDpadLeft, Converter={StaticResource GreenGrayBrush}}" />
+                                    <Ellipse Grid.Row="1" Grid.Column="2" Classes="btn-indicator"
+                                             Fill="{Binding OutDpadRight, Converter={StaticResource GreenGrayBrush}}" />
+                                    <Ellipse Grid.Row="2" Grid.Column="1" Classes="btn-indicator"
+                                             Fill="{Binding OutDpadDown, Converter={StaticResource GreenGrayBrush}}" />
+                                </Grid>
+                            </StackPanel>
+
+                            <!-- Face Buttons OUT -->
+                            <StackPanel Spacing="6">
+                                <TextBlock Text="BUTTONS OUT" Classes="eyebrow" Foreground="#00FF95"
+                                           HorizontalAlignment="Center" />
+                                <Grid RowDefinitions="22,22,22" ColumnDefinitions="22,22,22">
+                                    <Ellipse Grid.Row="0" Grid.Column="1" Classes="btn-indicator"
+                                             Fill="{Binding OutButtonY, Converter={StaticResource GreenGrayBrush}}" />
+                                    <Ellipse Grid.Row="1" Grid.Column="0" Classes="btn-indicator"
+                                             Fill="{Binding OutButtonX, Converter={StaticResource GreenGrayBrush}}" />
+                                    <Ellipse Grid.Row="1" Grid.Column="2" Classes="btn-indicator"
+                                             Fill="{Binding OutButtonB, Converter={StaticResource GreenGrayBrush}}" />
+                                    <Ellipse Grid.Row="2" Grid.Column="1" Classes="btn-indicator"
+                                             Fill="{Binding OutButtonA, Converter={StaticResource GreenGrayBrush}}" />
+                                </Grid>
+                            </StackPanel>
+                        </StackPanel>
                     </Grid>
 
-                    <!-- Buttons grid — 22px cells -->
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="10" Margin="0,2,0,0">
-                        <!-- DPad RAW -->
-                        <StackPanel Spacing="2" VerticalAlignment="Center">
-                            <TextBlock Text="D-Pad" Classes="label" HorizontalAlignment="Center" />
-                            <Grid RowDefinitions="22,22,22" ColumnDefinitions="22,22,22" Width="66" Height="66">
-                                <Ellipse Grid.Row="0" Grid.Column="1" Classes="btn-indicator"
-                                         Fill="{Binding DpadUp, Converter={StaticResource StatusBrush}}" />
-                                <Ellipse Grid.Row="1" Grid.Column="0" Classes="btn-indicator"
-                                         Fill="{Binding DpadLeft, Converter={StaticResource StatusBrush}}" />
-                                <Ellipse Grid.Row="1" Grid.Column="2" Classes="btn-indicator"
-                                         Fill="{Binding DpadRight, Converter={StaticResource StatusBrush}}" />
-                                <Ellipse Grid.Row="2" Grid.Column="1" Classes="btn-indicator"
-                                         Fill="{Binding DpadDown, Converter={StaticResource StatusBrush}}" />
-                            </Grid>
-                        </StackPanel>
-
-                        <!-- Face Buttons RAW -->
-                        <StackPanel Spacing="2" VerticalAlignment="Center">
-                            <TextBlock Text="Buttons" Classes="label" HorizontalAlignment="Center" />
-                            <Grid RowDefinitions="22,22,22" ColumnDefinitions="22,22,22" Width="66" Height="66">
-                                <Ellipse Grid.Row="0" Grid.Column="1" Classes="btn-indicator"
-                                         Fill="{Binding ButtonY, Converter={StaticResource StatusBrush}}" />
-                                <Ellipse Grid.Row="1" Grid.Column="0" Classes="btn-indicator"
-                                         Fill="{Binding ButtonX, Converter={StaticResource StatusBrush}}" />
-                                <Ellipse Grid.Row="1" Grid.Column="2" Classes="btn-indicator"
-                                         Fill="{Binding ButtonB, Converter={StaticResource StatusBrush}}" />
-                                <Ellipse Grid.Row="2" Grid.Column="1" Classes="btn-indicator"
-                                         Fill="{Binding ButtonA, Converter={StaticResource StatusBrush}}" />
-                            </Grid>
-                        </StackPanel>
-
-                        <!-- Separator -->
-                        <Border Width="1" Background="#1E2228" Margin="2,8" />
-
-                        <!-- DPad OUT -->
-                        <StackPanel Spacing="2" VerticalAlignment="Center">
-                            <TextBlock Text="D-Pad OUT" FontSize="10" Foreground="#00FF9C" HorizontalAlignment="Center" />
-                            <Grid RowDefinitions="22,22,22" ColumnDefinitions="22,22,22" Width="66" Height="66">
-                                <Ellipse Grid.Row="0" Grid.Column="1" Classes="btn-indicator"
-                                         Fill="{Binding OutDpadUp, Converter={StaticResource StatusBrush}}" />
-                                <Ellipse Grid.Row="1" Grid.Column="0" Classes="btn-indicator"
-                                         Fill="{Binding OutDpadLeft, Converter={StaticResource StatusBrush}}" />
-                                <Ellipse Grid.Row="1" Grid.Column="2" Classes="btn-indicator"
-                                         Fill="{Binding OutDpadRight, Converter={StaticResource StatusBrush}}" />
-                                <Ellipse Grid.Row="2" Grid.Column="1" Classes="btn-indicator"
-                                         Fill="{Binding OutDpadDown, Converter={StaticResource StatusBrush}}" />
-                            </Grid>
-                        </StackPanel>
-
-                        <!-- Face Buttons OUT -->
-                        <StackPanel Spacing="2" VerticalAlignment="Center">
-                            <TextBlock Text="Buttons OUT" FontSize="10" Foreground="#00FF9C" HorizontalAlignment="Center" />
-                            <Grid RowDefinitions="22,22,22" ColumnDefinitions="22,22,22" Width="66" Height="66">
-                                <Ellipse Grid.Row="0" Grid.Column="1" Classes="btn-indicator"
-                                         Fill="{Binding OutButtonY, Converter={StaticResource StatusBrush}}" />
-                                <Ellipse Grid.Row="1" Grid.Column="0" Classes="btn-indicator"
-                                         Fill="{Binding OutButtonX, Converter={StaticResource StatusBrush}}" />
-                                <Ellipse Grid.Row="1" Grid.Column="2" Classes="btn-indicator"
-                                         Fill="{Binding OutButtonB, Converter={StaticResource StatusBrush}}" />
-                                <Ellipse Grid.Row="2" Grid.Column="1" Classes="btn-indicator"
-                                         Fill="{Binding OutButtonA, Converter={StaticResource StatusBrush}}" />
-                            </Grid>
-                        </StackPanel>
-
-                        <!-- Shoulders + Menu -->
-                        <StackPanel Spacing="6" VerticalAlignment="Center">
-                            <TextBlock Text="Shoulders" Classes="label" HorizontalAlignment="Center" />
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                <Border Padding="6,3" CornerRadius="4"
-                                        Background="{Binding ButtonLB, Converter={StaticResource StatusBrush}}">
-                                    <TextBlock Text="LB" FontSize="10" Foreground="#0A0A0A" FontWeight="Bold" />
-                                </Border>
-                                <Border Padding="6,3" CornerRadius="4"
-                                        Background="{Binding ButtonRB, Converter={StaticResource StatusBrush}}">
-                                    <TextBlock Text="RB" FontSize="10" Foreground="#0A0A0A" FontWeight="Bold" />
-                                </Border>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
-                                <Border Padding="5,2" CornerRadius="3"
-                                        Background="{Binding ButtonBack, Converter={StaticResource StatusBrush}}">
-                                    <TextBlock Text="Back" FontSize="9" Foreground="#0A0A0A" />
-                                </Border>
-                                <Border Padding="5,2" CornerRadius="3"
-                                        Background="{Binding ButtonStart, Converter={StaticResource StatusBrush}}">
-                                    <TextBlock Text="Start" FontSize="9" Foreground="#0A0A0A" />
-                                </Border>
-                            </StackPanel>
-                        </StackPanel>
-                    </StackPanel>
                 </StackPanel>
             </Border>
+
         </StackPanel>
     </ScrollViewer>
 </UserControl>

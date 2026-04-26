@@ -4,11 +4,6 @@ using Avalonia.Media;
 
 namespace InputBusX.UI.Controls;
 
-/// <summary>
-/// Custom control that renders the stick response curve — deadzone band, optional
-/// anti-deadzone jump, and the exponent-shaped output curve — in real time as the
-/// user drags the filter sliders.
-/// </summary>
 public sealed class ResponseCurveCanvas : Control
 {
     public static readonly StyledProperty<double> DeadzoneProperty =
@@ -49,25 +44,52 @@ public sealed class ResponseCurveCanvas : Control
         double h = Bounds.Height;
         if (w < 2 || h < 2) return;
 
-        var bgBrush      = new SolidColorBrush(Color.Parse("#0E1118"));
-        var gridPen      = new Pen(new SolidColorBrush(Color.Parse("#151C28")), 1);
-        var dzFill       = new SolidColorBrush(Color.Parse("#111720"));
-        var dzLinePen    = new Pen(new SolidColorBrush(Color.Parse("#252B3F")), 1);
-        var linearPen    = new Pen(new SolidColorBrush(Color.Parse("#1D2235")), 1);
-        var curvePen     = new Pen(new SolidColorBrush(Color.Parse("#00FF9C")), 2,
-                               lineCap: PenLineCap.Round, lineJoin: PenLineJoin.Round);
-        var glowPen      = new Pen(new SolidColorBrush(Color.Parse("#2000FF9C")), 6,
-                               lineCap: PenLineCap.Round, lineJoin: PenLineJoin.Round);
-        var borderPen    = new Pen(new SolidColorBrush(Color.Parse("#1D2235")), 1);
+        // ── Palette ──────────────────────────────────────────────────────────
+        var bgBrush = new SolidColorBrush(Color.Parse("#080B11"));
 
-        // Background
+        // Very subtle grid — barely visible, doesn't compete with curve
+        var gridPen = new Pen(new SolidColorBrush(Color.Parse("#0E1520")), 1);
+
+        // Deadzone shading
+        var dzFill    = new SolidColorBrush(Color.Parse("#0C1018"));
+        var dzEdgePen = new Pen(new SolidColorBrush(Color.Parse("#1F2533")), 1,
+                            dashStyle: new DashStyle([3, 4], 0));
+
+        // Reference 1:1 line — dotted gray, subtle
+        var linearPen = new Pen(new SolidColorBrush(Color.Parse("#2A3345")), 1,
+                            dashStyle: new DashStyle([5, 5], 0));
+
+        // Curve glow passes — wide outer, medium inner
+        var glowOuterPen = new Pen(new SolidColorBrush(Color.Parse("#1800B7FF")), 12,
+                               lineCap: PenLineCap.Round, lineJoin: PenLineJoin.Round);
+        var glowInnerPen = new Pen(new SolidColorBrush(Color.Parse("#3000B7FF")), 6,
+                               lineCap: PenLineCap.Round, lineJoin: PenLineJoin.Round);
+
+        // Curve — cyan gradient stroke
+        var curveBrush = new LinearGradientBrush
+        {
+            StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative),
+            EndPoint   = new RelativePoint(1, 0, RelativeUnit.Relative),
+            GradientStops =
+            [
+                new GradientStop(Color.Parse("#00FF95"), 0.0),
+                new GradientStop(Color.Parse("#00D4E8"), 0.5),
+                new GradientStop(Color.Parse("#00B7FF"), 1.0),
+            ]
+        };
+        var curvePen = new Pen(curveBrush, 2.5,
+                           lineCap: PenLineCap.Round, lineJoin: PenLineJoin.Round);
+
+        var borderPen = new Pen(new SolidColorBrush(Color.Parse("#1F2533")), 1);
+
+        // ── Background ───────────────────────────────────────────────────────
         ctx.FillRectangle(bgBrush, new Rect(0, 0, w, h));
 
-        // Grid (4 divisions)
-        for (int i = 1; i < 4; i++)
+        // ── Subtle grid (5×5) ────────────────────────────────────────────────
+        for (int i = 1; i < 5; i++)
         {
-            double gx = w * i / 4.0;
-            double gy = h * i / 4.0;
+            double gx = w * i / 5.0;
+            double gy = h * i / 5.0;
             ctx.DrawLine(gridPen, new Point(gx, 0), new Point(gx, h));
             ctx.DrawLine(gridPen, new Point(0, gy), new Point(w, gy));
         }
@@ -76,26 +98,26 @@ public sealed class ResponseCurveCanvas : Control
         double adz = Math.Clamp(AntiDeadzone, 0, 1);
         double exp = Math.Max(Exponent, 0.01);
 
-        // Deadzone band (shaded region on left)
+        // ── Deadzone band ────────────────────────────────────────────────────
         if (dz > 0)
         {
             double dzX = dz * w;
             ctx.FillRectangle(dzFill, new Rect(0, 0, dzX, h));
-            ctx.DrawLine(dzLinePen, new Point(dzX, 0), new Point(dzX, h));
+            ctx.DrawLine(dzEdgePen, new Point(dzX, 0), new Point(dzX, h));
         }
 
-        // 1:1 linear reference
+        // ── 1:1 linear reference (dotted) ────────────────────────────────────
         ctx.DrawLine(linearPen, new Point(0, h), new Point(w, 0));
 
-        // Response curve — build StreamGeometry for a smooth polyline
-        const int steps = 160;
+        // ── Response curve — multi-pass glow + crisp line ────────────────────
+        const int steps = 200;
         var geo = BuildCurveGeometry(w, h, dz, adz, exp, steps);
 
-        // Draw glow pass first, then crisp line on top
-        ctx.DrawGeometry(null, glowPen, geo);
+        ctx.DrawGeometry(null, glowOuterPen, geo);
+        ctx.DrawGeometry(null, glowInnerPen, geo);
         ctx.DrawGeometry(null, curvePen, geo);
 
-        // Border
+        // ── Border ───────────────────────────────────────────────────────────
         ctx.DrawRectangle(null, borderPen, new Rect(0.5, 0.5, w - 1, h - 1));
     }
 
@@ -120,7 +142,6 @@ public sealed class ResponseCurveCanvas : Control
         return geo;
     }
 
-    // Mirrors CompositeInputFilter.ApplyStickFilters magnitude path exactly.
     private static double ComputeOutput(double input, double deadzone, double antiDeadzone, double exponent)
     {
         if (input < deadzone) return 0.0;

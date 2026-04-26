@@ -4,56 +4,109 @@
              x:Class="InputBusX.UI.Views.MacroEditorView"
              x:DataType="vm:MacroEditorViewModel">
 
-    <Grid ColumnDefinitions="260,*" Margin="4">
-        <!-- Macro List -->
-        <Border Classes="card" Grid.Column="0" Margin="0,0,8,0">
+    <Grid ColumnDefinitions="300,*" Margin="4">
+        <!-- Macro List Sidebar -->
+        <Border Classes="card" Grid.Column="0" Margin="0,0,10,0" Padding="16">
             <DockPanel>
-                <TextBlock Text="Macros" Classes="section-header" DockPanel.Dock="Top" />
 
-                <StackPanel DockPanel.Dock="Bottom" Spacing="4" Margin="0,8,0,0">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <Button Content="+ Add" Command="{Binding AddMacroCommand}" Classes="accent"
-                                ToolTip.Tip="Criar novo macro  (Ctrl+N)"
-                                AutomationProperties.Name="Add new macro" />
-                        <Button Content="Delete" Command="{Binding DeleteMacroCommand}" Classes="danger"
-                                ToolTip.Tip="Deletar macro selecionado  (Del)"
-                                AutomationProperties.Name="Delete selected macro" />
-                        <Button Content="⬇ Importar" Command="{Binding ImportMacrosCommand}" Classes="accent"
-                                ToolTip.Tip="Importa macros de um arquivo .matrixmacros exportado anteriormente"
-                                AutomationProperties.Name="Import macros" />
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <Button Content="⬆ Exportar" Command="{Binding ExportSelectedMacroCommand}"
-                                ToolTip.Tip="Exporta o macro selecionado para .matrixmacros"
-                                AutomationProperties.Name="Export selected macro" />
-                        <Button Content="⬆⬆ Todos" Command="{Binding ExportAllMacrosCommand}"
-                                ToolTip.Tip="Exporta todos os macros do perfil"
-                                AutomationProperties.Name="Export all macros" />
-                    </StackPanel>
-                </StackPanel>
+                <!-- Header row: label + Add button -->
+                <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,14">
+                    <TextBlock Grid.Column="0" Text="MACROS" Classes="eyebrow"
+                               VerticalAlignment="Center" />
+                    <Button Grid.Column="1" Content="+ New" Command="{Binding AddMacroCommand}"
+                            Classes="accent" Padding="12,6" MinHeight="30"
+                            ToolTip.Tip="Criar novo macro (Ctrl+N)"
+                            AutomationProperties.Name="Add new macro" />
+                </Grid>
+
+                <!-- Action buttons row -->
+                <Grid DockPanel.Dock="Bottom" Margin="0,12,0,0"
+                      ColumnDefinitions="*,*,*" RowDefinitions="Auto,Auto">
+                    <Button Grid.Row="0" Grid.Column="0"
+                            Content="Delete" Command="{Binding DeleteMacroCommand}"
+                            Classes="danger" Padding="8,6" MinHeight="30"
+                            Margin="0,0,4,4"
+                            ToolTip.Tip="Deletar macro selecionado (Del)"
+                            AutomationProperties.Name="Delete selected macro" />
+                    <Button Grid.Row="0" Grid.Column="1"
+                            Content="⬇ Import" Command="{Binding ImportMacrosCommand}"
+                            Classes="secondary" Padding="8,6" MinHeight="30"
+                            Margin="0,0,4,4"
+                            ToolTip.Tip="Importar macros de .matrixmacros"
+                            AutomationProperties.Name="Import macros" />
+                    <Button Grid.Row="0" Grid.Column="2"
+                            Content="⬆ Export" Command="{Binding ExportSelectedMacroCommand}"
+                            Classes="ghost" Padding="8,6" MinHeight="30"
+                            Margin="0,0,0,4"
+                            ToolTip.Tip="Exportar macro selecionado"
+                            AutomationProperties.Name="Export selected macro" />
+                    <Button Grid.Row="1" Grid.ColumnSpan="3"
+                            Content="⬆⬆ Export All" Command="{Binding ExportAllMacrosCommand}"
+                            Classes="ghost" Padding="8,6" MinHeight="30"
+                            HorizontalAlignment="Stretch"
+                            ToolTip.Tip="Exportar todos os macros"
+                            AutomationProperties.Name="Export all macros" />
+                </Grid>
 
                 <!-- Empty state -->
-                <TextBlock Text="No macros yet.&#x0A;Click + Add to create one."
-                           Foreground="#4A4F5A" FontStyle="Italic" TextAlignment="Center"
-                           HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,24"
-                           IsVisible="{Binding !Macros.Count}" />
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center"
+                            Spacing="8" Margin="0,24"
+                            IsVisible="{Binding !Macros.Count}">
+                    <TextBlock Text="✦" FontSize="22" Foreground="#2A3345"
+                               HorizontalAlignment="Center" />
+                    <TextBlock Text="Nenhum macro ainda." Foreground="#4A5066"
+                               FontStyle="Italic" TextAlignment="Center" FontSize="12" />
+                    <TextBlock Text="Clique em + New para criar." Foreground="#2A3345"
+                               TextAlignment="Center" FontSize="11" />
+                </StackPanel>
 
+                <!-- Macro cards list -->
                 <ListBox ItemsSource="{Binding Macros}"
                          SelectedItem="{Binding SelectedMacro}"
                          Background="Transparent"
                          AutomationProperties.Name="Macro list">
+                    <ListBox.Styles>
+                        <Style Selector="ListBoxItem">
+                            <Setter Property="Padding" Value="0" />
+                            <Setter Property="Margin" Value="0,0,0,6" />
+                            <Setter Property="CornerRadius" Value="10" />
+                        </Style>
+                        <Style Selector="ListBoxItem:pointerover /template/ ContentPresenter">
+                            <Setter Property="Background" Value="Transparent" />
+                        </Style>
+                        <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
+                            <Setter Property="Background" Value="Transparent" />
+                        </Style>
+                    </ListBox.Styles>
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <Ellipse Width="8" Height="8" VerticalAlignment="Center"
-                                         Fill="#00FF9C" IsVisible="{Binding Enabled}" />
-                                <Ellipse Width="8" Height="8" VerticalAlignment="Center"
-                                         Fill="#3A3F4A" IsVisible="{Binding !Enabled}" />
-                                <StackPanel>
-                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
-                                    <TextBlock Text="{Binding Type}" FontSize="10" Foreground="#4A4F5A" />
-                                </StackPanel>
-                            </StackPanel>
+                            <Border CornerRadius="10" Padding="12,10"
+                                    Background="#161A24"
+                                    BorderThickness="1"
+                                    BorderBrush="#1F2533">
+                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                    <!-- Status indicator -->
+                                    <Panel Grid.Column="0" Width="3" Margin="0,0,10,0">
+                                        <Border CornerRadius="2" Background="#00FF95"
+                                                VerticalAlignment="Stretch"
+                                                IsVisible="{Binding Enabled}" />
+                                        <Border CornerRadius="2" Background="#2A3345"
+                                                VerticalAlignment="Stretch"
+                                                IsVisible="{Binding !Enabled}" />
+                                    </Panel>
+                                    <!-- Name + type -->
+                                    <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold"
+                                                   FontSize="13" Foreground="#F0F2F8" />
+                                        <TextBlock Text="{Binding Type}" FontSize="10"
+                                                   Foreground="#4A5066" />
+                                    </StackPanel>
+                                    <!-- Enabled dot -->
+                                    <Ellipse Grid.Column="2" Width="6" Height="6"
+                                             VerticalAlignment="Center"
+                                             Fill="#00FF95" IsVisible="{Binding Enabled}" />
+                                </Grid>
+                            </Border>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
@@ -65,52 +118,56 @@
             <Panel>
 
             <!-- Empty state when no macro selected -->
-            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="10"
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="12"
                         IsVisible="{Binding SelectedMacro, Converter={x:Static ObjectConverters.IsNull}}">
-                <TextBlock Text="✦  Nenhum macro selecionado"
-                           FontSize="14" FontWeight="SemiBold"
-                           Foreground="#3A3F4A" HorizontalAlignment="Center" />
-                <TextBlock Text="Selecione um macro da lista ou clique em + Add para criar um novo."
-                           Foreground="#2A2D34" FontSize="11"
+                <TextBlock Text="✦" FontSize="32" Foreground="#2A3345"
+                           HorizontalAlignment="Center" />
+                <TextBlock Text="Nenhum macro selecionado"
+                           FontSize="15" FontWeight="SemiBold"
+                           Foreground="#4A5066" HorizontalAlignment="Center" />
+                <TextBlock Text="Selecione um macro da lista, ou crie um novo."
+                           Foreground="#2A3345" FontSize="12"
                            TextAlignment="Center" TextWrapping="Wrap"
-                           MaxWidth="220" HorizontalAlignment="Center" />
-                <TextBlock Text="Ctrl+N  →  novo macro"
-                           Foreground="#1E2228" FontSize="10"
-                           FontFamily="Cascadia Code,Consolas,Courier New"
-                           HorizontalAlignment="Center" Margin="0,4,0,0" />
+                           MaxWidth="260" HorizontalAlignment="Center" />
+                <Border Background="#161A24" BorderBrush="#2A3345" BorderThickness="1"
+                        CornerRadius="8" Padding="12,6" HorizontalAlignment="Center"
+                        Margin="0,4,0,0">
+                    <TextBlock Text="Ctrl+N  →  novo macro"
+                               FontSize="11" Foreground="#4A5066"
+                               FontFamily="JetBrains Mono,Consolas,Courier New" />
+                </Border>
             </StackPanel>
 
             <!-- Editor with sticky save footer (DockPanel keeps footer always visible) -->
             <DockPanel IsVisible="{Binding SelectedMacro, Converter={x:Static ObjectConverters.IsNotNull}}">
 
-                <!-- ── Sticky save footer — always in view regardless of scroll ── -->
+                <!-- ── Sticky save footer ── -->
                 <Border DockPanel.Dock="Bottom"
-                        Background="#0A0C10"
-                        BorderBrush="#1A1D22"
+                        Background="#0A0D13"
+                        BorderBrush="#1F2533"
                         BorderThickness="0,1,0,0"
-                        Padding="4,10,4,0"
-                        Margin="0,10,0,0">
+                        Padding="8,12,8,8"
+                        Margin="0,12,0,0">
                     <Grid ColumnDefinitions="*,Auto">
                         <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8"
                                     VerticalAlignment="Center">
-                            <Border Background="#1A1D22" CornerRadius="4" Padding="6,3">
-                                <TextBlock Text="Ctrl+S"
-                                           FontSize="10"
-                                           Foreground="#4A4F5A"
-                                           FontFamily="Cascadia Code,Consolas,Courier New" />
+                            <Border Background="#161A24" BorderBrush="#2A3345" BorderThickness="1"
+                                    CornerRadius="6" Padding="8,3">
+                                <TextBlock Text="Ctrl+S" FontSize="10" Foreground="#4A5066"
+                                           FontFamily="JetBrains Mono,Consolas,Courier New" />
                             </Border>
                             <TextBlock Text="para salvar alterações"
-                                       FontSize="11" Foreground="#3A3F4A"
+                                       FontSize="11" Foreground="#4A5066"
                                        VerticalAlignment="Center" />
                         </StackPanel>
                         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12">
                             <TextBlock Text="{Binding SaveStatus}"
-                                       Foreground="#00FF9C" FontWeight="SemiBold"
+                                       Foreground="#00FF95" FontWeight="SemiBold"
                                        VerticalAlignment="Center" />
-                            <Button Content="Save Macro"
+                            <Button Content="Salvar Macro"
                                     Command="{Binding SaveMacroCommand}"
                                     Classes="accent"
-                                    ToolTip.Tip="Salva as alterações deste macro  (Ctrl+S)"
+                                    ToolTip.Tip="Salva as alterações deste macro (Ctrl+S)"
                                     AutomationProperties.Name="Save macro settings" />
                         </StackPanel>
                     </Grid>
