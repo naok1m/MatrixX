@@ -85,6 +85,11 @@ function render(next) {
   renderWeapons();
 }
 
+function renderInputState(next) {
+  Object.assign(state, next);
+  renderDashboard();
+}
+
 function renderDashboard() {
   $('#connectionStatus').textContent = state.connectionStatus;
   $('#connectionText').textContent = state.connectionStatus;
@@ -659,6 +664,9 @@ $('#weaponConfigList').addEventListener('change', (event) => {
 window.chrome?.webview?.addEventListener('message', (event) => {
   if (event.data?.type === 'state') {
     render(event.data.payload);
+  }
+  if (event.data?.type === 'inputState') {
+    renderInputState(event.data.payload);
   }
 });
 

@@ -1051,7 +1051,11 @@ public sealed class WebShellBridge
             Interlocked.Exchange(ref _lastInputPublishTick, now);
         }
 
-        UpdateState(s => s with { OutputButtons = ButtonState.From(state.Buttons) }, shouldPublish);
+        UpdateState(s => s with { OutputButtons = ButtonState.From(state.Buttons) }, publish: false);
+        if (shouldPublish)
+        {
+            PublishInputState();
+        }
     }
 
     private void UpdateState(Func<ShellState, ShellState> update, bool publish = true)
@@ -1076,6 +1080,31 @@ public sealed class WebShellBridge
         }
 
         StateChanged?.Invoke(this, JsonSerializer.Serialize(new { type = "state", payload = snapshot }, JsonOptions));
+    }
+
+    private void PublishInputState()
+    {
+        ShellState snapshot;
+        lock (_sync)
+        {
+            snapshot = _state;
+        }
+
+        StateChanged?.Invoke(this, JsonSerializer.Serialize(new
+        {
+            type = "inputState",
+            payload = new
+            {
+                snapshot.LeftStickX,
+                snapshot.LeftStickY,
+                snapshot.RightStickX,
+                snapshot.RightStickY,
+                snapshot.LeftTrigger,
+                snapshot.RightTrigger,
+                snapshot.RawButtons,
+                snapshot.OutputButtons
+            }
+        }, JsonOptions));
     }
 
     private static bool ReadBool(JsonElement root, string name, bool fallback) =>
