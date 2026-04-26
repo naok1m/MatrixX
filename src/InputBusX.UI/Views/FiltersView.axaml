@@ -8,16 +8,15 @@
     <!--
         Outer structure:
           Row 0 (Auto)  — page header
-          Row 1 (*)     — two-column content area
+          Row 1 (24)    — structural gap (Avalonia 11.1 Grid has no RowSpacing)
+          Row 2 (*)     — two-column content area
 
         Content columns:
           Col 0 (*)     — scrollable settings cards
-          Col 1 (260)   — live preview panel (fixed, not floating)
-
-        ColumnSpacing replaces the old Padding/Margin hacks between columns.
-        RowSpacing replaces the page-header bottom Margin hack.
+          Col 1 (12)    — structural gap
+          Col 2 (260)   — live preview panel
     -->
-    <Grid RowDefinitions="Auto,*" RowSpacing="24">
+    <Grid RowDefinitions="Auto,24,*">
 
         <!-- ── Page header ─────────────────────────────────────────────── -->
         <TextBlock Grid.Row="0"
@@ -25,9 +24,8 @@
                    Classes="h1" />
 
         <!-- ── Two-column content ──────────────────────────────────────── -->
-        <Grid Grid.Row="1"
-              ColumnDefinitions="*,260"
-              ColumnSpacing="12">
+        <Grid Grid.Row="2"
+              ColumnDefinitions="*,12,260">
 
             <!-- ── LEFT: scrollable settings ───────────────────────────── -->
             <ScrollViewer Grid.Column="0">
@@ -38,8 +36,8 @@
                         <StackPanel Spacing="12">
                             <TextBlock Text="Deadzone" Classes="section-header" />
 
-                            <!-- Left Stick -->
-                            <Grid RowDefinitions="Auto,Auto" RowSpacing="6">
+                            <!-- Left Stick: label+value row / 6px gap / slider row -->
+                            <Grid RowDefinitions="Auto,6,Auto">
                                 <Grid ColumnDefinitions="*,Auto">
                                     <TextBlock Text="Left Stick"
                                                Classes="label"
@@ -55,7 +53,7 @@
                                         </TextBlock.Text>
                                     </TextBlock>
                                 </Grid>
-                                <Slider Grid.Row="1"
+                                <Slider Grid.Row="2"
                                         Value="{Binding LeftStickDeadzone}"
                                         Minimum="0" Maximum="0.5"
                                         HorizontalAlignment="Stretch"
@@ -67,7 +65,7 @@
                             </Grid>
 
                             <!-- Right Stick -->
-                            <Grid RowDefinitions="Auto,Auto" RowSpacing="6">
+                            <Grid RowDefinitions="Auto,6,Auto">
                                 <Grid ColumnDefinitions="*,Auto">
                                     <TextBlock Text="Right Stick"
                                                Classes="label"
@@ -83,7 +81,7 @@
                                         </TextBlock.Text>
                                     </TextBlock>
                                 </Grid>
-                                <Slider Grid.Row="1"
+                                <Slider Grid.Row="2"
                                         Value="{Binding RightStickDeadzone}"
                                         Minimum="0" Maximum="0.5"
                                         HorizontalAlignment="Stretch"
@@ -95,7 +93,7 @@
                             </Grid>
 
                             <!-- Trigger -->
-                            <Grid RowDefinitions="Auto,Auto" RowSpacing="6">
+                            <Grid RowDefinitions="Auto,6,Auto">
                                 <Grid ColumnDefinitions="*,Auto">
                                     <TextBlock Text="Trigger"
                                                Classes="label"
@@ -111,7 +109,7 @@
                                         </TextBlock.Text>
                                     </TextBlock>
                                 </Grid>
-                                <Slider Grid.Row="1"
+                                <Slider Grid.Row="2"
                                         Value="{Binding TriggerDeadzone}"
                                         Minimum="0" Maximum="0.5"
                                         HorizontalAlignment="Stretch"
@@ -133,7 +131,7 @@
                                        TextWrapping="Wrap" />
 
                             <!-- Left Stick -->
-                            <Grid RowDefinitions="Auto,Auto" RowSpacing="6">
+                            <Grid RowDefinitions="Auto,6,Auto">
                                 <Grid ColumnDefinitions="*,Auto">
                                     <TextBlock Text="Left Stick"
                                                Classes="label"
@@ -149,7 +147,7 @@
                                         </TextBlock.Text>
                                     </TextBlock>
                                 </Grid>
-                                <Slider Grid.Row="1"
+                                <Slider Grid.Row="2"
                                         Value="{Binding LeftStickAntiDeadzone}"
                                         Minimum="0" Maximum="0.5"
                                         HorizontalAlignment="Stretch"
@@ -161,7 +159,7 @@
                             </Grid>
 
                             <!-- Right Stick -->
-                            <Grid RowDefinitions="Auto,Auto" RowSpacing="6">
+                            <Grid RowDefinitions="Auto,6,Auto">
                                 <Grid ColumnDefinitions="*,Auto">
                                     <TextBlock Text="Right Stick"
                                                Classes="label"
@@ -177,7 +175,7 @@
                                         </TextBlock.Text>
                                     </TextBlock>
                                 </Grid>
-                                <Slider Grid.Row="1"
+                                <Slider Grid.Row="2"
                                         Value="{Binding RightStickAntiDeadzone}"
                                         Minimum="0" Maximum="0.5"
                                         HorizontalAlignment="Stretch"
@@ -203,7 +201,7 @@
                                 <Run Text=" = less sensitive near center" />
                             </TextBlock>
 
-                            <Grid RowDefinitions="Auto,Auto" RowSpacing="6">
+                            <Grid RowDefinitions="Auto,6,Auto">
                                 <Grid ColumnDefinitions="*,Auto">
                                     <TextBlock Text="Exponent"
                                                Classes="label"
@@ -219,7 +217,7 @@
                                         </TextBlock.Text>
                                     </TextBlock>
                                 </Grid>
-                                <Slider Grid.Row="1"
+                                <Slider Grid.Row="2"
                                         Value="{Binding ResponseCurveExponent}"
                                         Minimum="0.1" Maximum="4.0"
                                         TickFrequency="0.05"
@@ -244,7 +242,7 @@
                                       AutomationProperties.Name="Enable input smoothing" />
 
                             <StackPanel Spacing="12" IsEnabled="{Binding SmoothingEnabled}">
-                                <Grid RowDefinitions="Auto,Auto" RowSpacing="6">
+                                <Grid RowDefinitions="Auto,6,Auto">
                                     <Grid ColumnDefinitions="*,Auto">
                                         <TextBlock Text="Factor"
                                                    Classes="label"
@@ -260,7 +258,7 @@
                                             </TextBlock.Text>
                                         </TextBlock>
                                     </Grid>
-                                    <Slider Grid.Row="1"
+                                    <Slider Grid.Row="2"
                                             Value="{Binding SmoothingFactor}"
                                             HorizontalAlignment="Stretch"
                                             VerticalAlignment="Center"
@@ -276,13 +274,14 @@
                     </Border>
 
                     <!-- ── Actions ─────────────────────────────────────── -->
-                    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
+                    <!-- Col 1 = spacer between the two buttons -->
+                    <Grid ColumnDefinitions="*,Auto,10,Auto">
                         <Button Grid.Column="1"
                                 Content="Reset Defaults"
                                 Command="{Binding ResetDefaultsCommand}"
                                 Classes="secondary"
                                 AutomationProperties.Name="Reset filter settings to defaults" />
-                        <Button Grid.Column="2"
+                        <Button Grid.Column="3"
                                 Content="Apply"
                                 Command="{Binding ApplyCommand}"
                                 Classes="accent"
@@ -293,25 +292,18 @@
             </ScrollViewer>
 
             <!-- ── RIGHT: live response curve preview ──────────────────── -->
-            <!--
-                Grid column (not floating): VerticalAlignment="Top" is correct
-                here because the preview is a fixed-height content card, not
-                a panel that should stretch with the settings scroll area.
-                The card is anchored to Col 1 of the parent Grid, not positioned
-                with Margin hacks.
-            -->
-            <Border Grid.Column="1"
+            <Border Grid.Column="2"
                     Classes="card"
                     VerticalAlignment="Top">
                 <StackPanel Spacing="12">
 
-                    <!-- Header: status dot + title in a row -->
-                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                    <!-- Header: status dot / 8px gap / title -->
+                    <Grid ColumnDefinitions="Auto,8,*">
                         <Ellipse Grid.Column="0"
                                  Width="7" Height="7"
                                  Fill="#00FF9C"
                                  VerticalAlignment="Center" />
-                        <TextBlock Grid.Column="1"
+                        <TextBlock Grid.Column="2"
                                    Text="Live Preview"
                                    Classes="section-header"
                                    VerticalAlignment="Center" />
@@ -331,36 +323,36 @@
                             Height="200" />
                     </Border>
 
-                    <!-- Legend: each item is a Grid row with icon + label -->
+                    <!-- Legend: each row is a Grid with swatch / 6px gap / label -->
                     <StackPanel Spacing="5">
-                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="6">
+                        <Grid ColumnDefinitions="Auto,6,*">
                             <Border Grid.Column="0"
                                     Width="18" Height="2"
                                     Background="#1D2235"
                                     VerticalAlignment="Center" />
-                            <TextBlock Grid.Column="1"
+                            <TextBlock Grid.Column="2"
                                        Text="Linear (1:1)"
                                        Classes="muted"
                                        VerticalAlignment="Center" />
                         </Grid>
-                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="6">
+                        <Grid ColumnDefinitions="Auto,6,*">
                             <Border Grid.Column="0"
                                     Width="18" Height="2"
                                     Background="#00FF9C"
                                     VerticalAlignment="Center" />
-                            <TextBlock Grid.Column="1"
+                            <TextBlock Grid.Column="2"
                                        Text="Your curve"
                                        Classes="muted"
                                        VerticalAlignment="Center" />
                         </Grid>
-                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="6">
+                        <Grid ColumnDefinitions="Auto,6,*">
                             <Border Grid.Column="0"
                                     Width="18" Height="2"
                                     Background="#111720"
                                     BorderBrush="#252B3F"
                                     BorderThickness="1"
                                     VerticalAlignment="Center" />
-                            <TextBlock Grid.Column="1"
+                            <TextBlock Grid.Column="2"
                                        Text="Deadzone"
                                        Classes="muted"
                                        VerticalAlignment="Center" />
