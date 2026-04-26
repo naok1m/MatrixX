@@ -5,10 +5,9 @@
              RequestedThemeVariant="Dark">
 
     <Application.Resources>
-        <!-- Global converters available everywhere -->
         <conv:BoolToBrushConverter x:Key="BoolToConnFill"
-                                   TrueBrush="#00FF95"
-                                   FalseBrush="#2A3345" />
+                                   TrueBrush="#58D68D"
+                                   FalseBrush="#3A465B" />
     </Application.Resources>
 
     <Application.Styles>

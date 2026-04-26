@@ -6,9 +6,9 @@
         x:DataType="vm:MainViewModel"
         Title="ReflexX"
         Width="1280" Height="800"
-        MinWidth="1100" MinHeight="680"
+        MinWidth="1040" MinHeight="680"
         WindowStartupLocation="CenterScreen"
-        Background="#06070C">
+        Background="#0B1018">
 
     <Window.KeyBindings>
         <KeyBinding Gesture="Ctrl+S" Command="{Binding SaveCurrentCommand}" />
@@ -17,217 +17,199 @@
     </Window.KeyBindings>
 
     <Panel>
-    <Grid RowDefinitions="80,*,32">
+        <Grid RowDefinitions="72,*,32">
+            <Border Grid.Row="0"
+                    Classes="topbar-shell"
+                    Margin="16,12,16,8">
+                <Grid ColumnDefinitions="Auto,*,Auto">
 
-        <!-- ═══════════════════════════════════════════════════════════════
-             TOP NAV — logo + horizontal tabs + game chip + connection
-            ═══════════════════════════════════════════════════════════════ -->
-        <Border Grid.Row="0"
-                Classes="topbar-shell"
-                Margin="18,14,18,8">
-            <Grid ColumnDefinitions="Auto,*,Auto" Margin="10,0">
+                    <StackPanel Grid.Column="0"
+                                Orientation="Horizontal"
+                                Spacing="10"
+                                VerticalAlignment="Center">
+                        <Border Width="32"
+                                Height="32"
+                                CornerRadius="8"
+                                ClipToBounds="True"
+                                Background="#0F1621">
+                            <Image Source="avares://ReflexX/Assets/logo%20ReflexX.png"
+                                   Stretch="UniformToFill" />
+                        </Border>
 
-                <!-- Brand -->
-                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10"
-                            VerticalAlignment="Center">
-                    <Border CornerRadius="8" Width="32" Height="32"
-                            ClipToBounds="True"
-                            BoxShadow="0 0 16 0 #6000FF95">
-                           <Image Source="avares://ReflexX/Assets/logo%20ReflexX.png"
-                               Width="32" Height="32"
-                               Stretch="UniformToFill" />
-                    </Border>
-                    <TextBlock Text="ReflexX"
-                               FontSize="16" FontWeight="Bold"
-                               Foreground="#F0F2F8"
-                               VerticalAlignment="Center" />
-                    <Border Background="#0A2218"
-                            BorderBrush="#0000FF95"
-                            BorderThickness="1"
-                            CornerRadius="100"
-                            Padding="6,1"
-                            Margin="6,0,0,0"
-                            VerticalAlignment="Center">
-                        <TextBlock FontSize="9" FontWeight="Bold"
-                                   Foreground="#00FF95"
-                                   LetterSpacing="1">
-                            <TextBlock.Text>
-                                <MultiBinding StringFormat="v{0}">
-                                    <Binding Path="AppVersion" />
-                                </MultiBinding>
-                            </TextBlock.Text>
-                        </TextBlock>
-                    </Border>
-                </StackPanel>
-
-                <!-- Horizontal tabs (centered) -->
-                <ListBox Grid.Column="1"
-                         SelectedIndex="{Binding SelectedTabIndex}"
-                         HorizontalAlignment="Center"
-                         VerticalAlignment="Center"
-                         AutomationProperties.Name="Main navigation">
-                    <ListBox.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <StackPanel Orientation="Horizontal" Spacing="10" />
-                        </ItemsPanelTemplate>
-                    </ListBox.ItemsPanel>
-                    <ListBoxItem Classes="tab" Content="Home" />
-                    <ListBoxItem Classes="tab" Content="Macros" />
-                    <ListBoxItem Classes="tab" Content="Profiles" />
-                    <ListBoxItem Classes="tab" Content="Curve" />
-                    <ListBoxItem Classes="tab" Content="Weapons" />
-                    <ListBoxItem Classes="tab" Content="Logs" />
-                    <ListBoxItem Classes="tab" Content="Config" />
-                </ListBox>
-
-                <!-- Right cluster: update banner + connection pill -->
-                <StackPanel Grid.Column="2" Orientation="Horizontal"
-                            Spacing="10" VerticalAlignment="Center">
-
-                    <!-- Active game chip (reference style) -->
-                    <ComboBox Classes="topbar-chip"
-                              ItemsSource="{Binding GameProfiles}"
-                              SelectedItem="{Binding SelectedGameProfile}"
-                              Width="140"
-                              HorizontalContentAlignment="Center"
-                              VerticalContentAlignment="Center"
-                              AutomationProperties.Name="Game profile selector" />
-
-                    <!-- Update banner (only when available) -->
-                    <Border Classes="pill pill-accent"
-                            IsVisible="{Binding UpdateAvailable}"
-                            ToolTip.Tip="A new version is ready. Click to download.">
-                        <StackPanel Orientation="Horizontal" Spacing="5">
-                            <TextBlock Text="⬆" FontSize="11" Foreground="#00FF95" />
-                            <TextBlock Text="Update" FontSize="11" FontWeight="SemiBold"
-                                       Foreground="#00FF95" />
-                            <TextBlock Text="{Binding LatestVersion, StringFormat='v{0}'}"
-                                       FontSize="11" Foreground="#00FF95" Opacity="0.7" />
+                        <StackPanel Spacing="0"
+                                    VerticalAlignment="Center">
+                            <TextBlock Text="ReflexX"
+                                       FontSize="16"
+                                       FontWeight="SemiBold" />
+                            <TextBlock Text="{Binding AppVersion, StringFormat='v{0}'}"
+                                       Classes="muted"
+                                       FontSize="11" />
                         </StackPanel>
-                    </Border>
+                    </StackPanel>
 
-                    <!-- Connection pill -->
-                    <Border Classes="pill">
-                        <StackPanel Orientation="Horizontal" Spacing="6">
-                            <Ellipse Width="7" Height="7"
-                                     Fill="{Binding Dashboard.IsRunning,
-                                            Converter={StaticResource BoolToConnFill}}"
-                                     VerticalAlignment="Center" />
-                            <TextBlock Text="{Binding Dashboard.ConnectionStatus}"
-                                       FontSize="11"
-                                       Foreground="#F0F2F8"
-                                       VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Border>
-                </StackPanel>
+                    <ListBox Grid.Column="1"
+                             Margin="16,0"
+                             SelectedIndex="{Binding SelectedTabIndex}"
+                             HorizontalAlignment="Center"
+                             VerticalAlignment="Center"
+                             AutomationProperties.Name="Main navigation">
+                        <ListBox.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" Spacing="4" />
+                            </ItemsPanelTemplate>
+                        </ListBox.ItemsPanel>
+                        <ListBoxItem Classes="tab" Content="Home" />
+                        <ListBoxItem Classes="tab" Content="Macros" />
+                        <ListBoxItem Classes="tab" Content="Profiles" />
+                        <ListBoxItem Classes="tab" Content="Curve" />
+                        <ListBoxItem Classes="tab" Content="Weapons" />
+                        <ListBoxItem Classes="tab" Content="Logs" />
+                        <ListBoxItem Classes="tab" Content="Config" />
+                    </ListBox>
 
-            </Grid>
-        </Border>
+                    <StackPanel Grid.Column="2"
+                                Orientation="Horizontal"
+                                Spacing="8"
+                                VerticalAlignment="Center">
+                        <ComboBox Classes="topbar-chip"
+                                  ItemsSource="{Binding GameProfiles}"
+                                  SelectedItem="{Binding SelectedGameProfile}"
+                                  Width="144"
+                                  HorizontalContentAlignment="Center"
+                                  VerticalContentAlignment="Center"
+                                  AutomationProperties.Name="Game profile selector" />
 
-        <!-- ═══════════════════════════════════════════════════════════════
-             CONTENT AREA
-            ═══════════════════════════════════════════════════════════════ -->
-        <Border Grid.Row="1" Padding="18,8,18,14">
-            <ContentControl Content="{Binding CurrentView}"
-                            Opacity="{Binding ContentOpacity}">
-                <ContentControl.Transitions>
-                    <Transitions>
-                        <DoubleTransition Property="Opacity"
-                                          Duration="0:0:0.18"
-                                          Easing="CubicEaseOut" />
-                    </Transitions>
-                </ContentControl.Transitions>
-                <ContentControl.DataTemplates>
-                    <DataTemplate DataType="vm:DashboardViewModel">
-                        <views:DashboardView />
-                    </DataTemplate>
-                    <DataTemplate DataType="vm:MacroEditorViewModel">
-                        <views:MacroEditorView />
-                    </DataTemplate>
-                    <DataTemplate DataType="vm:ProfilesViewModel">
-                        <views:ProfilesView />
-                    </DataTemplate>
-                    <DataTemplate DataType="vm:FiltersViewModel">
-                        <views:FiltersView />
-                    </DataTemplate>
-                    <DataTemplate DataType="vm:LogsViewModel">
-                        <views:LogsView />
-                    </DataTemplate>
-                    <DataTemplate DataType="vm:WeaponDetectionViewModel">
-                        <views:WeaponDetectionView />
-                    </DataTemplate>
-                    <DataTemplate DataType="vm:SettingsViewModel">
-                        <views:SettingsView />
-                    </DataTemplate>
-                </ContentControl.DataTemplates>
-            </ContentControl>
-        </Border>
+                        <Border Classes="pill pill-accent"
+                                IsVisible="{Binding UpdateAvailable}"
+                                ToolTip.Tip="A new version is ready. Click to download.">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <TextBlock Text="Update"
+                                           FontSize="12"
+                                           FontWeight="SemiBold"
+                                           Foreground="#7EE0AA" />
+                                <TextBlock Text="{Binding LatestVersion, StringFormat='v{0}'}"
+                                           FontSize="12"
+                                           Foreground="#A8EAC6" />
+                            </StackPanel>
+                        </Border>
 
-        <!-- ═══════════════════════════════════════════════════════════════
-             STATUS BAR (bottom dock — always visible)
-            ═══════════════════════════════════════════════════════════════ -->
-        <Border Grid.Row="2"
-                Background="#0A0C12"
-                BorderBrush="#1F2533"
-                BorderThickness="0,1,0,0">
-            <Grid ColumnDefinitions="Auto,*,Auto" Margin="20,0">
+                        <Border Classes="pill">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Ellipse Width="8"
+                                         Height="8"
+                                         Fill="{Binding Dashboard.IsRunning, Converter={StaticResource BoolToConnFill}}"
+                                         VerticalAlignment="Center" />
+                                <TextBlock Text="{Binding Dashboard.ConnectionStatus}"
+                                           FontSize="12"
+                                           MaxWidth="140"
+                                           TextTrimming="CharacterEllipsis"
+                                           VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Grid>
+            </Border>
 
-                <!-- Left: profile + macros count -->
-                <StackPanel Grid.Column="0" Orientation="Horizontal"
-                            Spacing="14" VerticalAlignment="Center">
-                    <StackPanel Orientation="Horizontal" Spacing="5">
-                        <TextBlock Text="◉" FontSize="11" Foreground="#00B7FF" />
-                        <TextBlock Classes="muted" Text="PROFILE" FontWeight="SemiBold"
-                                   LetterSpacing="1" VerticalAlignment="Center" />
+            <Border Grid.Row="1"
+                    Padding="16,8,16,16">
+                <ContentControl Content="{Binding CurrentView}"
+                                Opacity="{Binding ContentOpacity}">
+                    <ContentControl.Transitions>
+                        <Transitions>
+                            <DoubleTransition Property="Opacity"
+                                              Duration="0:0:0.18"
+                                              Easing="CubicEaseOut" />
+                        </Transitions>
+                    </ContentControl.Transitions>
+                    <ContentControl.DataTemplates>
+                        <DataTemplate DataType="vm:DashboardViewModel">
+                            <views:DashboardView />
+                        </DataTemplate>
+                        <DataTemplate DataType="vm:MacroEditorViewModel">
+                            <views:MacroEditorView />
+                        </DataTemplate>
+                        <DataTemplate DataType="vm:ProfilesViewModel">
+                            <views:ProfilesView />
+                        </DataTemplate>
+                        <DataTemplate DataType="vm:FiltersViewModel">
+                            <views:FiltersView />
+                        </DataTemplate>
+                        <DataTemplate DataType="vm:LogsViewModel">
+                            <views:LogsView />
+                        </DataTemplate>
+                        <DataTemplate DataType="vm:WeaponDetectionViewModel">
+                            <views:WeaponDetectionView />
+                        </DataTemplate>
+                        <DataTemplate DataType="vm:SettingsViewModel">
+                            <views:SettingsView />
+                        </DataTemplate>
+                    </ContentControl.DataTemplates>
+                </ContentControl>
+            </Border>
+
+            <Border Grid.Row="2"
+                    Background="#0F1621"
+                    BorderBrush="#283243"
+                    BorderThickness="0,1,0,0">
+                <Grid ColumnDefinitions="Auto,*,Auto"
+                      Margin="16,0">
+                    <StackPanel Grid.Column="0"
+                                Orientation="Horizontal"
+                                Spacing="8"
+                                VerticalAlignment="Center">
+                        <Ellipse Width="7" Height="7" Fill="#4DA3FF" />
+                        <TextBlock Text="Profile"
+                                   Classes="muted"
+                                   FontWeight="SemiBold"
+                                   VerticalAlignment="Center" />
                         <TextBlock Text="{Binding Dashboard.ActiveProfileName}"
-                                   FontSize="11" Foreground="#F0F2F8" FontWeight="SemiBold"
+                                   FontSize="12"
+                                   FontWeight="SemiBold"
                                    VerticalAlignment="Center" />
                     </StackPanel>
-                </StackPanel>
 
-                <!-- Center: live status text -->
-                <TextBlock Grid.Column="1"
-                           Text="{Binding StatusText}"
-                           FontSize="11"
-                           Foreground="#8B92A8"
-                           HorizontalAlignment="Center"
-                           VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="1"
+                               Margin="16,0"
+                               Text="{Binding StatusText}"
+                               FontSize="12"
+                               Foreground="#AAB2C0"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               TextTrimming="CharacterEllipsis" />
 
-                <!-- Right: device + brand -->
-                <StackPanel Grid.Column="2" Orientation="Horizontal"
-                            Spacing="14" VerticalAlignment="Center">
-                    <TextBlock Classes="muted"
-                               Text="ReflexX — Precision In Every Input"
+                    <TextBlock Grid.Column="2"
+                               Text="Precision in every input"
+                               Classes="muted"
                                VerticalAlignment="Center" />
-                </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <Border HorizontalAlignment="Right"
+                VerticalAlignment="Bottom"
+                Margin="0,0,24,56"
+                CornerRadius="8"
+                Padding="16,12"
+                MaxWidth="380"
+                IsVisible="{Binding Toast.IsVisible}"
+                Background="{Binding Toast.Background}"
+                BorderBrush="#283243"
+                BorderThickness="1"
+                ZIndex="100">
+            <Grid ColumnDefinitions="Auto,*">
+                <TextBlock Grid.Column="0"
+                           Text="{Binding Toast.Icon}"
+                           FontSize="16"
+                           Foreground="{Binding Toast.Foreground}"
+                           VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1"
+                           Margin="10,0,0,0"
+                           Text="{Binding Toast.Message}"
+                           FontSize="13"
+                           Foreground="{Binding Toast.Foreground}"
+                           TextWrapping="Wrap"
+                           VerticalAlignment="Center" />
             </Grid>
         </Border>
-
-    </Grid>
-
-    <!-- ═══ Toast notification overlay ═══════════════════════════════════ -->
-    <Border HorizontalAlignment="Right"
-            VerticalAlignment="Bottom"
-            Margin="0,0,24,56"
-            CornerRadius="10"
-            Padding="16,12"
-            MaxWidth="380"
-            IsVisible="{Binding Toast.IsVisible}"
-            Background="{Binding Toast.Background}"
-            BoxShadow="0 8 28 0 #80000000"
-            ZIndex="100">
-        <StackPanel Orientation="Horizontal" Spacing="10">
-            <TextBlock Text="{Binding Toast.Icon}"
-                       FontSize="16"
-                       Foreground="{Binding Toast.Foreground}"
-                       VerticalAlignment="Center" />
-            <TextBlock Text="{Binding Toast.Message}"
-                       FontSize="13"
-                       Foreground="{Binding Toast.Foreground}"
-                       TextWrapping="Wrap"
-                       VerticalAlignment="Center" />
-        </StackPanel>
-    </Border>
-
     </Panel>
 </Window>

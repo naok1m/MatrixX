@@ -13,6 +13,8 @@ logs/
 
 # Published output and release ZIPs
 publish/
+dist/
+.dotnet-home/
 *.zip
 
 # OS
