@@ -61,7 +61,7 @@ jobs:
         if: steps.guard.outputs.SKIP == 'false'
         shell: pwsh
         run: |
-          $zip = "MatrixX-${{ steps.ver.outputs.VERSION }}-win-x64.zip"
+          $zip = "ReflexX-${{ steps.ver.outputs.VERSION }}-win-x64.zip"
           Compress-Archive -Path dist/* -DestinationPath $zip
           "ZIP=$zip" | Out-File $env:GITHUB_OUTPUT -Append
         id: pkg
@@ -87,5 +87,5 @@ jobs:
         run: |
           gh release create "${{ steps.ver.outputs.TAG }}" `
             "${{ steps.pkg.outputs.ZIP }}" `
-            --title "MatrixX ${{ steps.ver.outputs.TAG }}" `
+            --title "ReflexX ${{ steps.ver.outputs.TAG }}" `
             --notes-file release-notes.md

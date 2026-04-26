@@ -5,13 +5,13 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>InputBusX.UI</RootNamespace>
-    <AssemblyName>MatrixX</AssemblyName>
-    <Product>MatrixX</Product>
+    <AssemblyName>ReflexX</AssemblyName>
+    <Product>ReflexX</Product>
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <ApplicationIcon>Assets\matrixx-icon.ico</ApplicationIcon>
-    <Version>2.9.1</Version>
-    <AssemblyVersion>2.9.1.0</AssemblyVersion>
-    <FileVersion>2.9.1.0</FileVersion>
+    <Version>2.9.2</Version>
+    <AssemblyVersion>2.9.2.0</AssemblyVersion>
+    <FileVersion>2.9.2.0</FileVersion>
     <!--
       OpenCvSharp ships OpenCvSharpExtern.dll as a native dependency. For single-file
       publish, extract native libs to a temp dir at runtime so the P/Invoke loader

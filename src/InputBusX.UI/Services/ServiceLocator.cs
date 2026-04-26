@@ -40,6 +40,8 @@ public static class ServiceLocator
 
         var configPath = Path.Combine(
             AppDomain.CurrentDomain.BaseDirectory, "config", "settings.json");
+        var profilesPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "profiles");
+        Directory.CreateDirectory(profilesPath);
 
         var services = new ServiceCollection();
 

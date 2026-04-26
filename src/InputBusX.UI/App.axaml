@@ -13,6 +13,6 @@
 
     <Application.Styles>
         <FluentTheme />
-        <StyleInclude Source="avares://MatrixX/Styles/AppStyles.axaml" />
+        <StyleInclude Source="avares://ReflexX/Styles/AppStyles.axaml" />
     </Application.Styles>
 </Application>

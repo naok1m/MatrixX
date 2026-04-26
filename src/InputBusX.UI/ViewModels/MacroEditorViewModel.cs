@@ -230,7 +230,7 @@ public partial class MacroEditorViewModel : ViewModelBase
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
 
-    private static readonly FilePickerFileType _macroFileType = new("MatrixX Macros")
+    private static readonly FilePickerFileType _macroFileType = new("ReflexX Macros")
     {
         Patterns = ["*.matrixmacros"],
         MimeTypes = ["application/json"],
@@ -260,7 +260,7 @@ public partial class MacroEditorViewModel : ViewModelBase
 
         var files = await sp.OpenFilePickerAsync(new FilePickerOpenOptions
         {
-            Title = "Importar Macros — MatrixX",
+            Title = "Importar Macros — ReflexX",
             AllowMultiple = false,
             FileTypeFilter = [_macroFileType, FilePickerFileTypes.All],
         });
@@ -310,11 +310,11 @@ public partial class MacroEditorViewModel : ViewModelBase
 
         var suggested = macros.Count == 1
             ? $"{macros[0].Name.Replace(' ', '_')}.matrixmacros"
-            : "MatrixX_Macros_Export.matrixmacros";
+            : "ReflexX_Macros_Export.matrixmacros";
 
         var file = await sp.SaveFilePickerAsync(new FilePickerSaveOptions
         {
-            Title = "Exportar Macros — MatrixX",
+            Title = "Exportar Macros — ReflexX",
             SuggestedFileName = suggested,
             FileTypeChoices = [_macroFileType],
             DefaultExtension = "matrixmacros",

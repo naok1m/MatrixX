@@ -4,7 +4,7 @@
         xmlns:views="using:InputBusX.UI.Views"
         x:Class="InputBusX.UI.Views.MainWindow"
         x:DataType="vm:MainViewModel"
-        Title="MatrixX"
+        Title="ReflexX"
         Width="1280" Height="800"
         MinWidth="1100" MinHeight="680"
         WindowStartupLocation="CenterScreen"
@@ -34,11 +34,11 @@
                     <Border CornerRadius="8" Width="32" Height="32"
                             ClipToBounds="True"
                             BoxShadow="0 0 16 0 #6000FF95">
-                        <Image Source="avares://MatrixX/Assets/matrixx-icon.png"
+                        <Image Source="avares://ReflexX/Assets/matrixx-icon.png"
                                Width="32" Height="32"
                                Stretch="UniformToFill" />
                     </Border>
-                    <TextBlock Text="MatrixX"
+                    <TextBlock Text="ReflexX"
                                FontSize="16" FontWeight="Bold"
                                Foreground="#F0F2F8"
                                VerticalAlignment="Center" />
@@ -84,6 +84,26 @@
                 <!-- Right cluster: update banner + connection pill -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal"
                             Spacing="10" VerticalAlignment="Center">
+
+                    <!-- Active game chip (reference style) -->
+                    <Border Classes="chip"
+                            Background="#0F131D"
+                            BorderBrush="#2A3345"
+                            BorderThickness="1"
+                            Padding="12,6"
+                            CornerRadius="10">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <TextBlock Text="GP" FontSize="10" VerticalAlignment="Center" Foreground="#8B92A8" />
+                            <TextBlock Text="Warzone"
+                                       FontSize="11"
+                                       Foreground="#F0F2F8"
+                                       VerticalAlignment="Center" />
+                            <TextBlock Text="v"
+                                       FontSize="10"
+                                       Foreground="#00FF95"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
 
                     <!-- Update banner (only when available) -->
                     <Border Classes="pill pill-accent"
@@ -189,7 +209,7 @@
                 <StackPanel Grid.Column="2" Orientation="Horizontal"
                             Spacing="14" VerticalAlignment="Center">
                     <TextBlock Classes="muted"
-                               Text="MatrixX — Premium Controller Engine"
+                               Text="ReflexX — Precision In Every Input"
                                VerticalAlignment="Center" />
                 </StackPanel>
             </Grid>
