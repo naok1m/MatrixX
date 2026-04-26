@@ -44,6 +44,11 @@ public sealed class XInputProvider : IInputProvider
 
     public Task StartAsync(CancellationToken ct)
     {
+        if (_cts is { IsCancellationRequested: false })
+        {
+            return Task.CompletedTask;
+        }
+
         _cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
         _pollTask = Task.Factory.StartNew(
             () => PollLoop(_cts.Token),
@@ -57,9 +62,26 @@ public sealed class XInputProvider : IInputProvider
 
     public Task StopAsync()
     {
-        _cts?.Cancel();
+        try
+        {
+            _cts?.Cancel();
+        }
+        catch (ObjectDisposedException)
+        {
+            // Stop/Dispose can be reached twice through the DI graph during app shutdown.
+        }
+
+        try
+        {
+            _pollTask?.Wait(TimeSpan.FromSeconds(2));
+        }
+        catch (AggregateException ex) when (ex.InnerExceptions.All(e => e is OperationCanceledException))
+        {
+        }
+
         _cts?.Dispose();
         _cts = null;
+        _pollTask = null;
         _logger.LogInformation("XInput provider stopped");
         return Task.CompletedTask;
     }
@@ -171,8 +193,7 @@ public sealed class XInputProvider : IInputProvider
 
     public void Dispose()
     {
-        _cts?.Cancel();
-        _cts?.Dispose();
+        StopAsync().GetAwaiter().GetResult();
     }
 }
 

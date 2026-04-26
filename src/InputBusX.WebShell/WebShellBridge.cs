@@ -24,6 +24,7 @@ public sealed class WebShellBridge
     private readonly object _sync = new();
     private ShellState _state = new();
     private long _lastUiTick;
+    private long _lastInputPublishTick;
 
     public event EventHandler<string>? StateChanged;
 
@@ -1038,22 +1039,32 @@ public sealed class WebShellBridge
             LeftTrigger = state.LeftTrigger.Normalized,
             RightTrigger = state.RightTrigger.Normalized,
             RawButtons = ButtonState.From(state.Buttons)
-        });
+        }, publish: false);
     }
 
     private void OnProcessedInput(GamepadState state)
     {
-        UpdateState(s => s with { OutputButtons = ButtonState.From(state.Buttons) });
+        var now = Environment.TickCount64;
+        var shouldPublish = now - Interlocked.Read(ref _lastInputPublishTick) >= 33;
+        if (shouldPublish)
+        {
+            Interlocked.Exchange(ref _lastInputPublishTick, now);
+        }
+
+        UpdateState(s => s with { OutputButtons = ButtonState.From(state.Buttons) }, shouldPublish);
     }
 
-    private void UpdateState(Func<ShellState, ShellState> update)
+    private void UpdateState(Func<ShellState, ShellState> update, bool publish = true)
     {
         lock (_sync)
         {
             _state = update(_state);
         }
 
-        PublishState();
+        if (publish)
+        {
+            PublishState();
+        }
     }
 
     private void PublishState()

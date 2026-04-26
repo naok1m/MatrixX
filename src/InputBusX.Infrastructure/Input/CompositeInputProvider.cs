@@ -60,7 +60,7 @@ public sealed class CompositeInputProvider : IInputProvider
 
     public void Dispose()
     {
-        _xinput.Dispose();
-        _dinput.Dispose();
+        // The DI container owns the concrete providers and disposes them separately.
+        // Disposing them here as well causes double-dispose shutdown races.
     }
 }
