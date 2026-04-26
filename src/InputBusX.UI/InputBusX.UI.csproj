@@ -9,9 +9,9 @@
     <Product>ReflexX</Product>
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <ApplicationIcon>Assets\matrixx-icon.ico</ApplicationIcon>
-    <Version>2.9.8</Version>
-    <AssemblyVersion>2.9.8.0</AssemblyVersion>
-    <FileVersion>2.9.8.0</FileVersion>
+    <Version>2.9.9</Version>
+    <AssemblyVersion>2.9.9.0</AssemblyVersion>
+    <FileVersion>2.9.9.0</FileVersion>
     <!--
       OpenCvSharp ships OpenCvSharpExtern.dll as a native dependency. For single-file
       publish, extract native libs to a temp dir at runtime so the P/Invoke loader

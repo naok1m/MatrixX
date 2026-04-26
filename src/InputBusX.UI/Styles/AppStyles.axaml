@@ -1,7 +1,7 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <!-- Clean desktop design system: neutral surfaces, restrained accent, 8px spacing rhythm. -->
+    <!-- High-tech desktop design system: neutral depth, neon accent, precise motion. -->
 
     <Style Selector="Window">
         <Setter Property="FontFamily" Value="Inter, Segoe UI, Arial" />
@@ -56,11 +56,52 @@
     </Style>
 
     <Style Selector="Border.topbar-shell">
-        <Setter Property="Background" Value="#111722" />
-        <Setter Property="BorderBrush" Value="#283243" />
+        <Setter Property="Background" Value="#101720" />
+        <Setter Property="BorderBrush" Value="#233143" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Padding" Value="12,10" />
+        <Setter Property="BoxShadow" Value="0 12 34 0 #66000000, inset 0 1 0 0 #14FFFFFF" />
+        <Setter Property="Transitions">
+            <Setter.Value>
+                <Transitions>
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.18" />
+                    <BoxShadowsTransition Property="BoxShadow" Duration="0:0:0.18" />
+                </Transitions>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style Selector="Border.topbar-shell:pointerover">
+        <Setter Property="BorderBrush" Value="#2F465F" />
+        <Setter Property="BoxShadow" Value="0 16 46 0 #7A000000, 0 0 24 0 #2400F5B8, inset 0 1 0 0 #20FFFFFF" />
+    </Style>
+
+    <Style Selector="Border.brand-mark">
+        <Setter Property="Width" Value="58" />
+        <Setter Property="Height" Value="42" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Background" Value="#07100F" />
+        <Setter Property="BorderBrush" Value="#193832" />
+        <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Padding" Value="8" />
+        <Setter Property="BoxShadow" Value="0 0 22 0 #3300F5B8" />
+        <Setter Property="RenderTransform" Value="scale(1)" />
+        <Setter Property="Transitions">
+            <Setter.Value>
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.16" Easing="CubicEaseOut" />
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.16" />
+                    <BoxShadowsTransition Property="BoxShadow" Duration="0:0:0.16" />
+                </Transitions>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style Selector="Border.brand-mark:pointerover">
+        <Setter Property="RenderTransform" Value="scale(1.035)" />
+        <Setter Property="BorderBrush" Value="#00F5B8" />
+        <Setter Property="BoxShadow" Value="0 0 30 2 #6600F5B8" />
     </Style>
 
     <Style Selector="Border.card">
@@ -69,6 +110,13 @@
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="CornerRadius" Value="8" />
         <Setter Property="Padding" Value="16" />
+        <Setter Property="Transitions">
+            <Setter.Value>
+                <Transitions>
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.16" />
+                </Transitions>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <Style Selector="Border.card-interactive">
@@ -77,10 +125,22 @@
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="CornerRadius" Value="8" />
         <Setter Property="Padding" Value="16" />
+        <Setter Property="RenderTransform" Value="translateY(0px)" />
+        <Setter Property="Transitions">
+            <Setter.Value>
+                <Transitions>
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.16" />
+                    <BrushTransition Property="Background" Duration="0:0:0.16" />
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.16" Easing="CubicEaseOut" />
+                </Transitions>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <Style Selector="Border.card-interactive:pointerover">
         <Setter Property="BorderBrush" Value="#354258" />
+        <Setter Property="Background" Value="#151E2B" />
+        <Setter Property="RenderTransform" Value="translateY(-1px)" />
     </Style>
 
     <Style Selector="Border.card-flush">
@@ -105,6 +165,22 @@
         <Setter Property="CornerRadius" Value="8" />
         <Setter Property="Padding" Value="16" />
         <Setter Property="MinHeight" Value="112" />
+        <Setter Property="RenderTransform" Value="translateY(0px)" />
+        <Setter Property="Transitions">
+            <Setter.Value>
+                <Transitions>
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.16" />
+                    <BrushTransition Property="Background" Duration="0:0:0.16" />
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.16" Easing="CubicEaseOut" />
+                </Transitions>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style Selector="Border.stat-card:pointerover">
+        <Setter Property="Background" Value="#151E2B" />
+        <Setter Property="BorderBrush" Value="#38506A" />
+        <Setter Property="RenderTransform" Value="translateY(-1px)" />
     </Style>
 
     <Style Selector="Border.section-panel">
@@ -164,6 +240,22 @@
         <Setter Property="BorderBrush" Value="#354258" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="RenderTransform" Value="scale(1)" />
+        <Setter Property="Transitions">
+            <Setter.Value>
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.12" Easing="CubicEaseOut" />
+                </Transitions>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style Selector="Button:pointerover">
+        <Setter Property="RenderTransform" Value="scale(1.015)" />
+    </Style>
+
+    <Style Selector="Button:pressed">
+        <Setter Property="RenderTransform" Value="scale(0.985)" />
     </Style>
 
     <Style Selector="Button:pointerover /template/ ContentPresenter">
@@ -250,9 +342,93 @@
         <Setter Property="Foreground" Value="#AAB2C0" />
     </Style>
 
+    <Style Selector="ToggleButton.nav-tab">
+        <Setter Property="MinHeight" Value="46" />
+        <Setter Property="Padding" Value="14,0" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="#A9B0BC" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0,0,0,2" />
+        <Setter Property="CornerRadius" Value="0" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="RenderTransform" Value="translateY(0px)" />
+        <Setter Property="Transitions">
+            <Setter.Value>
+                <Transitions>
+                    <BrushTransition Property="Foreground" Duration="0:0:0.16" />
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.18" />
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.16" Easing="CubicEaseOut" />
+                </Transitions>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style Selector="ToggleButton.nav-tab /template/ ContentPresenter">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0,0,0,2" />
+        <Setter Property="Foreground" Value="#A9B0BC" />
+    </Style>
+
+    <Style Selector="ToggleButton.nav-tab:pointerover">
+        <Setter Property="Foreground" Value="#FFFFFF" />
+        <Setter Property="RenderTransform" Value="translateY(-1px)" />
+    </Style>
+
+    <Style Selector="ToggleButton.nav-tab:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="#FFFFFF" />
+    </Style>
+
+    <Style Selector="ToggleButton.nav-tab:checked">
+        <Setter Property="Foreground" Value="#00F5B8" />
+        <Setter Property="BorderBrush" Value="#00F5B8" />
+        <Setter Property="RenderTransform" Value="translateY(-1px)" />
+    </Style>
+
+    <Style Selector="ToggleButton.nav-tab:checked /template/ ContentPresenter">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="#00F5B8" />
+        <Setter Property="BorderBrush" Value="#00F5B8" />
+        <Setter Property="BorderThickness" Value="0,0,0,2" />
+    </Style>
+
     <Style Selector="ComboBox.topbar-chip">
-        <Setter Property="MinHeight" Value="34" />
-        <Setter Property="Padding" Value="10,4" />
+        <Setter Property="MinHeight" Value="38" />
+        <Setter Property="Padding" Value="14,4" />
+        <Setter Property="Background" Value="#090E15" />
+        <Setter Property="BorderBrush" Value="#334258" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="7" />
+        <Setter Property="Foreground" Value="#F4F6FA" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="RenderTransform" Value="scale(1)" />
+        <Setter Property="Transitions">
+            <Setter.Value>
+                <Transitions>
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.16" />
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.16" Easing="CubicEaseOut" />
+                </Transitions>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style Selector="ComboBox.topbar-chip:pointerover">
+        <Setter Property="BorderBrush" Value="#00F5B8" />
+        <Setter Property="RenderTransform" Value="scale(1.018)" />
+    </Style>
+
+    <Style Selector="ComboBox.topbar-chip /template/ Border#Background">
+        <Setter Property="Background" Value="#090E15" />
+        <Setter Property="BorderBrush" Value="#334258" />
+        <Setter Property="CornerRadius" Value="7" />
+    </Style>
+
+    <Style Selector="ComboBox.topbar-chip:pointerover /template/ Border#Background">
+        <Setter Property="BorderBrush" Value="#00F5B8" />
     </Style>
 
     <Style Selector="TextBox">
@@ -365,25 +541,55 @@
     </Style>
 
     <Style Selector="ListBoxItem.tab">
-        <Setter Property="MinHeight" Value="40" />
-        <Setter Property="Padding" Value="12,0" />
+        <Setter Property="MinHeight" Value="46" />
+        <Setter Property="Padding" Value="14,0" />
         <Setter Property="Margin" Value="0" />
-        <Setter Property="CornerRadius" Value="6" />
-        <Setter Property="Foreground" Value="#AAB2C0" />
-        <Setter Property="FontWeight" Value="SemiBold" />
-        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="CornerRadius" Value="0" />
+        <Setter Property="Foreground" Value="#A9B0BC" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="BorderThickness" Value="0,0,0,2" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="RenderTransform" Value="translateY(0px)" />
+        <Setter Property="Transitions">
+            <Setter.Value>
+                <Transitions>
+                    <BrushTransition Property="Foreground" Duration="0:0:0.16" />
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.18" />
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.16" Easing="CubicEaseOut" />
+                </Transitions>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <Style Selector="ListBoxItem.tab:pointerover /template/ ContentPresenter">
-        <Setter Property="Background" Value="#1C2637" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0,0,0,2" />
+    </Style>
+
+    <Style Selector="ListBoxItem.tab:pointerover">
+        <Setter Property="Foreground" Value="#FFFFFF" />
+        <Setter Property="RenderTransform" Value="translateY(-1px)" />
     </Style>
 
     <Style Selector="ListBoxItem.tab:selected /template/ ContentPresenter">
-        <Setter Property="Background" Value="#203B31" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="#00F5B8" />
+        <Setter Property="BorderBrush" Value="#00F5B8" />
+        <Setter Property="BorderThickness" Value="0,0,0,2" />
     </Style>
 
     <Style Selector="ListBoxItem.tab:selected">
-        <Setter Property="Foreground" Value="#7EE0AA" />
+        <Setter Property="Foreground" Value="#00F5B8" />
+        <Setter Property="BorderBrush" Value="#00F5B8" />
+        <Setter Property="RenderTransform" Value="translateY(-1px)" />
+    </Style>
+
+    <Style Selector="ListBoxItem.tab:selected:pointerover">
+        <Setter Property="Foreground" Value="#5DFFD4" />
+        <Setter Property="BorderBrush" Value="#5DFFD4" />
     </Style>
 
     <Style Selector="ListBoxItem.side">

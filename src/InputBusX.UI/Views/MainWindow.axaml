@@ -2,6 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:InputBusX.UI.ViewModels"
         xmlns:views="using:InputBusX.UI.Views"
+        xmlns:conv="using:InputBusX.UI.Converters"
         x:Class="InputBusX.UI.Views.MainWindow"
         x:DataType="vm:MainViewModel"
         Title="ReflexX"
@@ -16,69 +17,72 @@
         <KeyBinding Gesture="Delete" Command="{Binding DeleteCurrentCommand}" />
     </Window.KeyBindings>
 
+    <Window.Resources>
+        <conv:IndexEqualsConverter x:Key="IndexEquals" />
+    </Window.Resources>
+
     <Panel>
-        <Grid RowDefinitions="72,*,32">
+        <Grid RowDefinitions="84,*,32">
             <Border Grid.Row="0"
                     Classes="topbar-shell"
-                    Margin="16,12,16,8">
-                <Grid ColumnDefinitions="Auto,*,Auto">
+                    Margin="20,14,20,10">
+                <Grid ColumnDefinitions="Auto,Auto,*,Auto">
 
-                    <StackPanel Grid.Column="0"
+                    <Border Grid.Column="0"
+                            Classes="brand-mark"
+                            ClipToBounds="True"
+                            VerticalAlignment="Center">
+                        <Image Source="avares://ReflexX/Assets/logo%20ReflexX.png"
+                               Stretch="Uniform" />
+                    </Border>
+
+                    <StackPanel Grid.Column="1"
+                                Margin="24,0,0,0"
                                 Orientation="Horizontal"
-                                Spacing="10"
-                                VerticalAlignment="Center">
-                        <Border Width="32"
-                                Height="32"
-                                CornerRadius="8"
-                                ClipToBounds="True"
-                                Background="#0F1621">
-                            <Image Source="avares://ReflexX/Assets/logo%20ReflexX.png"
-                                   Stretch="UniformToFill" />
-                        </Border>
-
-                        <StackPanel Spacing="0"
-                                    VerticalAlignment="Center">
-                            <TextBlock Text="ReflexX"
-                                       FontSize="16"
-                                       FontWeight="SemiBold" />
-                            <TextBlock Text="{Binding AppVersion, StringFormat='v{0}'}"
-                                       Classes="muted"
-                                       FontSize="11" />
-                        </StackPanel>
+                                Spacing="12"
+                                VerticalAlignment="Center"
+                                AutomationProperties.Name="Main navigation">
+                        <ToggleButton Classes="nav-tab"
+                                      Content="HOME"
+                                      Command="{Binding NavigateToCommand}"
+                                      CommandParameter="Dashboard"
+                                      IsChecked="{Binding SelectedTabIndex, Mode=OneWay, Converter={StaticResource IndexEquals}, ConverterParameter=0}" />
+                        <ToggleButton Classes="nav-tab"
+                                      Content="MACROS"
+                                      Command="{Binding NavigateToCommand}"
+                                      CommandParameter="Macros"
+                                      IsChecked="{Binding SelectedTabIndex, Mode=OneWay, Converter={StaticResource IndexEquals}, ConverterParameter=1}" />
+                        <ToggleButton Classes="nav-tab"
+                                      Content="CURVE"
+                                      Command="{Binding NavigateToCommand}"
+                                      CommandParameter="Filters"
+                                      IsChecked="{Binding SelectedTabIndex, Mode=OneWay, Converter={StaticResource IndexEquals}, ConverterParameter=2}" />
+                        <ToggleButton Classes="nav-tab"
+                                      Content="PROFILES"
+                                      Command="{Binding NavigateToCommand}"
+                                      CommandParameter="Profiles"
+                                      IsChecked="{Binding SelectedTabIndex, Mode=OneWay, Converter={StaticResource IndexEquals}, ConverterParameter=3}" />
+                        <ToggleButton Classes="nav-tab"
+                                      Content="WEAPONS"
+                                      Command="{Binding NavigateToCommand}"
+                                      CommandParameter="Weapons"
+                                      IsChecked="{Binding SelectedTabIndex, Mode=OneWay, Converter={StaticResource IndexEquals}, ConverterParameter=4}" />
+                        <ToggleButton Classes="nav-tab"
+                                      Content="LOGS"
+                                      Command="{Binding NavigateToCommand}"
+                                      CommandParameter="Logs"
+                                      IsChecked="{Binding SelectedTabIndex, Mode=OneWay, Converter={StaticResource IndexEquals}, ConverterParameter=5}" />
+                        <ToggleButton Classes="nav-tab"
+                                      Content="SETTINGS"
+                                      Command="{Binding NavigateToCommand}"
+                                      CommandParameter="Settings"
+                                      IsChecked="{Binding SelectedTabIndex, Mode=OneWay, Converter={StaticResource IndexEquals}, ConverterParameter=6}" />
                     </StackPanel>
 
-                    <ListBox Grid.Column="1"
-                             Margin="16,0"
-                             SelectedIndex="{Binding SelectedTabIndex}"
-                             HorizontalAlignment="Center"
-                             VerticalAlignment="Center"
-                             AutomationProperties.Name="Main navigation">
-                        <ListBox.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <StackPanel Orientation="Horizontal" Spacing="4" />
-                            </ItemsPanelTemplate>
-                        </ListBox.ItemsPanel>
-                        <ListBoxItem Classes="tab" Content="Home" />
-                        <ListBoxItem Classes="tab" Content="Macros" />
-                        <ListBoxItem Classes="tab" Content="Profiles" />
-                        <ListBoxItem Classes="tab" Content="Curve" />
-                        <ListBoxItem Classes="tab" Content="Weapons" />
-                        <ListBoxItem Classes="tab" Content="Logs" />
-                        <ListBoxItem Classes="tab" Content="Config" />
-                    </ListBox>
-
-                    <StackPanel Grid.Column="2"
+                    <StackPanel Grid.Column="3"
                                 Orientation="Horizontal"
-                                Spacing="8"
+                                Spacing="12"
                                 VerticalAlignment="Center">
-                        <ComboBox Classes="topbar-chip"
-                                  ItemsSource="{Binding GameProfiles}"
-                                  SelectedItem="{Binding SelectedGameProfile}"
-                                  Width="144"
-                                  HorizontalContentAlignment="Center"
-                                  VerticalContentAlignment="Center"
-                                  AutomationProperties.Name="Game profile selector" />
-
                         <Border Classes="pill pill-accent"
                                 IsVisible="{Binding UpdateAvailable}"
                                 ToolTip.Tip="A new version is ready. Click to download.">
@@ -93,19 +97,13 @@
                             </StackPanel>
                         </Border>
 
-                        <Border Classes="pill">
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <Ellipse Width="8"
-                                         Height="8"
-                                         Fill="{Binding Dashboard.IsRunning, Converter={StaticResource BoolToConnFill}}"
-                                         VerticalAlignment="Center" />
-                                <TextBlock Text="{Binding Dashboard.ConnectionStatus}"
-                                           FontSize="12"
-                                           MaxWidth="140"
-                                           TextTrimming="CharacterEllipsis"
-                                           VerticalAlignment="Center" />
-                            </StackPanel>
-                        </Border>
+                        <ComboBox Classes="topbar-chip"
+                                  ItemsSource="{Binding GameProfiles}"
+                                  SelectedItem="{Binding SelectedGameProfile}"
+                                  Width="156"
+                                  HorizontalContentAlignment="Center"
+                                  VerticalContentAlignment="Center"
+                                  AutomationProperties.Name="Game profile selector" />
                     </StackPanel>
                 </Grid>
             </Border>
@@ -117,7 +115,7 @@
                     <ContentControl.Transitions>
                         <Transitions>
                             <DoubleTransition Property="Opacity"
-                                              Duration="0:0:0.18"
+                                              Duration="0:0:0.22"
                                               Easing="CubicEaseOut" />
                         </Transitions>
                     </ContentControl.Transitions>

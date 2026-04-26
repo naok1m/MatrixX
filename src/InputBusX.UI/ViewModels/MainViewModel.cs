@@ -68,8 +68,8 @@ public partial class MainViewModel : ViewModelBase
             if (e.PropertyName is nameof(DashboardViewModel.ConnectionStatus)
                                 or nameof(DashboardViewModel.IsRunning))
                 StatusText = Dashboard.IsRunning
-                    ? $"● {Dashboard.ConnectionStatus}"
-                    : "○ Disconnected";
+                    ? $"Online - {Dashboard.ConnectionStatus}"
+                    : "Disconnected";
         };
 
         // Fire-and-forget: check for updates in the background
@@ -111,7 +111,7 @@ public partial class MainViewModel : ViewModelBase
 
         _isFading      = true;
         ContentOpacity = 0.0;
-        await Task.Delay(120);   // let the 120ms DoubleTransition finish
+        await Task.Delay(150);   // let the transition breathe before swapping views
         CurrentView    = IndexToView(index);
         ContentOpacity = 1.0;
         _isFading      = false;
@@ -121,8 +121,8 @@ public partial class MainViewModel : ViewModelBase
     {
         0 => Dashboard,
         1 => MacroEditor,
-        2 => Profiles,
-        3 => Filters,
+        2 => Filters,
+        3 => Profiles,
         4 => WeaponDetection,
         5 => Logs,
         6 => Settings,
@@ -136,8 +136,8 @@ public partial class MainViewModel : ViewModelBase
         {
             "Dashboard" => 0,
             "Macros"    => 1,
-            "Profiles"  => 2,
-            "Filters"   => 3,
+            "Filters"   => 2,
+            "Profiles"  => 3,
             "Weapons"   => 4,
             "Logs"      => 5,
             "Settings"  => 6,
@@ -167,7 +167,7 @@ public partial class MainViewModel : ViewModelBase
         switch (SelectedTabIndex)
         {
             case 1: MacroEditor.AddMacroCommand.Execute(null);      break;
-            case 2: Profiles.CreateProfileCommand.Execute(null);    break;
+            case 3: Profiles.CreateProfileCommand.Execute(null);    break;
         }
     }
 
@@ -177,7 +177,7 @@ public partial class MainViewModel : ViewModelBase
         switch (SelectedTabIndex)
         {
             case 1: MacroEditor.DeleteMacroCommand.Execute(null);   break;
-            case 2: Profiles.DeleteProfileCommand.Execute(null);    break;
+            case 3: Profiles.DeleteProfileCommand.Execute(null);    break;
         }
     }
 
