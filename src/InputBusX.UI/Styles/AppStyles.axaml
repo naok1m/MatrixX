@@ -49,7 +49,6 @@
         <Setter Property="FontSize" Value="13" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Foreground" Value="#F0F2F8" />
-        <Setter Property="Margin" Value="0,0,0,12" />
         <Setter Property="LetterSpacing" Value="0.5" />
     </Style>
 
@@ -57,7 +56,6 @@
     <Style Selector="TextBlock.label">
         <Setter Property="FontSize" Value="11" />
         <Setter Property="Foreground" Value="#8B92A8" />
-        <Setter Property="Margin" Value="0,0,0,6" />
     </Style>
 
     <!-- Tracking-spaced uppercase mini label -->
@@ -352,17 +350,21 @@
         <Setter Property="MinHeight" Value="28" />
     </Style>
 
-    <!-- Filled (decrease) track — solid green with strong glow halo -->
+    <!-- Filled (decrease) track — 4px tall, centered, solid green with glow halo -->
     <Style Selector="Slider /template/ Track > Border">
         <Setter Property="CornerRadius" Value="2" />
         <Setter Property="Background" Value="#00FF95" />
         <Setter Property="BoxShadow" Value="0 0 8 0 #6000FF95, 0 0 16 0 #3000FF95" />
+        <Setter Property="Height" Value="4" />
+        <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
 
-    <!-- Unfilled (increase) track — dark base -->
+    <!-- Unfilled (increase) track — 4px tall, centered, dark base -->
     <Style Selector="Slider /template/ Track > RepeatButton:last-child /template/ Border">
         <Setter Property="Background" Value="#1F2533" />
         <Setter Property="CornerRadius" Value="2" />
+        <Setter Property="Height" Value="4" />
+        <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
 
     <!-- Thumb — bright green dot with strong glow halo -->

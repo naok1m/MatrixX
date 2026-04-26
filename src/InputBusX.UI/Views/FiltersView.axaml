@@ -5,251 +5,375 @@
              x:Class="InputBusX.UI.Views.FiltersView"
              x:DataType="vm:FiltersViewModel">
 
-    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,*">
+    <!--
+        Outer structure:
+          Row 0 (Auto)  — page header
+          Row 1 (*)     — two-column content area
 
-        <!-- ── Page header ──────────────────────────────────────────────── -->
-        <TextBlock Grid.Column="0" Grid.ColumnSpan="2"
+        Content columns:
+          Col 0 (*)     — scrollable settings cards
+          Col 1 (260)   — live preview panel (fixed, not floating)
+
+        ColumnSpacing replaces the old Padding/Margin hacks between columns.
+        RowSpacing replaces the page-header bottom Margin hack.
+    -->
+    <Grid RowDefinitions="Auto,*" RowSpacing="24">
+
+        <!-- ── Page header ─────────────────────────────────────────────── -->
+        <TextBlock Grid.Row="0"
                    Text="Input Filters"
-                   Classes="section-header"
-                   FontSize="20"
-                   Margin="4,4,4,12" />
+                   Classes="h1" />
 
-        <!-- ── Left: settings cards ─────────────────────────────────────── -->
-        <ScrollViewer Grid.Row="1" Grid.Column="0"
-                      Padding="4,0,12,4">
-            <StackPanel Spacing="10">
+        <!-- ── Two-column content ──────────────────────────────────────── -->
+        <Grid Grid.Row="1"
+              ColumnDefinitions="*,260"
+              ColumnSpacing="12">
 
-                <!-- Deadzone -->
-                <Border Classes="card card-interactive">
-                    <StackPanel Spacing="12">
-                        <TextBlock Text="Deadzone" Classes="section-header" />
+            <!-- ── LEFT: scrollable settings ───────────────────────────── -->
+            <ScrollViewer Grid.Column="0">
+                <StackPanel Spacing="24">
 
-                        <StackPanel Spacing="4">
-                            <TextBlock Classes="label">
-                                <TextBlock.Text>
-                                    <MultiBinding StringFormat="Left Stick: {0:P0}">
-                                        <Binding Path="LeftStickDeadzone" />
-                                    </MultiBinding>
-                                </TextBlock.Text>
-                            </TextBlock>
-                            <Slider Value="{Binding LeftStickDeadzone}"
-                                    Minimum="0" Maximum="0.5"
-                                    ToolTip.Tip="{Binding LeftStickDeadzone, StringFormat='Left Stick {0:P0}'}"
-                                    ToolTip.ShowDelay="0"
-                                    ToolTip.Placement="Top"
-                                    AutomationProperties.Name="Left stick deadzone" />
+                    <!-- ── Deadzone ────────────────────────────────────── -->
+                    <Border Classes="card">
+                        <StackPanel Spacing="12">
+                            <TextBlock Text="Deadzone" Classes="section-header" />
+
+                            <!-- Left Stick -->
+                            <Grid RowDefinitions="Auto,Auto" RowSpacing="6">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Text="Left Stick"
+                                               Classes="label"
+                                               VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1"
+                                               Classes="label"
+                                               HorizontalAlignment="Right"
+                                               VerticalAlignment="Center">
+                                        <TextBlock.Text>
+                                            <MultiBinding StringFormat="{}{0:P0}">
+                                                <Binding Path="LeftStickDeadzone" />
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
+                                </Grid>
+                                <Slider Grid.Row="1"
+                                        Value="{Binding LeftStickDeadzone}"
+                                        Minimum="0" Maximum="0.5"
+                                        HorizontalAlignment="Stretch"
+                                        VerticalAlignment="Center"
+                                        ToolTip.Tip="{Binding LeftStickDeadzone, StringFormat='Left Stick {0:P0}'}"
+                                        ToolTip.ShowDelay="0"
+                                        ToolTip.Placement="Top"
+                                        AutomationProperties.Name="Left stick deadzone" />
+                            </Grid>
+
+                            <!-- Right Stick -->
+                            <Grid RowDefinitions="Auto,Auto" RowSpacing="6">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Text="Right Stick"
+                                               Classes="label"
+                                               VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1"
+                                               Classes="label"
+                                               HorizontalAlignment="Right"
+                                               VerticalAlignment="Center">
+                                        <TextBlock.Text>
+                                            <MultiBinding StringFormat="{}{0:P0}">
+                                                <Binding Path="RightStickDeadzone" />
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
+                                </Grid>
+                                <Slider Grid.Row="1"
+                                        Value="{Binding RightStickDeadzone}"
+                                        Minimum="0" Maximum="0.5"
+                                        HorizontalAlignment="Stretch"
+                                        VerticalAlignment="Center"
+                                        ToolTip.Tip="{Binding RightStickDeadzone, StringFormat='Right Stick {0:P0}'}"
+                                        ToolTip.ShowDelay="0"
+                                        ToolTip.Placement="Top"
+                                        AutomationProperties.Name="Right stick deadzone" />
+                            </Grid>
+
+                            <!-- Trigger -->
+                            <Grid RowDefinitions="Auto,Auto" RowSpacing="6">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Text="Trigger"
+                                               Classes="label"
+                                               VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1"
+                                               Classes="label"
+                                               HorizontalAlignment="Right"
+                                               VerticalAlignment="Center">
+                                        <TextBlock.Text>
+                                            <MultiBinding StringFormat="{}{0:P0}">
+                                                <Binding Path="TriggerDeadzone" />
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
+                                </Grid>
+                                <Slider Grid.Row="1"
+                                        Value="{Binding TriggerDeadzone}"
+                                        Minimum="0" Maximum="0.5"
+                                        HorizontalAlignment="Stretch"
+                                        VerticalAlignment="Center"
+                                        ToolTip.Tip="{Binding TriggerDeadzone, StringFormat='Trigger {0:P0}'}"
+                                        ToolTip.ShowDelay="0"
+                                        ToolTip.Placement="Top"
+                                        AutomationProperties.Name="Trigger deadzone" />
+                            </Grid>
                         </StackPanel>
+                    </Border>
 
-                        <StackPanel Spacing="4">
-                            <TextBlock Classes="label">
-                                <TextBlock.Text>
-                                    <MultiBinding StringFormat="Right Stick: {0:P0}">
-                                        <Binding Path="RightStickDeadzone" />
-                                    </MultiBinding>
-                                </TextBlock.Text>
-                            </TextBlock>
-                            <Slider Value="{Binding RightStickDeadzone}"
-                                    Minimum="0" Maximum="0.5"
-                                    ToolTip.Tip="{Binding RightStickDeadzone, StringFormat='Right Stick {0:P0}'}"
-                                    ToolTip.ShowDelay="0"
-                                    ToolTip.Placement="Top"
-                                    AutomationProperties.Name="Right stick deadzone" />
+                    <!-- ── Anti-Deadzone ───────────────────────────────── -->
+                    <Border Classes="card">
+                        <StackPanel Spacing="12">
+                            <TextBlock Text="Anti-Deadzone" Classes="section-header" />
+                            <TextBlock Text="Adds minimum output to compensate for in-game deadzones."
+                                       Classes="muted"
+                                       TextWrapping="Wrap" />
+
+                            <!-- Left Stick -->
+                            <Grid RowDefinitions="Auto,Auto" RowSpacing="6">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Text="Left Stick"
+                                               Classes="label"
+                                               VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1"
+                                               Classes="label"
+                                               HorizontalAlignment="Right"
+                                               VerticalAlignment="Center">
+                                        <TextBlock.Text>
+                                            <MultiBinding StringFormat="{}{0:P0}">
+                                                <Binding Path="LeftStickAntiDeadzone" />
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
+                                </Grid>
+                                <Slider Grid.Row="1"
+                                        Value="{Binding LeftStickAntiDeadzone}"
+                                        Minimum="0" Maximum="0.5"
+                                        HorizontalAlignment="Stretch"
+                                        VerticalAlignment="Center"
+                                        ToolTip.Tip="{Binding LeftStickAntiDeadzone, StringFormat='Left Stick {0:P0}'}"
+                                        ToolTip.ShowDelay="0"
+                                        ToolTip.Placement="Top"
+                                        AutomationProperties.Name="Left stick anti-deadzone" />
+                            </Grid>
+
+                            <!-- Right Stick -->
+                            <Grid RowDefinitions="Auto,Auto" RowSpacing="6">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Text="Right Stick"
+                                               Classes="label"
+                                               VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1"
+                                               Classes="label"
+                                               HorizontalAlignment="Right"
+                                               VerticalAlignment="Center">
+                                        <TextBlock.Text>
+                                            <MultiBinding StringFormat="{}{0:P0}">
+                                                <Binding Path="RightStickAntiDeadzone" />
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
+                                </Grid>
+                                <Slider Grid.Row="1"
+                                        Value="{Binding RightStickAntiDeadzone}"
+                                        Minimum="0" Maximum="0.5"
+                                        HorizontalAlignment="Stretch"
+                                        VerticalAlignment="Center"
+                                        ToolTip.Tip="{Binding RightStickAntiDeadzone, StringFormat='Right Stick {0:P0}'}"
+                                        ToolTip.ShowDelay="0"
+                                        ToolTip.Placement="Top"
+                                        AutomationProperties.Name="Right stick anti-deadzone" />
+                            </Grid>
                         </StackPanel>
+                    </Border>
 
-                        <StackPanel Spacing="4">
-                            <TextBlock Classes="label">
-                                <TextBlock.Text>
-                                    <MultiBinding StringFormat="Trigger: {0:P0}">
-                                        <Binding Path="TriggerDeadzone" />
-                                    </MultiBinding>
-                                </TextBlock.Text>
+                    <!-- ── Response Curve ──────────────────────────────── -->
+                    <Border Classes="card">
+                        <StackPanel Spacing="12">
+                            <TextBlock Text="Response Curve" Classes="section-header" />
+                            <TextBlock Classes="muted" TextWrapping="Wrap">
+                                <Run Text="1.0" Foreground="#00FF9C" />
+                                <Run Text=" = linear  |  " />
+                                <Run Text="&lt;1.0" Foreground="#00CFFF" />
+                                <Run Text=" = more sensitive near center  |  " />
+                                <Run Text="&gt;1.0" Foreground="#FF4D6A" />
+                                <Run Text=" = less sensitive near center" />
                             </TextBlock>
-                            <Slider Value="{Binding TriggerDeadzone}"
-                                    Minimum="0" Maximum="0.5"
-                                    ToolTip.Tip="{Binding TriggerDeadzone, StringFormat='Trigger {0:P0}'}"
-                                    ToolTip.ShowDelay="0"
-                                    ToolTip.Placement="Top"
-                                    AutomationProperties.Name="Trigger deadzone" />
+
+                            <Grid RowDefinitions="Auto,Auto" RowSpacing="6">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Text="Exponent"
+                                               Classes="label"
+                                               VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1"
+                                               Classes="label"
+                                               HorizontalAlignment="Right"
+                                               VerticalAlignment="Center">
+                                        <TextBlock.Text>
+                                            <MultiBinding StringFormat="{}{0:F2}">
+                                                <Binding Path="ResponseCurveExponent" />
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
+                                </Grid>
+                                <Slider Grid.Row="1"
+                                        Value="{Binding ResponseCurveExponent}"
+                                        Minimum="0.1" Maximum="4.0"
+                                        TickFrequency="0.05"
+                                        IsSnapToTickEnabled="True"
+                                        HorizontalAlignment="Stretch"
+                                        VerticalAlignment="Center"
+                                        ToolTip.Tip="{Binding ResponseCurveExponent, StringFormat='Exponent {0:F2}'}"
+                                        ToolTip.ShowDelay="0"
+                                        ToolTip.Placement="Top"
+                                        AutomationProperties.Name="Response curve exponent" />
+                            </Grid>
                         </StackPanel>
-                    </StackPanel>
-                </Border>
+                    </Border>
 
-                <!-- Anti-Deadzone -->
-                <Border Classes="card card-interactive">
-                    <StackPanel Spacing="12">
-                        <TextBlock Text="Anti-Deadzone" Classes="section-header" />
-                        <TextBlock Text="Adds minimum output to compensate for in-game deadzones."
-                                   Classes="label" TextWrapping="Wrap" />
+                    <!-- ── Smoothing ───────────────────────────────────── -->
+                    <Border Classes="card">
+                        <StackPanel Spacing="12">
+                            <TextBlock Text="Smoothing" Classes="section-header" />
 
-                        <StackPanel Spacing="4">
-                            <TextBlock Classes="label">
-                                <TextBlock.Text>
-                                    <MultiBinding StringFormat="Left Stick: {0:P0}">
-                                        <Binding Path="LeftStickAntiDeadzone" />
-                                    </MultiBinding>
-                                </TextBlock.Text>
-                            </TextBlock>
-                            <Slider Value="{Binding LeftStickAntiDeadzone}"
-                                    Minimum="0" Maximum="0.5"
-                                    ToolTip.Tip="{Binding LeftStickAntiDeadzone, StringFormat='Left Stick {0:P0}'}"
-                                    ToolTip.ShowDelay="0"
-                                    ToolTip.Placement="Top"
-                                    AutomationProperties.Name="Left stick anti-deadzone" />
+                            <CheckBox Content="Enable Smoothing"
+                                      IsChecked="{Binding SmoothingEnabled}"
+                                      AutomationProperties.Name="Enable input smoothing" />
+
+                            <StackPanel Spacing="12" IsEnabled="{Binding SmoothingEnabled}">
+                                <Grid RowDefinitions="Auto,Auto" RowSpacing="6">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Text="Factor"
+                                                   Classes="label"
+                                                   VerticalAlignment="Center" />
+                                        <TextBlock Grid.Column="1"
+                                                   Classes="label"
+                                                   HorizontalAlignment="Right"
+                                                   VerticalAlignment="Center">
+                                            <TextBlock.Text>
+                                                <MultiBinding StringFormat="{}{0:P0}">
+                                                    <Binding Path="SmoothingFactor" />
+                                                </MultiBinding>
+                                            </TextBlock.Text>
+                                        </TextBlock>
+                                    </Grid>
+                                    <Slider Grid.Row="1"
+                                            Value="{Binding SmoothingFactor}"
+                                            HorizontalAlignment="Stretch"
+                                            VerticalAlignment="Center"
+                                            ToolTip.Tip="{Binding SmoothingFactor, StringFormat='Factor {0:P0}'}"
+                                            ToolTip.ShowDelay="0"
+                                            ToolTip.Placement="Top"
+                                            AutomationProperties.Name="Smoothing factor" />
+                                </Grid>
+                                <TextBlock Text="Higher = smoother but adds latency."
+                                           Classes="muted" />
+                            </StackPanel>
                         </StackPanel>
+                    </Border>
 
-                        <StackPanel Spacing="4">
-                            <TextBlock Classes="label">
-                                <TextBlock.Text>
-                                    <MultiBinding StringFormat="Right Stick: {0:P0}">
-                                        <Binding Path="RightStickAntiDeadzone" />
-                                    </MultiBinding>
-                                </TextBlock.Text>
-                            </TextBlock>
-                            <Slider Value="{Binding RightStickAntiDeadzone}"
-                                    Minimum="0" Maximum="0.5"
-                                    ToolTip.Tip="{Binding RightStickAntiDeadzone, StringFormat='Right Stick {0:P0}'}"
-                                    ToolTip.ShowDelay="0"
-                                    ToolTip.Placement="Top"
-                                    AutomationProperties.Name="Right stick anti-deadzone" />
-                        </StackPanel>
-                    </StackPanel>
-                </Border>
+                    <!-- ── Actions ─────────────────────────────────────── -->
+                    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
+                        <Button Grid.Column="1"
+                                Content="Reset Defaults"
+                                Command="{Binding ResetDefaultsCommand}"
+                                Classes="secondary"
+                                AutomationProperties.Name="Reset filter settings to defaults" />
+                        <Button Grid.Column="2"
+                                Content="Apply"
+                                Command="{Binding ApplyCommand}"
+                                Classes="accent"
+                                AutomationProperties.Name="Apply filter settings" />
+                    </Grid>
 
-                <!-- Response Curve -->
-                <Border Classes="card card-interactive">
-                    <StackPanel Spacing="12">
-                        <TextBlock Text="Response Curve" Classes="section-header" />
-                        <TextBlock Classes="label" TextWrapping="Wrap">
-                            <Run Text="1.0" Foreground="#00FF9C" />
-                            <Run Text=" = linear  |  " />
-                            <Run Text="&lt;1.0" Foreground="#00CFFF" />
-                            <Run Text=" = more sensitive near center  |  " />
-                            <Run Text="&gt;1.0" Foreground="#FF4D6A" />
-                            <Run Text=" = less sensitive near center" />
-                        </TextBlock>
-
-                        <StackPanel Spacing="4">
-                            <TextBlock Classes="label">
-                                <TextBlock.Text>
-                                    <MultiBinding StringFormat="Exponent: {0:F2}">
-                                        <Binding Path="ResponseCurveExponent" />
-                                    </MultiBinding>
-                                </TextBlock.Text>
-                            </TextBlock>
-                            <Slider Value="{Binding ResponseCurveExponent}"
-                                    Minimum="0.1" Maximum="4.0"
-                                    TickFrequency="0.05"
-                                    IsSnapToTickEnabled="True"
-                                    ToolTip.Tip="{Binding ResponseCurveExponent, StringFormat='Exponent {0:F2}'}"
-                                    ToolTip.ShowDelay="0"
-                                    ToolTip.Placement="Top"
-                                    AutomationProperties.Name="Response curve exponent" />
-                        </StackPanel>
-                    </StackPanel>
-                </Border>
-
-                <!-- Smoothing -->
-                <Border Classes="card card-interactive">
-                    <StackPanel Spacing="12">
-                        <TextBlock Text="Smoothing" Classes="section-header" />
-
-                        <CheckBox Content="Enable Smoothing"
-                                  IsChecked="{Binding SmoothingEnabled}"
-                                  AutomationProperties.Name="Enable input smoothing" />
-
-                        <StackPanel Spacing="4" IsEnabled="{Binding SmoothingEnabled}">
-                            <TextBlock Classes="label">
-                                <TextBlock.Text>
-                                    <MultiBinding StringFormat="Factor: {0:P0}">
-                                        <Binding Path="SmoothingFactor" />
-                                    </MultiBinding>
-                                </TextBlock.Text>
-                            </TextBlock>
-                            <Slider Value="{Binding SmoothingFactor}"
-                                    ToolTip.Tip="{Binding SmoothingFactor, StringFormat='Factor {0:P0}'}"
-                                    ToolTip.ShowDelay="0"
-                                    ToolTip.Placement="Top"
-                                    AutomationProperties.Name="Smoothing factor" />
-                            <TextBlock Text="Higher = smoother but adds latency."
-                                       Classes="muted" />
-                        </StackPanel>
-                    </StackPanel>
-                </Border>
-
-                <!-- Actions -->
-                <StackPanel Orientation="Horizontal" Spacing="10"
-                            HorizontalAlignment="Right" Margin="0,2,4,8">
-                    <Button Content="Reset Defaults"
-                            Command="{Binding ResetDefaultsCommand}"
-                            Classes="secondary"
-                            AutomationProperties.Name="Reset filter settings to defaults" />
-                    <Button Content="Apply"
-                            Command="{Binding ApplyCommand}"
-                            Classes="accent"
-                            AutomationProperties.Name="Apply filter settings" />
                 </StackPanel>
+            </ScrollViewer>
 
-            </StackPanel>
-        </ScrollViewer>
+            <!-- ── RIGHT: live response curve preview ──────────────────── -->
+            <!--
+                Grid column (not floating): VerticalAlignment="Top" is correct
+                here because the preview is a fixed-height content card, not
+                a panel that should stretch with the settings scroll area.
+                The card is anchored to Col 1 of the parent Grid, not positioned
+                with Margin hacks.
+            -->
+            <Border Grid.Column="1"
+                    Classes="card"
+                    VerticalAlignment="Top">
+                <StackPanel Spacing="12">
 
-        <!-- ── Right: live response curve preview ───────────────────────── -->
-        <Border Grid.Row="1" Grid.Column="1"
-            Classes="card card-interactive"
-                Width="240"
-                VerticalAlignment="Top"
-                Margin="0,0,4,4">
-            <StackPanel Spacing="10">
+                    <!-- Header: status dot + title in a row -->
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                        <Ellipse Grid.Column="0"
+                                 Width="7" Height="7"
+                                 Fill="#00FF9C"
+                                 VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="1"
+                                   Text="Live Preview"
+                                   Classes="section-header"
+                                   VerticalAlignment="Center" />
+                    </Grid>
 
-                <StackPanel Orientation="Horizontal" Spacing="8">
-                    <Ellipse Width="7" Height="7"
-                             Fill="#00FF9C"
-                             VerticalAlignment="Center" />
-                    <TextBlock Text="Live Preview" Classes="section-header"
-                               Margin="0" />
+                    <!-- Canvas border -->
+                    <Border CornerRadius="12"
+                            BorderBrush="#1F2533"
+                            BorderThickness="1"
+                            Background="#0B0E14"
+                            Padding="8"
+                            ClipToBounds="True">
+                        <controls:ResponseCurveCanvas
+                            Deadzone="{Binding LeftStickDeadzone}"
+                            AntiDeadzone="{Binding LeftStickAntiDeadzone}"
+                            Exponent="{Binding ResponseCurveExponent}"
+                            Height="200" />
+                    </Border>
+
+                    <!-- Legend: each item is a Grid row with icon + label -->
+                    <StackPanel Spacing="5">
+                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="6">
+                            <Border Grid.Column="0"
+                                    Width="18" Height="2"
+                                    Background="#1D2235"
+                                    VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="1"
+                                       Text="Linear (1:1)"
+                                       Classes="muted"
+                                       VerticalAlignment="Center" />
+                        </Grid>
+                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="6">
+                            <Border Grid.Column="0"
+                                    Width="18" Height="2"
+                                    Background="#00FF9C"
+                                    VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="1"
+                                       Text="Your curve"
+                                       Classes="muted"
+                                       VerticalAlignment="Center" />
+                        </Grid>
+                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="6">
+                            <Border Grid.Column="0"
+                                    Width="18" Height="2"
+                                    Background="#111720"
+                                    BorderBrush="#252B3F"
+                                    BorderThickness="1"
+                                    VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="1"
+                                       Text="Deadzone"
+                                       Classes="muted"
+                                       VerticalAlignment="Center" />
+                        </Grid>
+                    </StackPanel>
+
+                    <TextBlock Classes="muted"
+                               TextWrapping="Wrap"
+                               Text="Showing left stick. Right stick uses the same exponent with its own deadzone settings." />
+
                 </StackPanel>
+            </Border>
 
-                <!-- The canvas — mirrors exactly what the filter produces -->
-                <Border CornerRadius="12"
-                        BorderBrush="#1F2533"
-                        BorderThickness="1"
-                        Background="#0B0E14"
-                        Padding="8"
-                        ClipToBounds="True">
-                    <controls:ResponseCurveCanvas
-                        Deadzone="{Binding LeftStickDeadzone}"
-                        AntiDeadzone="{Binding LeftStickAntiDeadzone}"
-                        Exponent="{Binding ResponseCurveExponent}"
-                        Height="200" />
-                </Border>
-
-                <!-- Legend -->
-                <StackPanel Spacing="5">
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                        <Border Width="18" Height="2" Background="#1D2235"
-                                VerticalAlignment="Center" />
-                        <TextBlock Text="Linear (1:1)" Classes="muted"
-                                   VerticalAlignment="Center" />
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                        <Border Width="18" Height="2" Background="#00FF9C"
-                                VerticalAlignment="Center" />
-                        <TextBlock Text="Your curve" Classes="muted"
-                                   VerticalAlignment="Center" />
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                        <Border Width="18" Height="2" Background="#111720"
-                                VerticalAlignment="Center"
-                                BorderBrush="#252B3F" BorderThickness="1" />
-                        <TextBlock Text="Deadzone" Classes="muted"
-                                   VerticalAlignment="Center" />
-                    </StackPanel>
-                </StackPanel>
-
-                <TextBlock Classes="muted" TextWrapping="Wrap"
-                           Text="Showing left stick. Right stick uses the same exponent with its own deadzone settings." />
-
-            </StackPanel>
-        </Border>
-
+        </Grid>
     </Grid>
 </UserControl>
