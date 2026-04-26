@@ -6,119 +6,188 @@
              x:Name="ProfilesViewRoot">
 
     <Grid ColumnDefinitions="300,*" Margin="4">
-        <!-- Profile List -->
-        <Border Classes="card" Grid.Column="0" Margin="0,0,8,0">
+
+        <!-- ═══ Profile list sidebar ═══════════════════════════════════════ -->
+        <Border Classes="card" Grid.Column="0" Margin="0,0,10,0" Padding="16">
             <DockPanel>
-                <TextBlock Text="Profiles" Classes="section-header" DockPanel.Dock="Top" />
 
-                <StackPanel DockPanel.Dock="Bottom" Spacing="8" Margin="0,8,0,0">
-                    <Grid ColumnDefinitions="*,Auto">
-                        <TextBox Text="{Binding NewProfileName}" Watermark="New profile name..."
-                                 AutomationProperties.Name="New profile name" />
-                        <Button Grid.Column="1" Content="Create"
-                                Command="{Binding CreateProfileCommand}" Classes="accent" Margin="8,0,0,0"
-                                AutomationProperties.Name="Create new profile" />
-                    </Grid>
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <Button Content="Duplicate" Command="{Binding DuplicateProfileCommand}"
-                                AutomationProperties.Name="Duplicate selected profile" />
-                        <Button Content="Delete" Command="{Binding DeleteProfileCommand}" Classes="danger"
-                                AutomationProperties.Name="Delete selected profile" />
-                        <Button Content="Activate" Command="{Binding ActivateProfileCommand}" Classes="accent"
-                                AutomationProperties.Name="Activate selected profile" />
-                    </StackPanel>
-                    <!-- Import / Export -->
-                    <Separator />
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <Button Content="⬆ Export"
-                                Command="{Binding ExportProfileCommand}"
-                                Classes="ghost"
-                                ToolTip.Tip="Save the selected profile as a .json file to share or back up."
-                                AutomationProperties.Name="Export selected profile" />
-                        <Button Content="⬇ Import"
-                                Command="{Binding ImportProfileCommand}"
-                                Classes="ghost"
-                                ToolTip.Tip="Load a profile from a .json file. A new copy is created — existing profiles are not overwritten."
-                                AutomationProperties.Name="Import profile from file" />
-                    </StackPanel>
-                </StackPanel>
+                <!-- Header row -->
+                <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,14">
+                    <TextBlock Grid.Column="0" Text="PROFILES" Classes="eyebrow"
+                               VerticalAlignment="Center" />
+                </Grid>
 
+                <!-- Create row -->
+                <Grid DockPanel.Dock="Bottom" ColumnDefinitions="*,Auto" Margin="0,10,0,0">
+                    <TextBox Grid.Column="0" Text="{Binding NewProfileName}"
+                             Watermark="Nome do perfil..."
+                             AutomationProperties.Name="New profile name" />
+                    <Button Grid.Column="1" Content="Criar"
+                            Command="{Binding CreateProfileCommand}" Classes="accent"
+                            Margin="6,0,0,0"
+                            AutomationProperties.Name="Create new profile" />
+                </Grid>
+
+                <!-- Action buttons -->
+                <Grid DockPanel.Dock="Bottom" ColumnDefinitions="*,*,*" Margin="0,8,0,0">
+                    <Button Grid.Column="0" Content="Duplicar"
+                            Command="{Binding DuplicateProfileCommand}"
+                            Classes="secondary" Padding="8,6" MinHeight="30"
+                            Margin="0,0,4,0"
+                            AutomationProperties.Name="Duplicate selected profile" />
+                    <Button Grid.Column="1" Content="Deletar"
+                            Command="{Binding DeleteProfileCommand}"
+                            Classes="danger" Padding="8,6" MinHeight="30"
+                            Margin="0,0,4,0"
+                            AutomationProperties.Name="Delete selected profile" />
+                    <Button Grid.Column="2" Content="Ativar"
+                            Command="{Binding ActivateProfileCommand}"
+                            Classes="accent" Padding="8,6" MinHeight="30"
+                            AutomationProperties.Name="Activate selected profile" />
+                </Grid>
+
+                <!-- Import / Export -->
+                <Grid DockPanel.Dock="Bottom" ColumnDefinitions="*,*" Margin="0,6,0,0">
+                    <Button Grid.Column="0" Content="⬆ Export"
+                            Command="{Binding ExportProfileCommand}"
+                            Classes="ghost" Padding="8,6" MinHeight="30"
+                            Margin="0,0,4,0"
+                            ToolTip.Tip="Salvar perfil como .json"
+                            AutomationProperties.Name="Export selected profile" />
+                    <Button Grid.Column="1" Content="⬇ Import"
+                            Command="{Binding ImportProfileCommand}"
+                            Classes="ghost" Padding="8,6" MinHeight="30"
+                            ToolTip.Tip="Carregar perfil de .json"
+                            AutomationProperties.Name="Import profile from file" />
+                </Grid>
+
+                <!-- Profile cards list -->
                 <ListBox ItemsSource="{Binding Profiles}"
                          SelectedItem="{Binding SelectedProfile}"
                          Background="Transparent"
                          AutomationProperties.Name="Profile list">
+                    <ListBox.Styles>
+                        <Style Selector="ListBoxItem">
+                            <Setter Property="Padding" Value="0" />
+                            <Setter Property="Margin" Value="0,0,0,6" />
+                            <Setter Property="CornerRadius" Value="10" />
+                        </Style>
+                        <Style Selector="ListBoxItem:pointerover /template/ ContentPresenter">
+                            <Setter Property="Background" Value="Transparent" />
+                        </Style>
+                        <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
+                            <Setter Property="Background" Value="Transparent" />
+                        </Style>
+                    </ListBox.Styles>
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <StackPanel>
-                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
-                                    <TextBlock Text="(Default)" FontSize="10" Foreground="#00FF9C"
-                                               IsVisible="{Binding IsDefault}" VerticalAlignment="Center" />
-                                </StackPanel>
-                                <TextBlock FontSize="10" Foreground="#4A4F5A">
-                                    <TextBlock.Text>
-                                        <MultiBinding StringFormat="{}{0} macros">
-                                            <Binding Path="Macros.Count" />
-                                        </MultiBinding>
-                                    </TextBlock.Text>
-                                </TextBlock>
-                            </StackPanel>
+                            <Border CornerRadius="10" Padding="12,10"
+                                    Background="#161A24"
+                                    BorderThickness="1" BorderBrush="#1F2533">
+                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                    <Panel Grid.Column="0" Width="3" Margin="0,0,10,0">
+                                        <Border CornerRadius="2" Background="#00FF95"
+                                                VerticalAlignment="Stretch"
+                                                IsVisible="{Binding IsDefault}" />
+                                        <Border CornerRadius="2" Background="#2A3345"
+                                                VerticalAlignment="Stretch"
+                                                IsVisible="{Binding !IsDefault}" />
+                                    </Panel>
+                                    <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold"
+                                                   FontSize="13" Foreground="#F0F2F8" />
+                                        <TextBlock FontSize="10" Foreground="#4A5066">
+                                            <TextBlock.Text>
+                                                <MultiBinding StringFormat="{}{0} macros">
+                                                    <Binding Path="Macros.Count" />
+                                                </MultiBinding>
+                                            </TextBlock.Text>
+                                        </TextBlock>
+                                    </StackPanel>
+                                    <TextBlock Grid.Column="2" Text="DEFAULT" FontSize="9"
+                                               FontWeight="Bold" Foreground="#00FF95"
+                                               LetterSpacing="1" VerticalAlignment="Center"
+                                               IsVisible="{Binding IsDefault}" />
+                                </Grid>
+                            </Border>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
             </DockPanel>
         </Border>
 
-        <!-- Profile Details -->
+        <!-- ═══ Profile detail panel ════════════════════════════════════════ -->
         <Border Classes="card" Grid.Column="1">
             <ScrollViewer>
-                <StackPanel Spacing="16" IsEnabled="{Binding SelectedProfile, Converter={x:Static ObjectConverters.IsNotNull}}">
-                    <TextBlock Text="Profile Details" Classes="section-header" />
+                <StackPanel Spacing="20"
+                            IsEnabled="{Binding SelectedProfile, Converter={x:Static ObjectConverters.IsNotNull}}">
 
-                    <StackPanel Spacing="4">
-                        <TextBlock Text="Name" Classes="label" />
-                        <TextBlock Text="{Binding SelectedProfile.Name}" FontSize="18" FontWeight="Bold"
-                                   Foreground="#EAEAEA" />
-                    </StackPanel>
-
-                    <StackPanel Spacing="4">
-                        <TextBlock Text="Created" Classes="label" />
-                        <TextBlock Text="{Binding SelectedProfile.CreatedAt, StringFormat={}{0:yyyy-MM-dd HH:mm}}"
-                                   Foreground="#8A8F9A" />
-                    </StackPanel>
-
-                    <Separator />
-
-                    <!-- Associated Processes -->
-                    <TextBlock Text="Associated Processes" FontWeight="SemiBold" FontSize="14" Foreground="#EAEAEA" />
-                    <TextBlock Text="Auto-switch to this profile when these processes are in foreground"
-                               Classes="label" TextWrapping="Wrap" />
-
+                    <!-- Header -->
                     <Grid ColumnDefinitions="*,Auto">
-                        <TextBox Text="{Binding AssociatedProcess}" Watermark="Process name (e.g. game.exe)"
-                                 AutomationProperties.Name="Associated process name" />
-                        <Button Grid.Column="1" Content="Add" Command="{Binding AddProcessCommand}"
-                                Margin="8,0,0,0"
-                                AutomationProperties.Name="Add process association" />
+                        <StackPanel Grid.Column="0" Spacing="4">
+                            <TextBlock Text="DETALHES DO PERFIL" Classes="eyebrow" />
+                            <TextBlock Text="{Binding SelectedProfile.Name}"
+                                       FontSize="22" FontWeight="Bold" Foreground="#F0F2F8" />
+                        </StackPanel>
+                        <Border Grid.Column="1" Classes="pill" VerticalAlignment="Bottom">
+                            <TextBlock Text="{Binding SelectedProfile.CreatedAt, StringFormat={}{0:yyyy-MM-dd}}"
+                                       FontSize="11" Foreground="#8B92A8" Classes="mono" />
+                        </Border>
                     </Grid>
 
-                    <ItemsControl ItemsSource="{Binding SelectedProfile.AssociatedProcesses}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Border Classes="tag">
-                                    <Grid ColumnDefinitions="*,Auto">
-                                        <TextBlock Text="{Binding}" VerticalAlignment="Center" />
-                                        <Button Grid.Column="1" Content="X" FontSize="10"
-                                                Command="{Binding DataContext.RemoveProcessCommand, ElementName=ProfilesViewRoot}"
-                                                CommandParameter="{Binding}"
-                                                AutomationProperties.Name="Remove process" />
-                                    </Grid>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                    <Border Height="1" Background="#1F2533" />
+
+                    <!-- Associated Processes section -->
+                    <StackPanel Spacing="12">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="PROCESSOS ASSOCIADOS" Classes="eyebrow" />
+                            <TextBlock Text="Troca automática para este perfil quando esses processos estiverem em foco."
+                                       Classes="muted" TextWrapping="Wrap" />
+                        </StackPanel>
+
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBox Grid.Column="0"
+                                     Text="{Binding AssociatedProcess}"
+                                     Watermark="Nome do processo (ex: game.exe)"
+                                     AutomationProperties.Name="Associated process name" />
+                            <Button Grid.Column="1" Content="Adicionar"
+                                    Command="{Binding AddProcessCommand}"
+                                    Classes="secondary" Margin="8,0,0,0"
+                                    AutomationProperties.Name="Add process association" />
+                        </Grid>
+
+                        <ItemsControl ItemsSource="{Binding SelectedProfile.AssociatedProcesses}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="#161A24" BorderBrush="#2A3345"
+                                            BorderThickness="1" CornerRadius="8"
+                                            Padding="12,8" Margin="0,0,0,6">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <TextBlock Grid.Column="0" Text="{Binding}"
+                                                       VerticalAlignment="Center"
+                                                       Foreground="#F0F2F8" Classes="mono"
+                                                       FontSize="12" />
+                                            <Button Grid.Column="1" Content="✕"
+                                                    Classes="ghost icon" FontSize="11"
+                                                    Command="{Binding DataContext.RemoveProcessCommand, ElementName=ProfilesViewRoot}"
+                                                    CommandParameter="{Binding}"
+                                                    AutomationProperties.Name="Remove process" />
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <TextBlock Text="Nenhum processo associado ainda."
+                                   IsVisible="{Binding SelectedProfile.AssociatedProcesses.Count,
+                                               FallbackValue=0,
+                                               Converter={x:Static ObjectConverters.IsNull}}"
+                                   Classes="muted" FontStyle="Italic" />
+                    </StackPanel>
+
                 </StackPanel>
             </ScrollViewer>
         </Border>
+
     </Grid>
 </UserControl>

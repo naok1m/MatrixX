@@ -5,12 +5,11 @@
         x:Class="InputBusX.UI.Views.MainWindow"
         x:DataType="vm:MainViewModel"
         Title="MatrixX"
-        Width="1060" Height="720"
-        MinWidth="820" MinHeight="560"
+        Width="1280" Height="800"
+        MinWidth="1100" MinHeight="680"
         WindowStartupLocation="CenterScreen"
-        Background="#0B0D12">
+        Background="#06070C">
 
-    <!-- ── Global keyboard shortcuts ───────────────────────────────────── -->
     <Window.KeyBindings>
         <KeyBinding Gesture="Ctrl+S" Command="{Binding SaveCurrentCommand}" />
         <KeyBinding Gesture="Ctrl+N" Command="{Binding NewItemCommand}" />
@@ -18,156 +17,116 @@
     </Window.KeyBindings>
 
     <Panel>
-    <Grid ColumnDefinitions="200,*">
+    <Grid RowDefinitions="60,*,40">
 
-        <!-- ── Sidebar ─────────────────────────────────────────────────── -->
-        <Border Grid.Column="0"
-                Background="#0D0F16"
-                BorderBrush="#1D2235"
-                BorderThickness="0,0,1,0"
-                Padding="8,10,8,6">
-            <DockPanel>
+        <!-- ═══════════════════════════════════════════════════════════════
+             TOP NAV — logo + horizontal tabs + game chip + connection
+            ═══════════════════════════════════════════════════════════════ -->
+        <Border Grid.Row="0"
+                Background="#0A0C12"
+                BorderBrush="#1F2533"
+                BorderThickness="0,0,0,1">
+            <Grid ColumnDefinitions="Auto,*,Auto" Margin="20,0">
 
-                <!-- Brand / Logo -->
-                <StackPanel DockPanel.Dock="Top" Margin="0,4,0,16" Spacing="5">
-                    <Border CornerRadius="12"
-                            Width="44" Height="44"
-                            HorizontalAlignment="Center"
+                <!-- Brand -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10"
+                            VerticalAlignment="Center">
+                    <Border CornerRadius="8" Width="32" Height="32"
                             ClipToBounds="True"
-                            BoxShadow="0 0 22 0 #6000FF9C">
+                            BoxShadow="0 0 16 0 #6000FF95">
                         <Image Source="avares://MatrixX/Assets/matrixx-icon.png"
-                               Width="44" Height="44"
+                               Width="32" Height="32"
                                Stretch="UniformToFill" />
                     </Border>
                     <TextBlock Text="MatrixX"
-                               FontSize="15" FontWeight="Bold"
-                               Foreground="#E2E4EE"
-                               HorizontalAlignment="Center" />
+                               FontSize="16" FontWeight="Bold"
+                               Foreground="#F0F2F8"
+                               VerticalAlignment="Center" />
+                    <Border Background="#0A2218"
+                            BorderBrush="#0000FF95"
+                            BorderThickness="1"
+                            CornerRadius="100"
+                            Padding="6,1"
+                            Margin="6,0,0,0"
+                            VerticalAlignment="Center">
+                        <TextBlock FontSize="9" FontWeight="Bold"
+                                   Foreground="#00FF95"
+                                   LetterSpacing="1">
+                            <TextBlock.Text>
+                                <MultiBinding StringFormat="v{0}">
+                                    <Binding Path="AppVersion" />
+                                </MultiBinding>
+                            </TextBlock.Text>
+                        </TextBlock>
+                    </Border>
                 </StackPanel>
 
-                <!-- Status bar + version (bottom of sidebar) -->
-                <StackPanel DockPanel.Dock="Bottom" Margin="0,0,0,2" Spacing="0">
+                <!-- Horizontal tabs (centered) -->
+                <ListBox Grid.Column="1"
+                         SelectedIndex="{Binding SelectedTabIndex}"
+                         HorizontalAlignment="Center"
+                         VerticalAlignment="Stretch"
+                         AutomationProperties.Name="Main navigation">
+                    <ListBox.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal" Spacing="2" />
+                        </ItemsPanelTemplate>
+                    </ListBox.ItemsPanel>
+                    <ListBoxItem Classes="tab" Content="Home" />
+                    <ListBoxItem Classes="tab" Content="Macros" />
+                    <ListBoxItem Classes="tab" Content="Profiles" />
+                    <ListBoxItem Classes="tab" Content="Curve" />
+                    <ListBoxItem Classes="tab" Content="Weapons" />
+                    <ListBoxItem Classes="tab" Content="Logs" />
+                    <ListBoxItem Classes="tab" Content="Config" />
+                </ListBox>
 
-                    <!-- Update banner -->
-                    <Border Background="#0A1F18"
-                            BorderBrush="#00FF9C"
-                            BorderThickness="1"
-                            CornerRadius="6"
-                            Padding="10,7"
-                            Margin="0,0,0,8"
-                            IsVisible="{Binding UpdateAvailable}">
-                        <StackPanel Spacing="2">
-                            <TextBlock Text="⬆ Update available"
-                                       FontSize="11" FontWeight="SemiBold"
-                                       Foreground="#00FF9C" />
-                            <TextBlock FontSize="10" Foreground="#4A8060">
-                                <TextBlock.Text>
-                                    <MultiBinding StringFormat="v{0} is ready">
-                                        <Binding Path="LatestVersion" />
-                                    </MultiBinding>
-                                </TextBlock.Text>
-                            </TextBlock>
+                <!-- Right cluster: update banner + connection pill -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal"
+                            Spacing="10" VerticalAlignment="Center">
+
+                    <!-- Update banner (only when available) -->
+                    <Border Classes="pill pill-accent"
+                            IsVisible="{Binding UpdateAvailable}"
+                            ToolTip.Tip="A new version is ready. Click to download.">
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <TextBlock Text="⬆" FontSize="11" Foreground="#00FF95" />
+                            <TextBlock Text="Update" FontSize="11" FontWeight="SemiBold"
+                                       Foreground="#00FF95" />
+                            <TextBlock Text="{Binding LatestVersion, StringFormat='v{0}'}"
+                                       FontSize="11" Foreground="#00FF95" Opacity="0.7" />
                         </StackPanel>
                     </Border>
 
-                    <Separator />
-
-                    <TextBlock Text="{Binding StatusText}"
-                               FontSize="11"
-                               Foreground="#3D4560"
-                               HorizontalAlignment="Center"
-                               TextWrapping="Wrap" />
-
-                    <TextBlock FontSize="10"
-                               Foreground="#2D3450"
-                               HorizontalAlignment="Center"
-                               Margin="0,3,0,0">
-                        <TextBlock.Text>
-                            <MultiBinding StringFormat="MatrixX v{0}">
-                                <Binding Path="AppVersion" />
-                            </MultiBinding>
-                        </TextBlock.Text>
-                    </TextBlock>
+                    <!-- Connection pill -->
+                    <Border Classes="pill">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <Ellipse Width="7" Height="7"
+                                     Fill="{Binding Dashboard.IsRunning,
+                                            Converter={StaticResource BoolToConnFill}}"
+                                     VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding Dashboard.ConnectionStatus}"
+                                       FontSize="11"
+                                       Foreground="#F0F2F8"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
 
-                <!-- Navigation — split into GAMEPLAY and SYSTEM sections -->
-                <StackPanel DockPanel.Dock="Top" Spacing="0">
-
-                    <!-- GAMEPLAY section -->
-                    <TextBlock Classes="nav-section" Text="GAMEPLAY" />
-                    <ListBox SelectedIndex="{Binding GameplayNavIndex}"
-                             AutomationProperties.Name="Gameplay Navigation">
-                        <ListBoxItem AutomationProperties.Name="Dashboard">
-                            <StackPanel Orientation="Horizontal" Spacing="10">
-                                <TextBlock Text="◈" FontSize="14" VerticalAlignment="Center"
-                                           Width="18" TextAlignment="Center" />
-                                <TextBlock Text="Dashboard" VerticalAlignment="Center" />
-                            </StackPanel>
-                        </ListBoxItem>
-                        <ListBoxItem AutomationProperties.Name="Macro Editor">
-                            <StackPanel Orientation="Horizontal" Spacing="10">
-                                <TextBlock Text="⚡" FontSize="14" VerticalAlignment="Center"
-                                           Width="18" TextAlignment="Center" />
-                                <TextBlock Text="Macros" VerticalAlignment="Center" />
-                            </StackPanel>
-                        </ListBoxItem>
-                        <ListBoxItem AutomationProperties.Name="Profiles">
-                            <StackPanel Orientation="Horizontal" Spacing="10">
-                                <TextBlock Text="◉" FontSize="14" VerticalAlignment="Center"
-                                           Width="18" TextAlignment="Center" />
-                                <TextBlock Text="Profiles" VerticalAlignment="Center" />
-                            </StackPanel>
-                        </ListBoxItem>
-                        <ListBoxItem AutomationProperties.Name="Filters">
-                            <StackPanel Orientation="Horizontal" Spacing="10">
-                                <TextBlock Text="◎" FontSize="14" VerticalAlignment="Center"
-                                           Width="18" TextAlignment="Center" />
-                                <TextBlock Text="Filters" VerticalAlignment="Center" />
-                            </StackPanel>
-                        </ListBoxItem>
-                        <ListBoxItem AutomationProperties.Name="Weapons">
-                            <StackPanel Orientation="Horizontal" Spacing="10">
-                                <TextBlock Text="⊕" FontSize="14" VerticalAlignment="Center"
-                                           Width="18" TextAlignment="Center" />
-                                <TextBlock Text="Weapons" VerticalAlignment="Center" />
-                            </StackPanel>
-                        </ListBoxItem>
-                    </ListBox>
-
-                    <!-- SYSTEM section -->
-                    <TextBlock Classes="nav-section" Text="SYSTEM" />
-                    <ListBox SelectedIndex="{Binding SystemNavIndex}"
-                             AutomationProperties.Name="System Navigation">
-                        <ListBoxItem AutomationProperties.Name="Logs">
-                            <StackPanel Orientation="Horizontal" Spacing="10">
-                                <TextBlock Text="≡" FontSize="15" VerticalAlignment="Center"
-                                           Width="18" TextAlignment="Center" />
-                                <TextBlock Text="Logs" VerticalAlignment="Center" />
-                            </StackPanel>
-                        </ListBoxItem>
-                        <ListBoxItem AutomationProperties.Name="Settings">
-                            <StackPanel Orientation="Horizontal" Spacing="10">
-                                <TextBlock Text="⚙" FontSize="14" VerticalAlignment="Center"
-                                           Width="18" TextAlignment="Center" />
-                                <TextBlock Text="Settings" VerticalAlignment="Center" />
-                            </StackPanel>
-                        </ListBoxItem>
-                    </ListBox>
-
-                </StackPanel>
-
-            </DockPanel>
+            </Grid>
         </Border>
 
-        <!-- ── Content area with fade transition ───────────────────────── -->
-        <Border Grid.Column="1" Padding="16">
+        <!-- ═══════════════════════════════════════════════════════════════
+             CONTENT AREA
+            ═══════════════════════════════════════════════════════════════ -->
+        <Border Grid.Row="1" Padding="24">
             <ContentControl Content="{Binding CurrentView}"
                             Opacity="{Binding ContentOpacity}">
                 <ContentControl.Transitions>
                     <Transitions>
                         <DoubleTransition Property="Opacity"
-                                          Duration="0:0:0.12"
-                                          Easing="SineEaseInOut" />
+                                          Duration="0:0:0.18"
+                                          Easing="CubicEaseOut" />
                     </Transitions>
                 </ContentControl.Transitions>
                 <ContentControl.DataTemplates>
@@ -196,18 +155,58 @@
             </ContentControl>
         </Border>
 
+        <!-- ═══════════════════════════════════════════════════════════════
+             STATUS BAR (bottom dock — always visible)
+            ═══════════════════════════════════════════════════════════════ -->
+        <Border Grid.Row="2"
+                Background="#0A0C12"
+                BorderBrush="#1F2533"
+                BorderThickness="0,1,0,0">
+            <Grid ColumnDefinitions="Auto,*,Auto" Margin="20,0">
+
+                <!-- Left: profile + macros count -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal"
+                            Spacing="14" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" Spacing="5">
+                        <TextBlock Text="◉" FontSize="11" Foreground="#00B7FF" />
+                        <TextBlock Classes="muted" Text="PROFILE" FontWeight="SemiBold"
+                                   LetterSpacing="1" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding Dashboard.ActiveProfileName}"
+                                   FontSize="11" Foreground="#F0F2F8" FontWeight="SemiBold"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Center: live status text -->
+                <TextBlock Grid.Column="1"
+                           Text="{Binding StatusText}"
+                           FontSize="11"
+                           Foreground="#8B92A8"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center" />
+
+                <!-- Right: device + brand -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal"
+                            Spacing="14" VerticalAlignment="Center">
+                    <TextBlock Classes="muted"
+                               Text="MatrixX — Premium Controller Engine"
+                               VerticalAlignment="Center" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
     </Grid>
 
-    <!-- ── Toast notification overlay ─────────────────────────────────── -->
+    <!-- ═══ Toast notification overlay ═══════════════════════════════════ -->
     <Border HorizontalAlignment="Right"
             VerticalAlignment="Bottom"
-            Margin="0,0,24,24"
-            CornerRadius="8"
+            Margin="0,0,24,56"
+            CornerRadius="10"
             Padding="16,12"
             MaxWidth="380"
             IsVisible="{Binding Toast.IsVisible}"
             Background="{Binding Toast.Background}"
-            BoxShadow="0 4 20 0 #AA000000"
+            BoxShadow="0 8 28 0 #80000000"
             ZIndex="100">
         <StackPanel Orientation="Horizontal" Spacing="10">
             <TextBlock Text="{Binding Toast.Icon}"

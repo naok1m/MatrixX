@@ -1,7 +1,16 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:conv="using:InputBusX.UI.Converters"
              x:Class="InputBusX.UI.App"
              RequestedThemeVariant="Dark">
+
+    <Application.Resources>
+        <!-- Global converters available everywhere -->
+        <conv:BoolToBrushConverter x:Key="BoolToConnFill"
+                                   TrueBrush="#00FF95"
+                                   FalseBrush="#2A3345" />
+    </Application.Resources>
+
     <Application.Styles>
         <FluentTheme />
         <StyleInclude Source="avares://MatrixX/Styles/AppStyles.axaml" />
