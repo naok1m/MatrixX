@@ -17,7 +17,7 @@
     </Window.KeyBindings>
 
     <Panel>
-    <Grid RowDefinitions="72,*,32">
+    <Grid RowDefinitions="80,*,32">
 
         <!-- ═══════════════════════════════════════════════════════════════
              TOP NAV — logo + horizontal tabs + game chip + connection

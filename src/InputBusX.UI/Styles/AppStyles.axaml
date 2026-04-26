@@ -324,34 +324,35 @@
         ═══════════════════════════════════════════════════════════════════ -->
     <Style Selector="ListBoxItem.tab">
         <Setter Property="Padding" Value="18,0" />
-        <Setter Property="MinHeight" Value="44" />
+        <Setter Property="MinHeight" Value="52" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="#8B92A8" />
-        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontSize" Value="14" />
         <Setter Property="FontWeight" Value="Medium" />
         <Setter Property="Cursor" Value="Hand" />
-        <Setter Property="CornerRadius" Value="10" />
-        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="CornerRadius" Value="0" />
+        <Setter Property="BorderThickness" Value="0,0,0,2" />
         <Setter Property="BorderBrush" Value="Transparent" />
         <Setter Property="Transitions">
             <Setter.Value>
                 <Transitions>
                     <BrushTransition Property="Foreground" Duration="0:0:0.2" />
                     <BrushTransition Property="BorderBrush" Duration="0:0:0.2" />
+                    <ThicknessTransition Property="BorderThickness" Duration="0:0:0.2" Easing="CubicEaseOut" />
                 </Transitions>
             </Setter.Value>
         </Setter>
     </Style>
     <Style Selector="ListBoxItem.tab:pointerover">
-        <Setter Property="Foreground" Value="#D0D4E0" />
-        <Setter Property="Background" Value="#101723" />
+        <Setter Property="Foreground" Value="#E0E7F7" />
+        <Setter Property="BorderBrush" Value="#6600FF95" />
+        <Setter Property="BorderThickness" Value="0,0,0,2" />
     </Style>
     <Style Selector="ListBoxItem.tab:pointerover /template/ ContentPresenter">
         <Setter Property="Background" Value="Transparent" />
     </Style>
     <Style Selector="ListBoxItem.tab:selected">
         <Setter Property="Foreground" Value="#00FF95" />
-        <Setter Property="Background" Value="#0C261D" />
         <Setter Property="BorderThickness" Value="0,0,0,2" />
         <Setter Property="BorderBrush" Value="#00FF95" />
         <Setter Property="FontWeight" Value="SemiBold" />
@@ -481,6 +482,15 @@
         <Setter Property="CornerRadius" Value="2" />
     </Style>
 
+    <!-- Force thumb base visuals at control level to avoid fallback blue accents -->
+    <Style Selector="Slider /template/ Thumb">
+        <Setter Property="Background" Value="#00FF95" />
+        <Setter Property="BorderBrush" Value="#0A2218" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Width" Value="15" />
+        <Setter Property="Height" Value="15" />
+    </Style>
+
     <!-- Thumb — green dot with glow, smooth size transition -->
     <Style Selector="Slider /template/ Thumb /template/ Border">
         <Setter Property="Background" Value="#00FF95" />
@@ -494,6 +504,7 @@
                     <DoubleTransition Property="Width" Duration="0:0:0.18" Easing="CubicEaseOut" />
                     <DoubleTransition Property="Height" Duration="0:0:0.18" Easing="CubicEaseOut" />
                     <BoxShadowsTransition Property="BoxShadow" Duration="0:0:0.18" />
+                    <BrushTransition Property="Background" Duration="0:0:0.18" />
                 </Transitions>
             </Setter.Value>
         </Setter>
@@ -506,12 +517,17 @@
         <Setter Property="BoxShadow" Value="0 0 0 5 #5000FF95, 0 0 16 2 #5000FF95" />
     </Style>
 
-    <!-- Thumb press — max size + brightest glow -->
+    <!-- Drag glow pulse feel: stronger glow and a slight color lift while moving -->
     <Style Selector="Slider /template/ Thumb:pressed /template/ Border">
         <Setter Property="Width" Value="18" />
         <Setter Property="Height" Value="18" />
-        <Setter Property="Background" Value="#22FFAB" />
-        <Setter Property="BoxShadow" Value="0 0 0 7 #6000FF95, 0 0 24 4 #6000FF95" />
+        <Setter Property="Background" Value="#3EFFB7" />
+        <Setter Property="BoxShadow" Value="0 0 0 8 #7000FF95, 0 0 26 5 #7000FF95" />
+    </Style>
+
+    <!-- Thumb press — max size + brightest glow -->
+    <Style Selector="Slider:focus /template/ Thumb /template/ Border">
+        <Setter Property="BoxShadow" Value="0 0 0 5 #5000FF95, 0 0 18 2 #5000FF95" />
     </Style>
 
     <!-- ═══ Toggle (CheckBox styled as iOS-pill) ═══════════════════════════ -->
