@@ -323,45 +323,71 @@
          Active tab gets a glowing underline.
         ═══════════════════════════════════════════════════════════════════ -->
     <Style Selector="ListBoxItem.tab">
-        <Setter Property="Padding" Value="20,0" />
-        <Setter Property="MinHeight" Value="60" />
+        <Setter Property="Padding" Value="18,0" />
+        <Setter Property="MinHeight" Value="44" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="#8B92A8" />
         <Setter Property="FontSize" Value="13" />
         <Setter Property="FontWeight" Value="Medium" />
         <Setter Property="Cursor" Value="Hand" />
-        <Setter Property="CornerRadius" Value="0" />
-        <Setter Property="BorderThickness" Value="0,0,0,1" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="BorderThickness" Value="0" />
         <Setter Property="BorderBrush" Value="Transparent" />
         <Setter Property="Transitions">
             <Setter.Value>
                 <Transitions>
                     <BrushTransition Property="Foreground" Duration="0:0:0.2" />
                     <BrushTransition Property="BorderBrush" Duration="0:0:0.2" />
-                    <ThicknessTransition Property="BorderThickness" Duration="0:0:0.2" Easing="CubicEaseOut" />
                 </Transitions>
             </Setter.Value>
         </Setter>
     </Style>
     <Style Selector="ListBoxItem.tab:pointerover">
         <Setter Property="Foreground" Value="#D0D4E0" />
-        <Setter Property="BorderThickness" Value="0,0,0,2" />
-        <Setter Property="BorderBrush" Value="#5000FF95" />
+        <Setter Property="Background" Value="#101723" />
     </Style>
     <Style Selector="ListBoxItem.tab:pointerover /template/ ContentPresenter">
         <Setter Property="Background" Value="Transparent" />
     </Style>
     <Style Selector="ListBoxItem.tab:selected">
         <Setter Property="Foreground" Value="#00FF95" />
-        <Setter Property="BorderThickness" Value="0,0,0,3" />
+        <Setter Property="Background" Value="#0C261D" />
+        <Setter Property="BorderThickness" Value="0,0,0,2" />
         <Setter Property="BorderBrush" Value="#00FF95" />
         <Setter Property="FontWeight" Value="SemiBold" />
     </Style>
     <Style Selector="ListBoxItem.tab:selected /template/ ContentPresenter">
-        <Setter Property="BoxShadow" Value="0 8 20 0 #1800FF95" />
+        <Setter Property="BoxShadow" Value="0 0 0 0 transparent" />
     </Style>
     <Style Selector="ListBoxItem.tab:selected /template/ ContentPresenter">
         <Setter Property="Background" Value="Transparent" />
+    </Style>
+
+    <Style Selector="Border.topbar-shell">
+        <Setter Property="Background" Value="#0A0C12" />
+        <Setter Property="BorderBrush" Value="#1F2533" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="Padding" Value="12,8" />
+        <Setter Property="BoxShadow" Value="0 8 28 0 #70000000" />
+    </Style>
+
+    <Style Selector="ComboBox.topbar-chip">
+        <Setter Property="Background" Value="#0F131D" />
+        <Setter Property="Foreground" Value="#F0F2F8" />
+        <Setter Property="BorderBrush" Value="#2A3345" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="MinHeight" Value="32" />
+        <Setter Property="Padding" Value="10,4" />
+        <Setter Property="FontSize" Value="11" />
+    </Style>
+    <Style Selector="ComboBox.topbar-chip:pointerover /template/ Border#Background">
+        <Setter Property="Background" Value="#121826" />
+        <Setter Property="BorderBrush" Value="#3A4A60" />
+    </Style>
+    <Style Selector="ComboBox.topbar-chip:focus /template/ Border#Background">
+        <Setter Property="BorderBrush" Value="#00FF95" />
     </Style>
 
     <!-- ═══ Sidebar nav (vertical) — used inside views (e.g. Macros categories) ═ -->

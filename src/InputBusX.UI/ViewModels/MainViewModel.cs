@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using InputBusX.UI.Services;
@@ -17,6 +18,9 @@ public partial class MainViewModel : ViewModelBase
     // Update banner
     [ObservableProperty] private bool _updateAvailable;
     [ObservableProperty] private string _latestVersion = "";
+    [ObservableProperty] private string _selectedGameProfile = "Warzone";
+
+    public ObservableCollection<string> GameProfiles { get; } = new(["Warzone", "Apex", "Fortnite", "Valorant"]);
 
     /// <summary>Assembly version read from the .csproj &lt;Version&gt; tag.</summary>
     public string AppVersion { get; } =
