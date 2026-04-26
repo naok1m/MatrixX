@@ -157,8 +157,8 @@ public sealed class ResponseCurveCanvas : Control
             double markerOutput = ComputeOutput(markerInput, dz, adz, exp);
             var markerPoint = new Point(markerInput * w, (1.0 - markerOutput) * h);
 
-            ctx.FillEllipse(markerGlowBrush, markerPoint, 9, 9);
-            ctx.FillEllipse(markerBrush, markerPoint, 4.5, 4.5);
+            ctx.DrawEllipse(markerGlowBrush, null, markerPoint, 9, 9);
+            ctx.DrawEllipse(markerBrush, null, markerPoint, 4.5, 4.5);
             ctx.DrawEllipse(null, markerRingPen, markerPoint, 6, 6);
         }
 
