@@ -74,8 +74,24 @@ public partial class MainViewModel : ViewModelBase
 
     // ── Tab navigation ────────────────────────────────────────────────────
 
+    // Two-ListBox sidebar: gameplay items (0-4) and system items (5-6).
+    // Each returns -1 when the other group is active so no item appears selected.
+    public int GameplayNavIndex
+    {
+        get => SelectedTabIndex <= 4 ? SelectedTabIndex : -1;
+        set { if (value >= 0) SelectedTabIndex = value; }
+    }
+
+    public int SystemNavIndex
+    {
+        get => SelectedTabIndex >= 5 ? SelectedTabIndex - 5 : -1;
+        set { if (value >= 0) SelectedTabIndex = value + 5; }
+    }
+
     partial void OnSelectedTabIndexChanged(int value)
     {
+        OnPropertyChanged(nameof(GameplayNavIndex));
+        OnPropertyChanged(nameof(SystemNavIndex));
         _ = FadeToViewAsync(value);
     }
 

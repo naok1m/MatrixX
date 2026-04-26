@@ -28,26 +28,16 @@
                                 AutomationProperties.Name="Activate selected profile" />
                     </StackPanel>
                     <!-- Import / Export -->
-                    <Border Height="1" Background="#1A1D22" />
+                    <Separator />
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <Button Content="⬆ Export"
                                 Command="{Binding ExportProfileCommand}"
-                                Background="#1A1A2A"
-                                Foreground="#B388FF"
-                                BorderBrush="#B388FF"
-                                BorderThickness="1"
-                                CornerRadius="6"
-                                Padding="12,6"
+                                Classes="ghost"
                                 ToolTip.Tip="Save the selected profile as a .json file to share or back up."
                                 AutomationProperties.Name="Export selected profile" />
                         <Button Content="⬇ Import"
                                 Command="{Binding ImportProfileCommand}"
-                                Background="#1A1A2A"
-                                Foreground="#B388FF"
-                                BorderBrush="#B388FF"
-                                BorderThickness="1"
-                                CornerRadius="6"
-                                Padding="12,6"
+                                Classes="ghost"
                                 ToolTip.Tip="Load a profile from a .json file. A new copy is created — existing profiles are not overwritten."
                                 AutomationProperties.Name="Import profile from file" />
                     </StackPanel>
