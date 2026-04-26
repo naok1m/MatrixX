@@ -55,6 +55,8 @@ const state = {
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
+let activeView = 'dashboard';
+let hasRenderedAll = false;
 
 function send(type, extra = {}) {
   if (window.chrome?.webview) {
@@ -77,17 +79,31 @@ function fixed(value, digits = 2) {
 function render(next) {
   Object.assign(state, next);
   renderDashboard();
-  renderFilters();
-  renderProfiles();
-  renderLogs();
-  renderSettings();
-  renderMacros();
-  renderWeapons();
+  if (!hasRenderedAll) {
+    renderFilters();
+    renderProfiles();
+    renderLogs();
+    renderSettings();
+    renderMacros();
+    renderWeapons();
+    hasRenderedAll = true;
+    return;
+  }
+  renderActiveView();
 }
 
 function renderInputState(next) {
   Object.assign(state, next);
   renderDashboard();
+}
+
+function renderActiveView() {
+  if (activeView === 'curve') renderFilters();
+  if (activeView === 'profiles') renderProfiles();
+  if (activeView === 'logs') renderLogs();
+  if (activeView === 'settings') renderSettings();
+  if (activeView === 'macros') renderMacros();
+  if (activeView === 'weapons') renderWeapons();
 }
 
 function renderDashboard() {
@@ -99,7 +115,7 @@ function renderDashboard() {
   $('#toggleConnection').textContent = state.isConnecting ? 'Working...' : state.isRunning ? 'Stop' : 'Start';
   $('#toggleConnection').disabled = state.isConnecting;
   $('#connectionPill').classList.toggle('online', state.isRunning);
-  $('#gameProfile').value = state.gameProfile;
+  setControlValue($('#gameProfile'), state.gameProfile);
 
   const devices = state.connectedDevices ?? [];
   $('#deviceList').innerHTML = devices.length
@@ -132,7 +148,7 @@ function renderFilters() {
   bindRange('triggerDeadzone', filters.triggerDeadzone, 2);
   bindRange('responseCurveExponent', filters.responseCurveExponent, 2);
   bindRange('smoothingFactor', filters.smoothingFactor, 2);
-  $('#smoothingEnabled').checked = Boolean(filters.smoothingEnabled);
+  setControlChecked($('#smoothingEnabled'), Boolean(filters.smoothingEnabled));
   renderCurvePreview();
 }
 
@@ -183,12 +199,12 @@ function renderLogs() {
 
 function renderSettings() {
   const settings = state.settings ?? {};
-  $('#pollingRateMs').value = settings.pollingRateMs ?? 1;
-  $('#logLevel').value = settings.logLevel ?? 'Information';
-  $('#minimizeToTray').checked = Boolean(settings.minimizeToTray);
-  $('#startMinimized').checked = Boolean(settings.startMinimized);
-  $('#autoConnect').checked = Boolean(settings.autoConnect);
-  $('#showNotifications').checked = Boolean(settings.showNotifications);
+  setControlValue($('#pollingRateMs'), settings.pollingRateMs ?? 1);
+  setControlValue($('#logLevel'), settings.logLevel ?? 'Information');
+  setControlChecked($('#minimizeToTray'), Boolean(settings.minimizeToTray));
+  setControlChecked($('#startMinimized'), Boolean(settings.startMinimized));
+  setControlChecked($('#autoConnect'), Boolean(settings.autoConnect));
+  setControlChecked($('#showNotifications'), Boolean(settings.showNotifications));
 }
 
 function renderMacros() {
@@ -223,32 +239,29 @@ function renderMacros() {
   populateSelect('#slideButton', buttonOptions, selected.slideButton);
   populateSelect('#slideCancelButton', buttonOptions, selected.slideCancelButton);
 
-  $('#macroName').value = selected.name;
-  $('#macroPriority').value = selected.priority;
-  $('#macroEnabled').checked = selected.enabled;
-  $('#toggleMode').checked = selected.toggleMode;
-  $('#macroLoop').checked = selected.loop;
-  $('#macroDelayMs').value = selected.delayMs;
-  $('#macroIntervalMs').value = selected.intervalMs;
-  $('#macroIntensity').value = selected.intensity;
+  setControlValue($('#macroName'), selected.name);
+  setControlValue($('#macroPriority'), selected.priority);
+  setControlChecked($('#macroEnabled'), selected.enabled);
+  setControlChecked($('#toggleMode'), selected.toggleMode);
+  setControlChecked($('#macroLoop'), selected.loop);
+  setControlValue($('#macroDelayMs'), selected.delayMs);
+  setControlValue($('#macroIntervalMs'), selected.intervalMs);
+  setControlValue($('#macroIntensity'), selected.intensity);
   $('#macroIntensityValue').textContent = fixed(selected.intensity, 2);
-  $('#macroRandomization').value = selected.randomizationFactor;
+  setControlValue($('#macroRandomization'), selected.randomizationFactor);
   $('#macroRandomizationValue').textContent = fixed(selected.randomizationFactor, 2);
-  $('#recoilCompensationX').value = selected.recoilCompensationX;
-  $('#recoilCompensationY').value = selected.recoilCompensationY;
-  $('#flickStrength').value = selected.flickStrength;
-  $('#flickIntervalMs').value = selected.flickIntervalMs;
-  $('#jumpIntervalMs').value = selected.jumpIntervalMs;
-  $('#slideCancelDelayMs').value = selected.slideCancelDelayMs;
-  $('#strafeAmplitude').value = selected.strafeAmplitude;
+  setControlValue($('#recoilCompensationX'), selected.recoilCompensationX);
+  setControlValue($('#recoilCompensationY'), selected.recoilCompensationY);
+  setControlValue($('#flickStrength'), selected.flickStrength);
+  setControlValue($('#flickIntervalMs'), selected.flickIntervalMs);
+  setControlValue($('#jumpIntervalMs'), selected.jumpIntervalMs);
+  setControlValue($('#slideCancelDelayMs'), selected.slideCancelDelayMs);
+  setControlValue($('#strafeAmplitude'), selected.strafeAmplitude);
   $('#strafeAmplitudeValue').textContent = fixed(selected.strafeAmplitude, 2);
-  $('#strafeIntervalMs').value = selected.strafeIntervalMs;
+  setControlValue($('#strafeIntervalMs'), selected.strafeIntervalMs);
 
   const type = selected.type;
-  $('#macroNoRecoilCard').classList.toggle('hidden', !['NoRecoil', 'AutoFireNoRecoil', 'ProgressiveRecoil', 'CrowBar'].includes(type));
-  $('#macroButtonsCard').classList.toggle('hidden', !['AutoPing', 'Remap', 'HoldBreath'].includes(type));
-  $('#macroAimAssistCard').classList.toggle('hidden', !['AimAssistBuff', 'JumpShot', 'SlideCancel'].includes(type));
-  $('#macroMovementCard').classList.toggle('hidden', !['InstaDropShot', 'FastDrop', 'JumpShot', 'StrafeShot', 'HoldBreath', 'SlideCancel'].includes(type));
+  syncMacroTypePanels(type);
 }
 
 function renderWeapons() {
@@ -256,17 +269,17 @@ function renderWeapons() {
   $('#toggleWeaponDetection').textContent = detection.isRunning ? 'Stop Detection' : 'Start Detection';
   $('#currentWeaponName').textContent = detection.currentWeaponName || 'None';
   $('#weaponStatusMessage').textContent = detection.statusMessage || 'Detection is stopped.';
-  $('#weaponCaptureX').value = detection.captureX ?? 1700;
-  $('#weaponCaptureY').value = detection.captureY ?? 950;
-  $('#weaponCaptureWidth').value = detection.captureWidth ?? 300;
-  $('#weaponCaptureHeight').value = detection.captureHeight ?? 60;
-  $('#weaponIntervalMs').value = detection.intervalMs ?? 250;
-  $('#weaponMatchThreshold').value = detection.matchThreshold ?? 0.8;
+  setControlValue($('#weaponCaptureX'), detection.captureX ?? 1700);
+  setControlValue($('#weaponCaptureY'), detection.captureY ?? 950);
+  setControlValue($('#weaponCaptureWidth'), detection.captureWidth ?? 300);
+  setControlValue($('#weaponCaptureHeight'), detection.captureHeight ?? 60);
+  setControlValue($('#weaponIntervalMs'), detection.intervalMs ?? 250);
+  setControlValue($('#weaponMatchThreshold'), detection.matchThreshold ?? 0.8);
   $('#weaponMatchThresholdValue').textContent = fixed(detection.matchThreshold, 2);
 
   populateSelect('#weaponGame', detection.games ?? [], detection.selectedGame);
   populateSelect('#weaponCategory', detection.categories ?? [], detection.selectedCategory);
-  $('#weaponSearch').value = detection.searchText ?? '';
+  setControlValue($('#weaponSearch'), detection.searchText ?? '');
   $('#weaponPreviewPanel').classList.toggle('hidden', !detection.previewImageDataUrl);
   $('#weaponPreviewImage').src = detection.previewImageDataUrl || '';
   $('#weaponPreviewTitle').textContent = detection.previewTitle || 'Region Preview';
@@ -356,7 +369,7 @@ function renderWeapons() {
 function bindRange(id, value, digits) {
   const input = $(`#${id}`);
   const label = $(`#${id}Value`);
-  input.value = value ?? 0;
+  setControlValue(input, value ?? 0);
   label.textContent = fixed(value, digits);
 }
 
@@ -368,6 +381,16 @@ function populateSelect(selector, options, selected) {
     element.dataset.rendered = html;
   }
   element.value = selected ?? options[0] ?? '';
+}
+
+function setControlValue(element, value) {
+  if (!element || document.activeElement === element) return;
+  element.value = value ?? '';
+}
+
+function setControlChecked(element, checked) {
+  if (!element || document.activeElement === element) return;
+  element.checked = Boolean(checked);
 }
 
 function getSelectedMacro() {
@@ -472,6 +495,18 @@ function collectWeaponSettings() {
   };
 }
 
+function syncMacroTypePanels(type = $('#macroType').value) {
+  $('#macroNoRecoilCard').classList.toggle('hidden', !['NoRecoil', 'AutoFireNoRecoil', 'ProgressiveRecoil', 'CrowBar'].includes(type));
+  $('#macroButtonsCard').classList.toggle('hidden', !['AutoPing', 'Remap', 'HoldBreath'].includes(type));
+  $('#macroAimAssistCard').classList.toggle('hidden', !['AimAssistBuff', 'JumpShot', 'SlideCancel'].includes(type));
+  $('#macroMovementCard').classList.toggle('hidden', !['InstaDropShot', 'FastDrop', 'JumpShot', 'StrafeShot', 'HoldBreath', 'SlideCancel'].includes(type));
+}
+
+function saveSelectedMacro() {
+  const macro = collectMacro();
+  if (macro) send('saveMacro', macro);
+}
+
 function renderStick(selector, x, y) {
   const max = 44;
   $(selector).style.transform = `translate(${clamp(x, -1, 1) * max}px, ${clamp(-y, -1, 1) * max}px)`;
@@ -535,7 +570,9 @@ $$('.nav-item').forEach((button) => {
     $$('.nav-item').forEach((item) => item.classList.remove('active'));
     button.classList.add('active');
     const view = button.dataset.view;
+    activeView = view;
     $$('.view').forEach((panel) => panel.classList.toggle('active', panel.dataset.viewPanel === view));
+    renderActiveView();
   });
 });
 
@@ -556,17 +593,16 @@ $('#deleteMacro').addEventListener('click', () => {
   const selected = getSelectedMacro();
   if (selected) send('deleteMacro', { value: selected.id });
 });
-$('#saveMacro').addEventListener('click', () => {
-  const macro = collectMacro();
-  if (macro) send('saveMacro', macro);
-});
+$('#saveMacro').addEventListener('click', saveSelectedMacro);
+$('#macroEnabled').addEventListener('change', saveSelectedMacro);
+$('#macroType').addEventListener('change', (event) => syncMacroTypePanels(event.target.value));
 $('#toggleWeaponDetection').addEventListener('click', () => send('toggleWeaponDetection'));
 $('#addWeapon').addEventListener('click', () => send('addWeapon'));
 $('#openWeaponLibrary').addEventListener('click', () => openModal('weaponLibraryModal'));
 $('#saveWeaponSettings').addEventListener('click', () => send('saveWeaponSettings', collectWeaponSettings()));
 $('#selectWeaponRegion').addEventListener('click', () => send('selectWeaponRegion'));
-$('#previewWeaponCapture').addEventListener('click', () => send('previewWeaponCapture'));
-$('#testWeaponCapture').addEventListener('click', () => send('testWeaponCapture'));
+$('#previewWeaponCapture').addEventListener('click', () => send('previewWeaponCapture', collectWeaponDetection()));
+$('#testWeaponCapture').addEventListener('click', () => send('testWeaponCapture', collectWeaponDetection()));
 $('#closeWeaponPreview').addEventListener('click', () => send('closeWeaponPreview'));
 $('#copyWeaponTest').addEventListener('click', async () => {
   const text = $('#weaponTestResult').textContent;
@@ -667,6 +703,15 @@ window.chrome?.webview?.addEventListener('message', (event) => {
   }
   if (event.data?.type === 'inputState') {
     renderInputState(event.data.payload);
+  }
+  if (event.data?.type === 'toast') {
+    state.logs = [...(state.logs ?? []), {
+      timestamp: new Date().toLocaleTimeString(),
+      level: event.data.payload?.level ?? 'Error',
+      category: 'WebShell',
+      message: event.data.payload?.message ?? 'Command failed'
+    }];
+    if (activeView === 'logs') renderLogs();
   }
 });
 

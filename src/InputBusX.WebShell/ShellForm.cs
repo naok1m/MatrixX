@@ -59,8 +59,20 @@ public sealed class ShellForm : Form
             _bridge.StateChanged += (_, json) =>
             {
                 if (IsDisposed || _webView.CoreWebView2 is null) return;
-                BeginInvoke(() =>
-                    _webView.CoreWebView2.PostWebMessageAsJson(json));
+                try
+                {
+                    BeginInvoke(() =>
+                    {
+                        if (!IsDisposed && _webView.CoreWebView2 is not null)
+                        {
+                            _webView.CoreWebView2.PostWebMessageAsJson(json);
+                        }
+                    });
+                }
+                catch (InvalidOperationException)
+                {
+                    // The window handle can disappear while services are shutting down.
+                }
             };
 
             _webView.CoreWebView2.NavigateToString(LoadShellHtml());
@@ -79,7 +91,23 @@ public sealed class ShellForm : Form
 
     private async void OnWebMessageReceived(object? sender, CoreWebView2WebMessageReceivedEventArgs e)
     {
-        await _bridge.HandleAsync(e.WebMessageAsJson);
+        try
+        {
+            await _bridge.HandleAsync(e.WebMessageAsJson);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "WebShell command failed: {Message}", e.WebMessageAsJson);
+            if (_webView.CoreWebView2 is not null)
+            {
+                var payload = System.Text.Json.JsonSerializer.Serialize(new
+                {
+                    type = "toast",
+                    payload = new { level = "error", message = ex.Message }
+                });
+                _webView.CoreWebView2.PostWebMessageAsJson(payload);
+            }
+        }
     }
 
     private static string LoadShellHtml()

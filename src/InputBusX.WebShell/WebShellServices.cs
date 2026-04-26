@@ -20,6 +20,7 @@ namespace InputBusX.WebShell;
 public sealed class WebShellServices : IDisposable
 {
     private ServiceProvider? _provider;
+    private bool _shutdownRequested;
 
     public IServiceProvider Provider => _provider
         ?? throw new InvalidOperationException("Services have not been initialized.");
@@ -78,6 +79,22 @@ public sealed class WebShellServices : IDisposable
 
     public void Shutdown()
     {
+        if (_shutdownRequested)
+        {
+            return;
+        }
+
+        _shutdownRequested = true;
+
+        try
+        {
+            Resolve<IInputPipeline>().StopAsync().GetAwaiter().GetResult();
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Failed to stop input pipeline during shutdown");
+        }
+
         try
         {
             Resolve<IWeaponDetectionService>().StopAsync().GetAwaiter().GetResult();
@@ -88,6 +105,7 @@ public sealed class WebShellServices : IDisposable
         }
 
         _provider?.Dispose();
+        _provider = null;
         Log.CloseAndFlush();
     }
 

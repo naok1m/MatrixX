@@ -170,13 +170,13 @@ public sealed class WebShellBridge
                 await SelectWeaponRegionAsync();
                 break;
             case "previewWeaponCapture":
-                PreviewWeaponCapture();
+                PreviewWeaponCapture(root);
                 break;
             case "closeWeaponPreview":
                 CloseWeaponPreview();
                 break;
             case "testWeaponCapture":
-                await TestWeaponCaptureAsync();
+                await TestWeaponCaptureAsync(root);
                 break;
             case "captureWeaponReference":
                 await CaptureWeaponReferenceAsync(ReadString(root, "value", ""));
@@ -553,9 +553,8 @@ public sealed class WebShellBridge
         var profile = _profileManager.ActiveProfile;
         var macro = new MacroDefinition
         {
-            Name = $"Macro {profile.Macros.Count + 1}",
-            Type = MacroType.NoRecoil,
-            ActivationButton = GamepadButton.RightShoulder
+            Name = $"New Macro {profile.Macros.Count + 1}",
+            Type = MacroType.AutoPing
         };
         profile.Macros.Add(macro);
         _profileManager.SaveProfile(profile);
@@ -631,6 +630,11 @@ public sealed class WebShellBridge
         macro.TriggerSource = ParseEnum(ReadString(root, "triggerSource", macro.TriggerSource.ToString()), macro.TriggerSource);
         macro.ActivationButton = ParseNullableButton(ReadString(root, "activationButton", macro.ActivationButton?.ToString() ?? "None"));
         macro.PingButton = ParseNullableButton(ReadString(root, "pingButton", macro.PingButton?.ToString() ?? "None"));
+        if (macro.Type == MacroType.AutoPing && !macro.PingButton.HasValue)
+        {
+            macro.PingButton = GamepadButton.DPadUp;
+        }
+
         macro.SourceButton = ParseNullableButton(ReadString(root, "sourceButton", macro.SourceButton?.ToString() ?? "None"));
         macro.TargetButton = ParseNullableButton(ReadString(root, "targetButton", macro.TargetButton?.ToString() ?? "None"));
         macro.CrouchButton = ParseEnum(ReadString(root, "crouchButton", macro.CrouchButton.ToString()), macro.CrouchButton);
@@ -837,16 +841,20 @@ public sealed class WebShellBridge
         });
     }
 
-    private void PreviewWeaponCapture()
+    private void PreviewWeaponCapture(JsonElement root)
     {
         var settings = _configStore.Load().WeaponDetection;
-        var dataUrl = CaptureRegionDataUrl(settings.CaptureX, settings.CaptureY, settings.CaptureWidth, settings.CaptureHeight);
+        var x = ReadInt(root, "captureX", settings.CaptureX);
+        var y = ReadInt(root, "captureY", settings.CaptureY);
+        var width = ReadInt(root, "captureWidth", settings.CaptureWidth);
+        var height = ReadInt(root, "captureHeight", settings.CaptureHeight);
+        var dataUrl = CaptureRegionDataUrl(x, y, width, height);
         UpdateState(s => s with
         {
             WeaponDetection = s.WeaponDetection with
             {
                 PreviewImageDataUrl = dataUrl,
-                PreviewTitle = "Region Preview"
+                PreviewTitle = $"Region Preview ({x}, {y}, {width}x{height})"
             }
         });
     }
@@ -863,9 +871,16 @@ public sealed class WebShellBridge
         });
     }
 
-    private async Task TestWeaponCaptureAsync()
+    private async Task TestWeaponCaptureAsync(JsonElement root)
     {
-        var settings = _configStore.Load().WeaponDetection;
+        var config = _configStore.Load();
+        var settings = config.WeaponDetection;
+        settings.CaptureX = ReadInt(root, "captureX", settings.CaptureX);
+        settings.CaptureY = ReadInt(root, "captureY", settings.CaptureY);
+        settings.CaptureWidth = ReadInt(root, "captureWidth", settings.CaptureWidth);
+        settings.CaptureHeight = ReadInt(root, "captureHeight", settings.CaptureHeight);
+        settings.IntervalMs = ReadInt(root, "intervalMs", settings.IntervalMs);
+        settings.MatchThreshold = ReadDouble(root, "matchThreshold", settings.MatchThreshold);
         var result = await _weaponDetection.TestCaptureAsync(settings);
         UpdateState(s => s with
         {

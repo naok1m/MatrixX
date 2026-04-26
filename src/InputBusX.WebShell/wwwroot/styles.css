@@ -30,7 +30,7 @@ html, body {
   font: 13px/1.45 Inter, "Segoe UI", system-ui, sans-serif;
 }
 
-button, select { font: inherit; }
+button, select, input { font: inherit; }
 
 .app-shell {
   height: 100%;
@@ -150,9 +150,11 @@ button, select { font: inherit; }
 
 .game-chip select {
   min-width: 0;
+  height: 32px;
   border: 0;
+  border-radius: 6px;
   outline: 0;
-  background: transparent;
+  background: #0b121d;
   color: #fff;
   font-weight: 800;
 }
