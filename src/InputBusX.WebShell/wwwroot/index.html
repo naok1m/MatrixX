@@ -138,13 +138,508 @@
         </article>
       </section>
 
-      <section class="view" data-view-panel="macros"><div class="coming-soon">Macro Studio</div></section>
-      <section class="view" data-view-panel="curve"><div class="coming-soon">Curve Lab</div></section>
-      <section class="view" data-view-panel="profiles"><div class="coming-soon">Profiles</div></section>
-      <section class="view" data-view-panel="weapons"><div class="coming-soon">Weapon Detection</div></section>
-      <section class="view" data-view-panel="logs"><div class="coming-soon">Telemetry Logs</div></section>
-      <section class="view" data-view-panel="settings"><div class="coming-soon">Settings</div></section>
+      <section class="view" data-view-panel="macros">
+        <div class="page-heading compact">
+          <div>
+            <span class="eyebrow">MACROS</span>
+            <h1>Macro Studio</h1>
+          </div>
+        </div>
+
+        <div class="macro-shell">
+          <aside class="panel macro-sidebar">
+            <div class="macro-sidebar-head">
+              <div class="panel-title"><span class="dot green"></span> Macros</div>
+              <button class="ghost-action" id="createMacro">+ New</button>
+            </div>
+            <div id="macroList" class="macro-list"></div>
+          </aside>
+
+          <section class="panel macro-editor">
+            <div id="macroEmpty" class="empty-state">
+              <div class="empty-symbol">✦</div>
+              <strong>No macro selected</strong>
+              <p>Select one from the list or create a new macro.</p>
+            </div>
+
+            <div id="macroEditorBody" class="macro-editor-body hidden">
+              <div class="macro-editor-header">
+                <div>
+                  <span class="eyebrow">EDITOR</span>
+                  <h2 id="macroEditorTitle">Macro Settings</h2>
+                </div>
+                <div class="toolbar-inline">
+                  <button class="ghost-action" id="deleteMacro">Delete</button>
+                  <button class="primary-action compact-action" id="saveMacro">Save Macro</button>
+                </div>
+              </div>
+
+              <div class="editor-grid macro-general-grid">
+                <article class="form-panel">
+                  <div class="panel-title"><span class="dot blue"></span> General</div>
+                  <label class="field">
+                    <span>Name</span>
+                    <input id="macroName" type="text" placeholder="Macro name" />
+                  </label>
+                  <label class="field">
+                    <span>Type</span>
+                    <select id="macroType"></select>
+                  </label>
+                  <div class="inline-grid two">
+                    <label class="field">
+                      <span>Priority</span>
+                      <input id="macroPriority" type="number" min="0" max="100" />
+                    </label>
+                    <label class="toggle-row fieldless">
+                      <span>Enabled</span>
+                      <input id="macroEnabled" type="checkbox" />
+                    </label>
+                  </div>
+                  <div class="inline-grid two">
+                    <label class="field">
+                      <span>Activation Button</span>
+                      <select id="activationButton"></select>
+                    </label>
+                    <label class="field">
+                      <span>Trigger Source</span>
+                      <select id="triggerSource"></select>
+                    </label>
+                  </div>
+                  <div class="inline-grid two">
+                    <label class="toggle-row fieldless">
+                      <span>Toggle Mode</span>
+                      <input id="toggleMode" type="checkbox" />
+                    </label>
+                    <label class="toggle-row fieldless">
+                      <span>Loop</span>
+                      <input id="macroLoop" type="checkbox" />
+                    </label>
+                  </div>
+                </article>
+
+                <article class="form-panel">
+                  <div class="panel-title"><span class="dot amber"></span> Timing</div>
+                  <label class="field">
+                    <span>Initial Delay (ms)</span>
+                    <input id="macroDelayMs" type="number" min="0" max="5000" />
+                  </label>
+                  <label class="field">
+                    <span>Interval (ms)</span>
+                    <input id="macroIntervalMs" type="number" min="1" max="5000" />
+                  </label>
+                  <label class="field">
+                    <span>Intensity</span>
+                    <input id="macroIntensity" type="range" min="0" max="5" step="0.05" />
+                    <strong id="macroIntensityValue">1.00</strong>
+                  </label>
+                  <label class="field">
+                    <span>Randomization</span>
+                    <input id="macroRandomization" type="range" min="0" max="1" step="0.01" />
+                    <strong id="macroRandomizationValue">0.00</strong>
+                  </label>
+                </article>
+              </div>
+
+              <div class="editor-grid macro-advanced-grid">
+                <article class="panel form-panel" id="macroNoRecoilCard">
+                  <div class="panel-title"><span class="dot green"></span> Recoil Control</div>
+                  <div class="inline-grid two">
+                    <label class="field">
+                      <span>Recoil X</span>
+                      <input id="recoilCompensationX" type="number" min="-32767" max="32767" />
+                    </label>
+                    <label class="field">
+                      <span>Recoil Y</span>
+                      <input id="recoilCompensationY" type="number" min="-32767" max="32767" />
+                    </label>
+                  </div>
+                </article>
+
+                <article class="panel form-panel" id="macroButtonsCard">
+                  <div class="panel-title"><span class="dot blue"></span> Button Mapping</div>
+                  <div class="inline-grid two">
+                    <label class="field">
+                      <span>Ping Button</span>
+                      <select id="pingButton"></select>
+                    </label>
+                    <label class="field">
+                      <span>Source Button</span>
+                      <select id="sourceButton"></select>
+                    </label>
+                  </div>
+                  <div class="inline-grid two">
+                    <label class="field">
+                      <span>Target Button</span>
+                      <select id="targetButton"></select>
+                    </label>
+                    <label class="field">
+                      <span>Breath Button</span>
+                      <select id="breathButton"></select>
+                    </label>
+                  </div>
+                </article>
+
+                <article class="panel form-panel" id="macroAimAssistCard">
+                  <div class="panel-title"><span class="dot amber"></span> Assist Tuning</div>
+                  <div class="inline-grid two">
+                    <label class="field">
+                      <span>Flick Strength</span>
+                      <input id="flickStrength" type="number" min="0" max="32767" />
+                    </label>
+                    <label class="field">
+                      <span>Flick Interval</span>
+                      <input id="flickIntervalMs" type="number" min="1" max="1000" />
+                    </label>
+                  </div>
+                  <div class="inline-grid two">
+                    <label class="field">
+                      <span>Jump Interval</span>
+                      <input id="jumpIntervalMs" type="number" min="1" max="5000" />
+                    </label>
+                    <label class="field">
+                      <span>Slide Cancel Delay</span>
+                      <input id="slideCancelDelayMs" type="number" min="1" max="2000" />
+                    </label>
+                  </div>
+                </article>
+
+                <article class="panel form-panel" id="macroMovementCard">
+                  <div class="panel-title"><span class="dot green"></span> Movement Helpers</div>
+                  <div class="inline-grid two">
+                    <label class="field">
+                      <span>Crouch Button</span>
+                      <select id="crouchButton"></select>
+                    </label>
+                    <label class="field">
+                      <span>Jump Button</span>
+                      <select id="jumpButton"></select>
+                    </label>
+                  </div>
+                  <div class="inline-grid two">
+                    <label class="field">
+                      <span>Strafe Amplitude</span>
+                      <input id="strafeAmplitude" type="range" min="0" max="1" step="0.01" />
+                      <strong id="strafeAmplitudeValue">0.60</strong>
+                    </label>
+                    <label class="field">
+                      <span>Strafe Interval</span>
+                      <input id="strafeIntervalMs" type="number" min="1" max="2000" />
+                    </label>
+                  </div>
+                  <div class="inline-grid two">
+                    <label class="field">
+                      <span>Slide Button</span>
+                      <select id="slideButton"></select>
+                    </label>
+                    <label class="field">
+                      <span>Slide Cancel Button</span>
+                      <select id="slideCancelButton"></select>
+                    </label>
+                  </div>
+                </article>
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section class="view" data-view-panel="curve">
+        <div class="page-heading compact">
+          <div>
+            <span class="eyebrow">CURVE</span>
+            <h1>Input Curve</h1>
+          </div>
+          <button class="ghost-action" id="resetFilters">Reset</button>
+        </div>
+
+        <div class="editor-grid curve-layout">
+          <article class="panel form-panel weapon-capture-card">
+            <div class="panel-title"><span class="dot blue"></span> Deadzones</div>
+            <label class="field">
+              <span>Left Stick Deadzone</span>
+              <input id="leftStickDeadzone" type="range" min="0" max="0.5" step="0.01" />
+              <strong id="leftStickDeadzoneValue"></strong>
+            </label>
+            <label class="field">
+              <span>Right Stick Deadzone</span>
+              <input id="rightStickDeadzone" type="range" min="0" max="0.5" step="0.01" />
+              <strong id="rightStickDeadzoneValue"></strong>
+            </label>
+            <label class="field">
+              <span>Trigger Deadzone</span>
+              <input id="triggerDeadzone" type="range" min="0" max="0.25" step="0.01" />
+              <strong id="triggerDeadzoneValue"></strong>
+            </label>
+          </article>
+
+          <article class="panel form-panel">
+            <div class="panel-title"><span class="dot amber"></span> Response</div>
+            <label class="field">
+              <span>Left Anti-Deadzone</span>
+              <input id="leftStickAntiDeadzone" type="range" min="0" max="0.5" step="0.01" />
+              <strong id="leftStickAntiDeadzoneValue"></strong>
+            </label>
+            <label class="field">
+              <span>Right Anti-Deadzone</span>
+              <input id="rightStickAntiDeadzone" type="range" min="0" max="0.5" step="0.01" />
+              <strong id="rightStickAntiDeadzoneValue"></strong>
+            </label>
+            <label class="field">
+              <span>Response Curve</span>
+              <input id="responseCurveExponent" type="range" min="0.5" max="3" step="0.05" />
+              <strong id="responseCurveExponentValue"></strong>
+            </label>
+            <label class="field">
+              <span>Smoothing</span>
+              <input id="smoothingFactor" type="range" min="0" max="1" step="0.01" />
+              <strong id="smoothingFactorValue"></strong>
+            </label>
+            <label class="toggle-row">
+              <span>Smoothing Enabled</span>
+              <input id="smoothingEnabled" type="checkbox" />
+            </label>
+            <button class="primary-action" id="saveFilters">Apply Filters</button>
+          </article>
+
+          <article class="panel form-panel curve-preview-panel">
+            <div class="panel-title"><span class="dot green"></span> Preview</div>
+            <svg id="curvePreview" class="curve-preview" viewBox="0 0 320 220" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="curveGlow" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#10e4ff" />
+                  <stop offset="100%" stop-color="#00f5b8" />
+                </linearGradient>
+              </defs>
+              <g class="curve-grid">
+                <line x1="28" y1="190" x2="302" y2="190"></line>
+                <line x1="28" y1="28" x2="28" y2="190"></line>
+                <line x1="28" y1="109" x2="302" y2="109"></line>
+                <line x1="165" y1="28" x2="165" y2="190"></line>
+              </g>
+              <path id="curvePathShadow" class="curve-shadow"></path>
+              <path id="curvePath" class="curve-line"></path>
+            </svg>
+            <div class="curve-legend">
+              <span>Input</span>
+              <span>Output</span>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="view" data-view-panel="profiles">
+        <div class="page-heading compact">
+          <div>
+            <span class="eyebrow">PROFILES</span>
+            <h1>Profile Manager</h1>
+          </div>
+        </div>
+
+        <div class="editor-grid profile-layout">
+          <article class="panel form-panel">
+            <div class="panel-title"><span class="dot green"></span> Create Profile</div>
+            <label class="field">
+              <span>Name</span>
+              <input id="newProfileName" type="text" placeholder="New profile name" />
+            </label>
+            <button class="primary-action" id="createProfile">Create</button>
+          </article>
+
+          <article class="panel list-panel">
+            <div class="panel-title"><span class="dot blue"></span> Profiles</div>
+            <div id="profilesList" class="profile-list"></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="view" data-view-panel="weapons">
+        <div class="page-heading compact">
+          <div>
+            <span class="eyebrow">WEAPONS</span>
+            <h1>Weapon Detection</h1>
+            <p class="page-copy">Recognises your active weapon by matching the HUD name plate against reference captures.</p>
+          </div>
+          <button class="ghost-action" id="toggleWeaponDetection">Start Detection</button>
+        </div>
+
+        <div class="editor-grid weapon-shell">
+          <article class="panel weapon-status-card">
+            <div class="panel-title"><span class="dot green"></span> Status</div>
+            <div class="weapon-status-main">
+              <div>
+                <span class="stat-caption">Current Weapon</span>
+                <strong id="currentWeaponName" class="accent-text">None</strong>
+              </div>
+              <div>
+                <span class="stat-caption">Detection</span>
+                <p id="weaponStatusMessage">Detection is stopped.</p>
+              </div>
+            </div>
+          </article>
+
+          <article class="panel form-panel weapon-capture-card">
+            <div class="panel-title"><span class="dot blue"></span> Capture Region</div>
+            <p class="section-copy">Coordinates of the HUD area where the game shows the weapon name. Tight regions match faster and more reliably.</p>
+            <div class="weapon-capture-topbar">
+              <div class="inline-grid four">
+                <label class="field">
+                  <span>X</span>
+                  <input id="weaponCaptureX" type="number" min="0" max="9999" />
+                </label>
+                <label class="field">
+                  <span>Y</span>
+                  <input id="weaponCaptureY" type="number" min="0" max="9999" />
+                </label>
+                <label class="field">
+                  <span>Width</span>
+                  <input id="weaponCaptureWidth" type="number" min="1" max="9999" />
+                </label>
+                <label class="field">
+                  <span>Height</span>
+                  <input id="weaponCaptureHeight" type="number" min="1" max="9999" />
+                </label>
+              </div>
+              <button class="ghost-action weapon-select-area" id="selectWeaponRegion">Selecionar Area</button>
+            </div>
+            <div class="weapon-capture-footer">
+              <div class="inline-grid two weapon-capture-meta">
+                <label class="field">
+                  <span>Interval (ms)</span>
+                  <input id="weaponIntervalMs" type="number" min="10" max="5000" />
+                </label>
+                <label class="field">
+                  <span>Match Threshold (0.00-1.00)</span>
+                  <input id="weaponMatchThreshold" type="range" min="0.5" max="1" step="0.01" />
+                  <strong id="weaponMatchThresholdValue">0.80</strong>
+                </label>
+              </div>
+              <div class="toolbar-inline weapon-capture-actions">
+                <button class="ghost-action" id="previewWeaponCapture">Preview</button>
+                <button class="primary-action compact-action" id="testWeaponCapture">Run Test</button>
+              </div>
+            </div>
+            <div id="weaponPreviewPanel" class="weapon-preview-panel hidden">
+              <div class="panel-title-row">
+                <div class="panel-title"><span class="dot blue"></span> <span id="weaponPreviewTitle">Region Preview</span></div>
+                <button class="mini-action" id="closeWeaponPreview">Close</button>
+              </div>
+              <img id="weaponPreviewImage" alt="Weapon region preview" />
+            </div>
+            <div id="weaponTestPanel" class="weapon-test-panel hidden">
+              <div class="panel-title-row">
+                <div class="panel-title"><span class="dot amber"></span> Detection Result</div>
+                <button class="mini-action" id="copyWeaponTest">Copy</button>
+              </div>
+              <pre id="weaponTestResult"></pre>
+            </div>
+          </article>
+
+          <article class="panel list-panel weapon-config-card">
+            <div class="panel-title-row">
+              <div>
+                <div class="panel-title"><span class="dot amber"></span> Weapon Profiles</div>
+                <p class="section-copy compact">Equip a weapon in-game, then capture a reference on its row. More references make detection more robust.</p>
+              </div>
+              <div class="toolbar-inline">
+                <button class="ghost-action weapon-library-trigger" id="openWeaponLibrary">Banco de Armas</button>
+                <button class="ghost-action" id="addWeapon">+ Adicionar</button>
+              </div>
+            </div>
+            <div class="weapon-columns">
+              <span>Name</span>
+              <span>Recoil X</span>
+              <span>Recoil Y</span>
+              <span>Intensity</span>
+              <span></span>
+            </div>
+            <div id="weaponConfigList" class="weapon-config-list"></div>
+            <div class="weapon-config-actions">
+              <button class="primary-action compact-action" id="saveWeaponSettings">Save Settings</button>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="view" data-view-panel="logs">
+        <div class="page-heading compact">
+          <div>
+            <span class="eyebrow">LOGS</span>
+            <h1>Telemetry Logs</h1>
+          </div>
+          <button class="ghost-action" id="clearLogs">Clear View</button>
+        </div>
+
+        <article class="panel logs-panel">
+          <div id="logsList" class="logs-list"></div>
+        </article>
+      </section>
+
+      <section class="view" data-view-panel="settings">
+        <div class="page-heading compact">
+          <div>
+            <span class="eyebrow">SETTINGS</span>
+            <h1>General Settings</h1>
+          </div>
+        </div>
+
+        <div class="editor-grid two-up">
+          <article class="panel form-panel">
+            <div class="panel-title"><span class="dot amber"></span> Runtime</div>
+            <label class="field">
+              <span>Polling Rate (ms)</span>
+              <input id="pollingRateMs" type="number" min="1" max="100" />
+            </label>
+            <label class="field">
+              <span>Log Level</span>
+              <select id="logLevel">
+                <option>Verbose</option>
+                <option>Debug</option>
+                <option>Information</option>
+                <option>Warning</option>
+                <option>Error</option>
+              </select>
+            </label>
+          </article>
+
+          <article class="panel form-panel">
+            <div class="panel-title"><span class="dot blue"></span> Behavior</div>
+            <label class="toggle-row"><span>Minimize to Tray</span><input id="minimizeToTray" type="checkbox" /></label>
+            <label class="toggle-row"><span>Start Minimized</span><input id="startMinimized" type="checkbox" /></label>
+            <label class="toggle-row"><span>Auto Connect</span><input id="autoConnect" type="checkbox" /></label>
+            <label class="toggle-row"><span>Show Notifications</span><input id="showNotifications" type="checkbox" /></label>
+            <button class="primary-action" id="saveSettings">Save Settings</button>
+          </article>
+        </div>
+      </section>
     </main>
+
+    <div id="weaponLibraryModal" class="modal-shell hidden">
+      <div class="modal-backdrop" data-close-modal="weaponLibraryModal"></div>
+      <section class="modal-card weapon-library-modal">
+        <div class="panel-title-row">
+          <div>
+            <div class="panel-title"><span class="dot amber"></span> Banco de Armas</div>
+            <p class="section-copy compact">Escolha uma arma da biblioteca para importar para o perfil atual.</p>
+          </div>
+          <button class="mini-action" data-close-modal="weaponLibraryModal">Close</button>
+        </div>
+        <div class="inline-grid three">
+          <label class="field">
+            <span>Game</span>
+            <select id="weaponGame"></select>
+          </label>
+          <label class="field">
+            <span>Category</span>
+            <select id="weaponCategory"></select>
+          </label>
+          <label class="field">
+            <span>Search</span>
+            <input id="weaponSearch" type="text" placeholder="Search weapon..." />
+          </label>
+        </div>
+        <div id="weaponLibraryList" class="library-list"></div>
+      </section>
+    </div>
 
     <footer class="statusbar">
       <span><i class="dot blue"></i> Profile <strong id="footerProfile">Default</strong></span>

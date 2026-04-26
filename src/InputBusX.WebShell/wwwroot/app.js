@@ -1,7 +1,21 @@
+const buttonOptions = [
+  'None', 'A', 'B', 'X', 'Y', 'LeftShoulder', 'RightShoulder',
+  'LeftThumb', 'RightThumb', 'Back', 'Start', 'DPadUp', 'DPadDown', 'DPadLeft', 'DPadRight'
+];
+
+const triggerOptions = ['None', 'RightTrigger', 'LeftTrigger'];
+const macroTypes = [
+  'NoRecoil', 'AutoFire', 'AutoPing', 'Remap', 'Sequence', 'Toggle', 'AimAssistBuff',
+  'HeadAssist', 'ScriptedShape', 'ProgressiveRecoil', 'TrackingAssist',
+  'AutoFireNoRecoil', 'InstaDropShot', 'JumpShot', 'StrafeShot', 'HoldBreath',
+  'SlideCancel', 'FastDrop', 'CrowBar', 'Custom'
+];
+
 const state = {
   isRunning: false,
   isConnecting: false,
   connectionStatus: 'Disconnected',
+  activeProfileId: '',
   activeProfileName: 'Default',
   gameProfile: 'Warzone',
   connectedDevices: [],
@@ -12,15 +26,39 @@ const state = {
   leftTrigger: 0,
   rightTrigger: 0,
   rawButtons: {},
-  outputButtons: {}
+  outputButtons: {},
+  profiles: [],
+  filters: {},
+  settings: {},
+  logs: [],
+  macros: [],
+  selectedMacroId: '',
+  weaponDetection: {
+    isRunning: false,
+    currentWeaponName: 'None',
+    statusMessage: 'Detection is stopped.',
+    captureX: 1700,
+    captureY: 950,
+    captureWidth: 300,
+    captureHeight: 60,
+    intervalMs: 250,
+    matchThreshold: 0.8,
+    weapons: [],
+    games: [],
+    categories: [],
+    selectedGame: '',
+    selectedCategory: 'All',
+    searchText: '',
+    libraryWeapons: []
+  }
 };
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 
-function send(type, value) {
+function send(type, extra = {}) {
   if (window.chrome?.webview) {
-    window.chrome.webview.postMessage({ type, value });
+    window.chrome.webview.postMessage({ type, ...extra });
   }
 }
 
@@ -32,20 +70,30 @@ function pct(value) {
   return `${Math.round(clamp(value, 0, 1) * 100)}%`;
 }
 
+function fixed(value, digits = 2) {
+  return Number(value ?? 0).toFixed(digits);
+}
+
 function render(next) {
   Object.assign(state, next);
+  renderDashboard();
+  renderFilters();
+  renderProfiles();
+  renderLogs();
+  renderSettings();
+  renderMacros();
+  renderWeapons();
+}
 
+function renderDashboard() {
   $('#connectionStatus').textContent = state.connectionStatus;
   $('#connectionText').textContent = state.connectionStatus;
   $('#activeProfile').textContent = state.activeProfileName;
   $('#footerProfile').textContent = state.activeProfileName;
   $('#footerStatus').textContent = state.isRunning ? state.connectionStatus : 'Ready';
-  $('#toggleConnection').textContent = state.isConnecting
-    ? 'Working...'
-    : state.isRunning ? 'Stop' : 'Start';
+  $('#toggleConnection').textContent = state.isConnecting ? 'Working...' : state.isRunning ? 'Stop' : 'Start';
   $('#toggleConnection').disabled = state.isConnecting;
   $('#connectionPill').classList.toggle('online', state.isRunning);
-
   $('#gameProfile').value = state.gameProfile;
 
   const devices = state.connectedDevices ?? [];
@@ -55,9 +103,8 @@ function render(next) {
 
   renderStick('#leftStick', state.leftStickX, state.leftStickY);
   renderStick('#rightStick', state.rightStickX, state.rightStickY);
-  $('#leftStickReadout').innerHTML = `X:${state.leftStickX.toFixed(2)}&nbsp;&nbsp;Y:${state.leftStickY.toFixed(2)}`;
-  $('#rightStickReadout').innerHTML = `X:${state.rightStickX.toFixed(2)}&nbsp;&nbsp;Y:${state.rightStickY.toFixed(2)}`;
-
+  $('#leftStickReadout').innerHTML = `X:${fixed(state.leftStickX)}&nbsp;&nbsp;Y:${fixed(state.leftStickY)}`;
+  $('#rightStickReadout').innerHTML = `X:${fixed(state.rightStickX)}&nbsp;&nbsp;Y:${fixed(state.rightStickY)}`;
   $('#leftTrigger').style.height = pct(state.leftTrigger);
   $('#rightTrigger').style.height = pct(state.rightTrigger);
   $('#leftTriggerReadout').textContent = pct(state.leftTrigger);
@@ -71,10 +118,358 @@ function render(next) {
   setActive('[data-key="rb"]', state.rawButtons?.rb);
 }
 
+function renderFilters() {
+  const filters = state.filters ?? {};
+  bindRange('leftStickDeadzone', filters.leftStickDeadzone, 2);
+  bindRange('rightStickDeadzone', filters.rightStickDeadzone, 2);
+  bindRange('leftStickAntiDeadzone', filters.leftStickAntiDeadzone, 2);
+  bindRange('rightStickAntiDeadzone', filters.rightStickAntiDeadzone, 2);
+  bindRange('triggerDeadzone', filters.triggerDeadzone, 2);
+  bindRange('responseCurveExponent', filters.responseCurveExponent, 2);
+  bindRange('smoothingFactor', filters.smoothingFactor, 2);
+  $('#smoothingEnabled').checked = Boolean(filters.smoothingEnabled);
+  renderCurvePreview();
+}
+
+function renderProfiles() {
+  const profiles = state.profiles ?? [];
+  $('#profilesList').innerHTML = profiles.map((profile) => `
+    <article class="profile-card ${profile.isActive ? 'active' : ''}">
+      <div class="profile-head">
+        <div>
+          <strong>${escapeHtml(profile.name)}</strong>
+          <span>${profile.macroCount} macros</span>
+        </div>
+        <div class="profile-actions">
+          <button class="mini-action" data-action="activate" data-id="${profile.id}">${profile.isActive ? 'Active' : 'Use'}</button>
+          <button class="mini-action" data-action="duplicate" data-id="${profile.id}">Copy</button>
+          ${profile.isDefault ? '' : `<button class="mini-action danger" data-action="delete" data-id="${profile.id}">Delete</button>`}
+        </div>
+      </div>
+      <div class="process-list">
+        ${(profile.associatedProcesses?.length
+          ? profile.associatedProcesses.map((process) => `
+              <span class="process-chip">
+                ${escapeHtml(process)}
+                <button data-action="remove-process" data-id="${profile.id}" data-value="${escapeAttribute(process)}">×</button>
+              </span>`).join('')
+          : '<span class="empty-copy">No linked processes</span>')}
+      </div>
+      <div class="process-entry">
+        <input type="text" id="process-${profile.id}" placeholder="Add process name" />
+        <button class="mini-action" data-action="add-process" data-id="${profile.id}">Add</button>
+      </div>
+    </article>`).join('');
+}
+
+function renderLogs() {
+  const logs = state.logs ?? [];
+  $('#logsList').innerHTML = logs.length
+    ? logs.map((entry) => `
+      <div class="log-row">
+        <span class="log-time">${escapeHtml(entry.timestamp)}</span>
+        <span class="log-level level-${String(entry.level).toLowerCase()}">${escapeHtml(entry.level)}</span>
+        <span class="log-category">${escapeHtml(entry.category)}</span>
+        <span class="log-message">${escapeHtml(entry.message)}</span>
+      </div>`).join('')
+    : '<div class="empty-copy">No log entries in the current session view.</div>';
+  $('#logsList').scrollTop = $('#logsList').scrollHeight;
+}
+
+function renderSettings() {
+  const settings = state.settings ?? {};
+  $('#pollingRateMs').value = settings.pollingRateMs ?? 1;
+  $('#logLevel').value = settings.logLevel ?? 'Information';
+  $('#minimizeToTray').checked = Boolean(settings.minimizeToTray);
+  $('#startMinimized').checked = Boolean(settings.startMinimized);
+  $('#autoConnect').checked = Boolean(settings.autoConnect);
+  $('#showNotifications').checked = Boolean(settings.showNotifications);
+}
+
+function renderMacros() {
+  const macros = state.macros ?? [];
+  const selected = getSelectedMacro();
+
+  $('#macroList').innerHTML = macros.length
+    ? macros.map((macro) => `
+      <button class="macro-item ${macro.id === state.selectedMacroId ? 'active' : ''}" data-id="${macro.id}">
+        <span class="macro-item-bar ${macro.enabled ? 'enabled' : ''}"></span>
+        <span class="macro-item-copy">
+          <strong>${escapeHtml(macro.name)}</strong>
+          <small>${escapeHtml(macro.type)}</small>
+        </span>
+      </button>`).join('')
+    : '<div class="empty-copy macro-empty-copy">No macros yet. Create one to begin.</div>';
+
+  $('#macroEmpty').classList.toggle('hidden', Boolean(selected));
+  $('#macroEditorBody').classList.toggle('hidden', !selected);
+  if (!selected) return;
+
+  $('#macroEditorTitle').textContent = selected.name || 'Macro Settings';
+  populateSelect('#macroType', macroTypes, selected.type);
+  populateSelect('#activationButton', buttonOptions, selected.activationButton);
+  populateSelect('#triggerSource', triggerOptions, selected.triggerSource);
+  populateSelect('#pingButton', buttonOptions, selected.pingButton);
+  populateSelect('#sourceButton', buttonOptions, selected.sourceButton);
+  populateSelect('#targetButton', buttonOptions, selected.targetButton);
+  populateSelect('#crouchButton', buttonOptions, selected.crouchButton);
+  populateSelect('#jumpButton', buttonOptions, selected.jumpButton);
+  populateSelect('#breathButton', buttonOptions, selected.breathButton);
+  populateSelect('#slideButton', buttonOptions, selected.slideButton);
+  populateSelect('#slideCancelButton', buttonOptions, selected.slideCancelButton);
+
+  $('#macroName').value = selected.name;
+  $('#macroPriority').value = selected.priority;
+  $('#macroEnabled').checked = selected.enabled;
+  $('#toggleMode').checked = selected.toggleMode;
+  $('#macroLoop').checked = selected.loop;
+  $('#macroDelayMs').value = selected.delayMs;
+  $('#macroIntervalMs').value = selected.intervalMs;
+  $('#macroIntensity').value = selected.intensity;
+  $('#macroIntensityValue').textContent = fixed(selected.intensity, 2);
+  $('#macroRandomization').value = selected.randomizationFactor;
+  $('#macroRandomizationValue').textContent = fixed(selected.randomizationFactor, 2);
+  $('#recoilCompensationX').value = selected.recoilCompensationX;
+  $('#recoilCompensationY').value = selected.recoilCompensationY;
+  $('#flickStrength').value = selected.flickStrength;
+  $('#flickIntervalMs').value = selected.flickIntervalMs;
+  $('#jumpIntervalMs').value = selected.jumpIntervalMs;
+  $('#slideCancelDelayMs').value = selected.slideCancelDelayMs;
+  $('#strafeAmplitude').value = selected.strafeAmplitude;
+  $('#strafeAmplitudeValue').textContent = fixed(selected.strafeAmplitude, 2);
+  $('#strafeIntervalMs').value = selected.strafeIntervalMs;
+
+  const type = selected.type;
+  $('#macroNoRecoilCard').classList.toggle('hidden', !['NoRecoil', 'AutoFireNoRecoil', 'ProgressiveRecoil', 'CrowBar'].includes(type));
+  $('#macroButtonsCard').classList.toggle('hidden', !['AutoPing', 'Remap', 'HoldBreath'].includes(type));
+  $('#macroAimAssistCard').classList.toggle('hidden', !['AimAssistBuff', 'JumpShot', 'SlideCancel'].includes(type));
+  $('#macroMovementCard').classList.toggle('hidden', !['InstaDropShot', 'FastDrop', 'JumpShot', 'StrafeShot', 'HoldBreath', 'SlideCancel'].includes(type));
+}
+
+function renderWeapons() {
+  const detection = state.weaponDetection ?? {};
+  $('#toggleWeaponDetection').textContent = detection.isRunning ? 'Stop Detection' : 'Start Detection';
+  $('#currentWeaponName').textContent = detection.currentWeaponName || 'None';
+  $('#weaponStatusMessage').textContent = detection.statusMessage || 'Detection is stopped.';
+  $('#weaponCaptureX').value = detection.captureX ?? 1700;
+  $('#weaponCaptureY').value = detection.captureY ?? 950;
+  $('#weaponCaptureWidth').value = detection.captureWidth ?? 300;
+  $('#weaponCaptureHeight').value = detection.captureHeight ?? 60;
+  $('#weaponIntervalMs').value = detection.intervalMs ?? 250;
+  $('#weaponMatchThreshold').value = detection.matchThreshold ?? 0.8;
+  $('#weaponMatchThresholdValue').textContent = fixed(detection.matchThreshold, 2);
+
+  populateSelect('#weaponGame', detection.games ?? [], detection.selectedGame);
+  populateSelect('#weaponCategory', detection.categories ?? [], detection.selectedCategory);
+  $('#weaponSearch').value = detection.searchText ?? '';
+  $('#weaponPreviewPanel').classList.toggle('hidden', !detection.previewImageDataUrl);
+  $('#weaponPreviewImage').src = detection.previewImageDataUrl || '';
+  $('#weaponPreviewTitle').textContent = detection.previewTitle || 'Region Preview';
+  $('#weaponTestPanel').classList.toggle('hidden', !detection.testCaptureResult);
+  $('#weaponTestResult').textContent = detection.testCaptureResult || '';
+
+  $('#weaponLibraryList').innerHTML = (detection.libraryWeapons ?? []).map((weapon) => `
+    <article class="library-item">
+      <div class="library-item-main">
+        <span class="library-chip">${escapeHtml(weapon.category)}</span>
+        <strong>${escapeHtml(weapon.name)}</strong>
+        <small>Recoil Y ${weapon.recoilCompensationY} - Intensity ${fixed(weapon.intensity, 1)}x</small>
+      </div>
+      <div class="toolbar-inline">
+        <button class="mini-action" data-library-action="activate" data-id="${weapon.id}">Activate</button>
+        <button class="mini-action" data-library-action="import" data-id="${weapon.id}">Add</button>
+      </div>
+    </article>`).join('') || '<div class="empty-copy">No library weapon matches this filter.</div>';
+
+  $('#weaponConfigList').innerHTML = (detection.weapons ?? []).map((weapon) => `
+    <article class="weapon-card">
+      <div class="weapon-main-row">
+        <label class="field fieldless">
+          <input data-weapon-field="name" data-id="${weapon.id}" type="text" value="${escapeAttribute(weapon.name)}" />
+        </label>
+        <label class="field fieldless">
+          <input data-weapon-field="recoilCompensationX" data-id="${weapon.id}" type="number" value="${weapon.recoilCompensationX}" />
+        </label>
+        <label class="field fieldless">
+          <input data-weapon-field="recoilCompensationY" data-id="${weapon.id}" type="number" value="${weapon.recoilCompensationY}" />
+        </label>
+        <label class="field fieldless">
+          <input data-weapon-field="intensity" data-id="${weapon.id}" type="number" step="0.05" min="0" max="5" value="${weapon.intensity}" />
+        </label>
+        <button class="mini-action danger weapon-remove" data-weapon-action="remove" data-id="${weapon.id}">Delete</button>
+      </div>
+      <div class="weapon-subrow">
+        <div class="toolbar-inline">
+          <button class="mini-action weapon-reference" data-weapon-action="capture-ref" data-id="${weapon.id}">Capturar Referencia</button>
+          ${weapon.referenceCount ? `<button class="mini-action danger" data-weapon-action="clear-refs" data-id="${weapon.id}">Clear</button>` : ''}
+        </div>
+        <span class="weapon-reference-copy">${weapon.referenceCount === 0 ? 'No reference captured' : `${weapon.referenceCount} references saved`}</span>
+        <div class="toolbar-inline weapon-rapid-group">
+          <label class="toggle-row fieldless">
+            <span>Rapid Fire</span>
+            <input data-weapon-field="rapidFireEnabled" data-id="${weapon.id}" type="checkbox" ${weapon.rapidFireEnabled ? 'checked' : ''} />
+          </label>
+          <label class="field fieldless weapon-rapid-input ${weapon.rapidFireEnabled ? '' : 'hidden'}">
+            <span>ms</span>
+            <input data-weapon-field="rapidFireIntervalMs" data-id="${weapon.id}" type="number" min="1" max="1000" value="${weapon.rapidFireIntervalMs}" />
+          </label>
+        </div>
+      </div>
+      <div class="weapon-custom-region">
+        <div class="weapon-custom-top">
+          <label class="toggle-row fieldless">
+            <span>Usar regiao de captura propria desta arma</span>
+            <input data-weapon-field="useCustomRegion" data-id="${weapon.id}" type="checkbox" ${weapon.useCustomRegion ? 'checked' : ''} />
+          </label>
+          <div class="toolbar-inline ${weapon.useCustomRegion ? '' : 'hidden'}" data-weapon-custom-tools="${weapon.id}">
+            <button class="mini-action" data-weapon-action="pick-region" data-id="${weapon.id}">Selecionar</button>
+            <button class="mini-action" data-weapon-action="preview-region" data-id="${weapon.id}">Preview</button>
+          </div>
+        </div>
+        <div class="weapon-region-grid ${weapon.useCustomRegion ? '' : 'hidden'}" data-weapon-custom-grid="${weapon.id}">
+          <label class="field fieldless">
+            <span>X</span>
+            <input data-weapon-field="captureX" data-id="${weapon.id}" type="number" value="${weapon.captureX}" />
+          </label>
+          <label class="field fieldless">
+            <span>Y</span>
+            <input data-weapon-field="captureY" data-id="${weapon.id}" type="number" value="${weapon.captureY}" />
+          </label>
+          <label class="field fieldless">
+            <span>W</span>
+            <input data-weapon-field="captureWidth" data-id="${weapon.id}" type="number" value="${weapon.captureWidth}" />
+          </label>
+          <label class="field fieldless">
+            <span>H</span>
+            <input data-weapon-field="captureHeight" data-id="${weapon.id}" type="number" value="${weapon.captureHeight}" />
+          </label>
+        </div>
+      </div>
+    </article>`).join('') || '<div class="empty-copy">No configured weapons yet.</div>';
+}
+
+function bindRange(id, value, digits) {
+  const input = $(`#${id}`);
+  const label = $(`#${id}Value`);
+  input.value = value ?? 0;
+  label.textContent = fixed(value, digits);
+}
+
+function populateSelect(selector, options, selected) {
+  const element = $(selector);
+  const html = options.map((option) => `<option value="${escapeAttribute(option)}">${escapeHtml(option)}</option>`).join('');
+  if (element.dataset.rendered !== html) {
+    element.innerHTML = html;
+    element.dataset.rendered = html;
+  }
+  element.value = selected ?? options[0] ?? '';
+}
+
+function getSelectedMacro() {
+  return (state.macros ?? []).find((macro) => macro.id === state.selectedMacroId) ?? null;
+}
+
+function collectFilters() {
+  return {
+    leftStickDeadzone: Number($('#leftStickDeadzone').value),
+    rightStickDeadzone: Number($('#rightStickDeadzone').value),
+    leftStickAntiDeadzone: Number($('#leftStickAntiDeadzone').value),
+    rightStickAntiDeadzone: Number($('#rightStickAntiDeadzone').value),
+    triggerDeadzone: Number($('#triggerDeadzone').value),
+    responseCurveExponent: Number($('#responseCurveExponent').value),
+    smoothingFactor: Number($('#smoothingFactor').value),
+    smoothingEnabled: $('#smoothingEnabled').checked
+  };
+}
+
+function collectSettings() {
+  return {
+    pollingRateMs: Number($('#pollingRateMs').value),
+    logLevel: $('#logLevel').value,
+    minimizeToTray: $('#minimizeToTray').checked,
+    startMinimized: $('#startMinimized').checked,
+    autoConnect: $('#autoConnect').checked,
+    showNotifications: $('#showNotifications').checked
+  };
+}
+
+function collectMacro() {
+  const selected = getSelectedMacro();
+  if (!selected) return null;
+  return {
+    id: selected.id,
+    name: $('#macroName').value,
+    macroType: $('#macroType').value,
+    enabled: $('#macroEnabled').checked,
+    priority: Number($('#macroPriority').value),
+    activationButton: $('#activationButton').value,
+    triggerSource: $('#triggerSource').value,
+    toggleMode: $('#toggleMode').checked,
+    loop: $('#macroLoop').checked,
+    delayMs: Number($('#macroDelayMs').value),
+    intervalMs: Number($('#macroIntervalMs').value),
+    intensity: Number($('#macroIntensity').value),
+    randomizationFactor: Number($('#macroRandomization').value),
+    recoilCompensationX: Number($('#recoilCompensationX').value),
+    recoilCompensationY: Number($('#recoilCompensationY').value),
+    pingButton: $('#pingButton').value,
+    sourceButton: $('#sourceButton').value,
+    targetButton: $('#targetButton').value,
+    flickStrength: Number($('#flickStrength').value),
+    flickIntervalMs: Number($('#flickIntervalMs').value),
+    crouchButton: $('#crouchButton').value,
+    jumpButton: $('#jumpButton').value,
+    jumpIntervalMs: Number($('#jumpIntervalMs').value),
+    strafeAmplitude: Number($('#strafeAmplitude').value),
+    strafeIntervalMs: Number($('#strafeIntervalMs').value),
+    breathButton: $('#breathButton').value,
+    slideButton: $('#slideButton').value,
+    slideCancelDelayMs: Number($('#slideCancelDelayMs').value),
+    slideCancelButton: $('#slideCancelButton').value
+  };
+}
+
+function collectWeaponDetection() {
+  return {
+    captureX: Number($('#weaponCaptureX').value),
+    captureY: Number($('#weaponCaptureY').value),
+    captureWidth: Number($('#weaponCaptureWidth').value),
+    captureHeight: Number($('#weaponCaptureHeight').value),
+    intervalMs: Number($('#weaponIntervalMs').value),
+    matchThreshold: Number($('#weaponMatchThreshold').value)
+  };
+}
+
+function collectWeaponCard(id) {
+  const get = (field) => $(`[data-weapon-field="${field}"][data-id="${id}"]`);
+  const existing = (state.weaponDetection?.weapons ?? []).find((weapon) => weapon.id === id) ?? {};
+  return {
+    id,
+    name: get('name').value,
+    recoilCompensationX: Number(get('recoilCompensationX').value),
+    recoilCompensationY: Number(get('recoilCompensationY').value),
+    intensity: Number(get('intensity').value),
+    rapidFireEnabled: get('rapidFireEnabled').checked,
+    rapidFireIntervalMs: Number(get('rapidFireIntervalMs').value),
+    useCustomRegion: get('useCustomRegion').checked,
+    captureX: Number(get('captureX').value),
+    captureY: Number(get('captureY').value),
+    captureWidth: Number(get('captureWidth').value),
+    captureHeight: Number(get('captureHeight').value),
+    referenceImagePaths: existing.referenceImagePaths ?? []
+  };
+}
+
+function collectWeaponSettings() {
+  return {
+    ...collectWeaponDetection(),
+    weapons: (state.weaponDetection?.weapons ?? []).map((weapon) => collectWeaponCard(weapon.id))
+  };
+}
+
 function renderStick(selector, x, y) {
   const max = 44;
-  $(selector).style.transform =
-    `translate(${clamp(x, -1, 1) * max}px, ${clamp(-y, -1, 1) * max}px)`;
+  $(selector).style.transform = `translate(${clamp(x, -1, 1) * max}px, ${clamp(-y, -1, 1) * max}px)`;
 }
 
 function renderButtons(group, buttons = {}) {
@@ -88,6 +483,35 @@ function setActive(selector, active) {
   $$(selector).forEach((element) => element.classList.toggle('active', Boolean(active)));
 }
 
+function openModal(id) {
+  $(`#${id}`)?.classList.remove('hidden');
+}
+
+function closeModal(id) {
+  $(`#${id}`)?.classList.add('hidden');
+}
+
+function renderCurvePreview() {
+  const filters = collectFilters();
+  const exponent = Math.max(0.01, filters.responseCurveExponent || 1);
+  const deadzone = clamp(filters.rightStickDeadzone || filters.leftStickDeadzone || 0, 0, 0.6);
+  const anti = clamp(filters.rightStickAntiDeadzone || filters.leftStickAntiDeadzone || 0, 0, 0.8);
+  const smooth = filters.smoothingEnabled ? clamp(filters.smoothingFactor || 0, 0, 1) : 0;
+
+  const points = [];
+  for (let i = 0; i <= 40; i += 1) {
+    const t = i / 40;
+    let x = t;
+    let y = t <= deadzone ? 0 : (t - deadzone) / (1 - deadzone || 1);
+    y = clamp(anti + (1 - anti) * Math.pow(y, exponent), 0, 1);
+    y = y * (1 - smooth * 0.15) + t * (smooth * 0.15);
+    points.push([28 + x * 274, 190 - y * 162]);
+  }
+  const d = points.map((point, index) => `${index === 0 ? 'M' : 'L'}${point[0].toFixed(2)},${point[1].toFixed(2)}`).join(' ');
+  $('#curvePath').setAttribute('d', d);
+  $('#curvePathShadow').setAttribute('d', d);
+}
+
 function escapeHtml(value) {
   return String(value)
     .replaceAll('&', '&amp;')
@@ -97,19 +521,140 @@ function escapeHtml(value) {
     .replaceAll("'", '&#039;');
 }
 
+function escapeAttribute(value) {
+  return escapeHtml(value).replaceAll('`', '&#096;');
+}
+
 $$('.nav-item').forEach((button) => {
   button.addEventListener('click', () => {
     $$('.nav-item').forEach((item) => item.classList.remove('active'));
     button.classList.add('active');
     const view = button.dataset.view;
-    $$('.view').forEach((panel) => {
-      panel.classList.toggle('active', panel.dataset.viewPanel === view);
-    });
+    $$('.view').forEach((panel) => panel.classList.toggle('active', panel.dataset.viewPanel === view));
   });
 });
 
 $('#toggleConnection').addEventListener('click', () => send('toggleConnection'));
-$('#gameProfile').addEventListener('change', (event) => send('setGameProfile', event.target.value));
+$('#gameProfile').addEventListener('change', (event) => send('setGameProfile', { value: event.target.value }));
+$('#saveFilters').addEventListener('click', () => send('saveFilters', collectFilters()));
+$('#resetFilters').addEventListener('click', () => send('resetFilters'));
+$('#saveSettings').addEventListener('click', () => send('saveSettings', collectSettings()));
+$('#clearLogs').addEventListener('click', () => send('clearLogs'));
+$('#createProfile').addEventListener('click', () => {
+  const value = $('#newProfileName').value.trim();
+  if (!value) return;
+  send('createProfile', { value });
+  $('#newProfileName').value = '';
+});
+$('#createMacro').addEventListener('click', () => send('createMacro'));
+$('#deleteMacro').addEventListener('click', () => {
+  const selected = getSelectedMacro();
+  if (selected) send('deleteMacro', { value: selected.id });
+});
+$('#saveMacro').addEventListener('click', () => {
+  const macro = collectMacro();
+  if (macro) send('saveMacro', macro);
+});
+$('#toggleWeaponDetection').addEventListener('click', () => send('toggleWeaponDetection'));
+$('#addWeapon').addEventListener('click', () => send('addWeapon'));
+$('#openWeaponLibrary').addEventListener('click', () => openModal('weaponLibraryModal'));
+$('#saveWeaponSettings').addEventListener('click', () => send('saveWeaponSettings', collectWeaponSettings()));
+$('#selectWeaponRegion').addEventListener('click', () => send('selectWeaponRegion'));
+$('#previewWeaponCapture').addEventListener('click', () => send('previewWeaponCapture'));
+$('#testWeaponCapture').addEventListener('click', () => send('testWeaponCapture'));
+$('#closeWeaponPreview').addEventListener('click', () => send('closeWeaponPreview'));
+$('#copyWeaponTest').addEventListener('click', async () => {
+  const text = $('#weaponTestResult').textContent;
+  if (text) await navigator.clipboard?.writeText(text);
+});
+$$( '[data-close-modal]' ).forEach((button) => button.addEventListener('click', () => closeModal(button.dataset.closeModal)));
+
+['macroIntensity', 'macroRandomization', 'strafeAmplitude', 'weaponMatchThreshold',
+ 'leftStickDeadzone', 'rightStickDeadzone', 'leftStickAntiDeadzone', 'rightStickAntiDeadzone',
+ 'triggerDeadzone', 'responseCurveExponent', 'smoothingFactor'].forEach((id) => {
+  $(`#${id}`).addEventListener('input', () => {
+    if (id === 'macroIntensity') $('#macroIntensityValue').textContent = fixed($('#macroIntensity').value, 2);
+    if (id === 'macroRandomization') $('#macroRandomizationValue').textContent = fixed($('#macroRandomization').value, 2);
+    if (id === 'strafeAmplitude') $('#strafeAmplitudeValue').textContent = fixed($('#strafeAmplitude').value, 2);
+    if (id === 'weaponMatchThreshold') $('#weaponMatchThresholdValue').textContent = fixed($('#weaponMatchThreshold').value, 2);
+    if (id.endsWith('Deadzone') || id.includes('responseCurve') || id === 'smoothingFactor') {
+      const label = $(`#${id}Value`);
+      if (label) label.textContent = fixed($(`#${id}`).value, 2);
+      renderCurvePreview();
+    }
+  });
+});
+
+$('#smoothingEnabled').addEventListener('change', renderCurvePreview);
+$('#weaponGame').addEventListener('change', (event) => send('setWeaponGame', { value: event.target.value }));
+$('#weaponCategory').addEventListener('change', (event) => send('setWeaponCategory', { value: event.target.value }));
+$('#weaponSearch').addEventListener('input', (event) => send('setWeaponSearch', { value: event.target.value }));
+
+$('#profilesList').addEventListener('click', (event) => {
+  const button = event.target.closest('button[data-action]');
+  if (!button) return;
+  const action = button.dataset.action;
+  const id = button.dataset.id;
+  const value = button.dataset.value;
+
+  if (action === 'activate') send('activateProfile', { value: id });
+  if (action === 'duplicate') send('duplicateProfile', { value: id });
+  if (action === 'delete') send('deleteProfile', { value: id });
+  if (action === 'remove-process') send('removeProfileProcess', { profileId: id, value });
+  if (action === 'add-process') {
+    const input = $(`#process-${id}`);
+    const processValue = input.value.trim();
+    if (!processValue) return;
+    send('addProfileProcess', { profileId: id, value: processValue });
+    input.value = '';
+  }
+});
+
+$('#macroList').addEventListener('click', (event) => {
+  const button = event.target.closest('.macro-item');
+  if (!button) return;
+  send('selectMacro', { value: button.dataset.id });
+});
+
+$('#weaponLibraryList').addEventListener('click', (event) => {
+  const button = event.target.closest('button[data-library-action]');
+  if (!button) return;
+  const action = button.dataset.libraryAction;
+  const id = button.dataset.id;
+  if (action === 'activate') send('activateLibraryWeapon', { value: id });
+  if (action === 'import') {
+    send('addWeaponFromLibrary', { value: id });
+    closeModal('weaponLibraryModal');
+  }
+});
+
+$('#weaponConfigList').addEventListener('click', (event) => {
+  const button = event.target.closest('button[data-weapon-action]');
+  if (!button) return;
+  const action = button.dataset.weaponAction;
+  const id = button.dataset.id;
+  if (action === 'remove') send('removeWeapon', { value: id });
+  if (action === 'capture-ref') send('captureWeaponReference', { value: id });
+  if (action === 'clear-refs') send('clearWeaponReferences', { value: id });
+  if (action === 'pick-region') send('selectWeaponCustomRegion', { value: id });
+  if (action === 'preview-region') send('previewWeaponCustomRegion', { value: id });
+});
+
+$('#weaponConfigList').addEventListener('change', (event) => {
+  const input = event.target;
+  if (!(input instanceof HTMLInputElement)) return;
+  const id = input.dataset.id;
+  if (!id) return;
+
+  if (input.dataset.weaponField === 'useCustomRegion') {
+    document.querySelector(`[data-weapon-custom-tools="${id}"]`)?.classList.toggle('hidden', !input.checked);
+    document.querySelector(`[data-weapon-custom-grid="${id}"]`)?.classList.toggle('hidden', !input.checked);
+  }
+
+  if (input.dataset.weaponField === 'rapidFireEnabled') {
+    input.closest('.weapon-rapid-group')?.querySelector('.weapon-rapid-input')?.classList.toggle('hidden', !input.checked);
+  }
+});
 
 window.chrome?.webview?.addEventListener('message', (event) => {
   if (event.data?.type === 'state') {
@@ -118,4 +663,8 @@ window.chrome?.webview?.addEventListener('message', (event) => {
 });
 
 render(state);
+populateSelect('#macroType', macroTypes, 'NoRecoil');
+['#activationButton', '#pingButton', '#sourceButton', '#targetButton', '#crouchButton', '#jumpButton', '#breathButton', '#slideButton', '#slideCancelButton']
+  .forEach((selector) => populateSelect(selector, buttonOptions, 'None'));
+populateSelect('#triggerSource', triggerOptions, 'RightTrigger');
 send('ready');
