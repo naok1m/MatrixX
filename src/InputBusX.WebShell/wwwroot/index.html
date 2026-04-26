@@ -152,6 +152,11 @@
               <div class="panel-title"><span class="dot green"></span> Macros</div>
               <button class="ghost-action" id="createMacro">+ New</button>
             </div>
+            <div class="macro-sidebar-tools">
+              <button class="mini-action" id="importMacros">Importar</button>
+              <button class="mini-action" id="exportMacro">Exportar</button>
+              <button class="mini-action" id="exportAllMacros">Exportar Todos</button>
+            </div>
             <div id="macroList" class="macro-list"></div>
           </aside>
 
@@ -337,6 +342,228 @@
                     </label>
                   </div>
                 </article>
+
+                <article class="panel form-panel macro-section macro-section-shape" id="macroScriptedShapeCard">
+                  <div class="panel-title accent-shape">Scripted Shape</div>
+                  <p class="section-copy">Movimento paramétrico do analógico: círculo, oval, flick. Enquanto o botão de ativação estiver ativo, a forma é aplicada (aditivo ou override).</p>
+                  <div class="inline-grid two">
+                    <label class="field"><span>Forma</span><select id="motionShape"></select></label>
+                    <label class="field"><span>Analógico alvo</span><select id="motionTarget"></select></label>
+                  </div>
+                  <div class="inline-grid two">
+                    <label class="field"><span>Raio X (0..1)</span><input id="motionRadiusX" type="number" step="0.05" min="0" max="1" /></label>
+                    <label class="field"><span>Raio Y (0..1)</span><input id="motionRadiusY" type="number" step="0.05" min="0" max="1" /></label>
+                  </div>
+                  <div class="inline-grid two">
+                    <label class="field"><span>Rotação (°)</span><input id="motionRotation" type="number" step="5" min="-360" max="360" /></label>
+                    <label class="field"><span>Período (ms) — 1 revolução</span><input id="motionPeriodMs" type="number" step="50" min="50" max="5000" /></label>
+                  </div>
+                  <div class="inline-grid two">
+                    <label class="field"><span>Duração total (ms) — 0 = infinito</span><input id="motionDurationMs" type="number" step="50" min="0" max="10000" /></label>
+                    <label class="field"><span>Fase inicial (°)</span><input id="motionStartPhase" type="number" step="5" min="-360" max="360" /></label>
+                  </div>
+                  <div class="inline-grid two">
+                    <label class="field"><span>Direção do Flick (°)</span><input id="motionDirection" type="number" step="5" min="-360" max="360" /></label>
+                    <label class="field"><span>Amplitude do Flick (0..1)</span><input id="motionAmplitude" type="number" step="0.05" min="0" max="1" /></label>
+                  </div>
+                  <div class="inline-grid two">
+                    <label class="field"><span>Easing</span><select id="motionEasing"></select></label>
+                    <label class="field"><span>Multiplicador de intensidade</span><input id="motionIntensityMul" type="number" step="0.1" min="0" max="3" /></label>
+                  </div>
+                  <div class="inline-grid two">
+                    <label class="toggle-row fieldless"><span>Horário</span><input id="motionClockwise" type="checkbox" /></label>
+                    <label class="toggle-row fieldless"><span>Aditivo (somar ao input)</span><input id="motionAdditive" type="checkbox" /></label>
+                  </div>
+                  <p class="hint">None = ativado apenas pelo botão acima. RT/LT = também exige o gatilho pressionado.</p>
+                </article>
+
+                <article class="panel form-panel macro-section macro-section-tracking" id="macroTrackingAssistCard">
+                  <div class="panel-title accent-tracking">Tracking Assist</div>
+                  <p class="section-copy">Enquanto você tracka um inimigo, adiciona movimentos orbitais no stick de mira que "magnetizam" o aim assist do jogo ao alvo. Mais movimento = órbita maior = mais aim assist.</p>
+                  <div class="inline-grid two">
+                    <label class="field"><span>Analógico alvo</span><select id="taTarget"></select></label>
+                    <label class="field"><span>Shape orbital</span><select id="taShape"></select></label>
+                  </div>
+                  <div class="inline-grid three">
+                    <label class="field"><span>Raio base (parado)</span><input id="taBaseRadius" type="number" step="0.01" min="0.01" max="0.5" /></label>
+                    <label class="field"><span>Raio máximo</span><input id="taMaxRadius" type="number" step="0.05" min="0.05" max="1" /></label>
+                    <label class="field"><span>Período orbital (ms)</span><input id="taPeriodMs" type="number" step="10" min="30" max="1000" /></label>
+                  </div>
+                  <div class="inline-grid three">
+                    <label class="field"><span>Threshold mínimo</span><input id="taDeflectionThreshold" type="number" step="0.05" min="0" max="0.5" /></label>
+                    <label class="field"><span>Curva de escala</span><input id="taScaleCurve" type="number" step="0.1" min="0.1" max="3" /></label>
+                    <label class="field"><span>Intensidade</span><input id="taIntensityMul" type="number" step="0.1" min="0.1" max="3" /></label>
+                  </div>
+                  <div class="inline-grid two">
+                    <label class="field"><span>Easing</span><select id="taEasing"></select></label>
+                    <label class="toggle-row fieldless"><span>Horário</span><input id="taClockwise" type="checkbox" /></label>
+                  </div>
+                  <label class="toggle-row"><span>Órbita livre (sem precisar mover o stick)</span><input id="taFreeOrbit" type="checkbox" /></label>
+                  <p class="hint">Quando ativado, o macro orbita sozinho usando o raio base mesmo sem input. Combine com TriggerSource=None para um assist passivo permanente.</p>
+                </article>
+
+                <article class="panel form-panel macro-section macro-section-head" id="macroHeadAssistCard">
+                  <div class="panel-title accent-head">Head Assist</div>
+                  <p class="section-copy">Mini flick no analógico para travar HS quando o inimigo pula. Três presets (curto/médio/longo) escolhidos pela distância estimada em tempo real.</p>
+                  <div class="inline-grid two">
+                    <label class="field"><span>Analógico alvo</span><select id="haTarget"></select></label>
+                    <label class="field"><span>Fonte da distância</span><select id="haDistanceSource"></select></label>
+                  </div>
+                  <label class="toggle-row"><span>Aditivo (soma ao input)</span><input id="haAdditive" type="checkbox" /></label>
+
+                  <div class="sub-section">
+                    <strong class="sub-title accent-short">Curto alcance</strong>
+                    <div class="inline-grid three">
+                      <label class="field"><span>Amplitude</span><input id="haShortAmp" type="number" step="0.05" min="0" max="1" /></label>
+                      <label class="field"><span>Duração (ms)</span><input id="haShortDur" type="number" step="10" min="20" max="1000" /></label>
+                      <label class="field"><span>Direção (°)</span><input id="haShortDir" type="number" step="5" min="0" max="360" /></label>
+                    </div>
+                  </div>
+                  <div class="sub-section">
+                    <strong class="sub-title accent-medium">Médio alcance</strong>
+                    <div class="inline-grid three">
+                      <label class="field"><span>Amplitude</span><input id="haMediumAmp" type="number" step="0.05" min="0" max="1" /></label>
+                      <label class="field"><span>Duração (ms)</span><input id="haMediumDur" type="number" step="10" min="20" max="1000" /></label>
+                      <label class="field"><span>Direção (°)</span><input id="haMediumDir" type="number" step="5" min="0" max="360" /></label>
+                    </div>
+                  </div>
+                  <div class="sub-section">
+                    <strong class="sub-title accent-long">Longo alcance</strong>
+                    <div class="inline-grid three">
+                      <label class="field"><span>Amplitude</span><input id="haLongAmp" type="number" step="0.05" min="0" max="1" /></label>
+                      <label class="field"><span>Duração (ms)</span><input id="haLongDur" type="number" step="10" min="20" max="1000" /></label>
+                      <label class="field"><span>Direção (°)</span><input id="haLongDir" type="number" step="5" min="0" max="360" /></label>
+                    </div>
+                  </div>
+
+                  <strong class="sub-title">Limiares do estimador</strong>
+                  <div class="inline-grid two">
+                    <label class="field"><span>Trigger hold curto (ms)</span><input id="haShortHoldMsMax" type="number" step="10" min="20" max="2000" /></label>
+                    <label class="field"><span>Trigger hold médio (ms)</span><input id="haMediumHoldMsMax" type="number" step="50" min="50" max="5000" /></label>
+                  </div>
+                  <div class="inline-grid two">
+                    <label class="field"><span>Deflexão curta (0..1)</span><input id="haDeflectionShortMax" type="number" step="0.05" min="0" max="1" /></label>
+                    <label class="field"><span>Deflexão média (0..1)</span><input id="haDeflectionMediumMax" type="number" step="0.05" min="0" max="1" /></label>
+                  </div>
+                  <div class="inline-grid two">
+                    <label class="field"><span>Recoil curto (mag)</span><input id="haRecoilShortMax" type="number" step="250" min="0" max="32767" /></label>
+                    <label class="field"><span>Recoil médio (mag)</span><input id="haRecoilMediumMax" type="number" step="250" min="0" max="32767" /></label>
+                  </div>
+
+                  <strong class="sub-title">Pesos da fusão (Auto)</strong>
+                  <div class="inline-grid three">
+                    <label class="field"><span>Trigger</span><input id="haWeightTrigger" type="number" step="0.1" min="0" max="5" /></label>
+                    <label class="field"><span>Deflexão</span><input id="haWeightDeflection" type="number" step="0.1" min="0" max="5" /></label>
+                    <label class="field"><span>Recoil</span><input id="haWeightRecoil" type="number" step="0.1" min="0" max="5" /></label>
+                  </div>
+
+                  <div class="inline-grid two">
+                    <label class="field"><span>Botão de ciclo (Manual)</span><select id="haCycleButton"></select></label>
+                    <label class="field"><span>Cooldown re-fire (ms)</span><input id="haReFireCooldownMs" type="number" step="25" min="0" max="2000" /></label>
+                  </div>
+                  <div class="inline-grid two">
+                    <label class="field"><span>Hold mínimo do gatilho (ms)</span><input id="haMinTriggerHoldMs" type="number" step="5" min="0" max="500" /></label>
+                    <label class="toggle-row fieldless"><span>Disparar no primeiro frame</span><input id="haFireOnPress" type="checkbox" /></label>
+                  </div>
+                  <label class="toggle-row"><span>Disparar apenas 1 vez por toque</span><input id="haFireOnce" type="checkbox" /></label>
+                </article>
+
+                <article class="panel form-panel macro-section macro-section-recoil" id="macroProgressiveRecoilCard">
+                  <div class="panel-title accent-recoil">Progressive No-Recoil</div>
+                  <p class="section-copy">Compensação em 3 fases (início/meio/fim) baseada nas munições. Transições usam smoothstep para não "pular" entre fases.</p>
+                  <div class="inline-grid two">
+                    <label class="field"><span>Munições totais</span><input id="prTotalAmmo" type="number" step="1" min="3" max="300" /></label>
+                    <label class="field"><span>Tempo do pente cheio (ms)</span><input id="prFullMagDurationMs" type="number" step="100" min="500" max="10000" /></label>
+                  </div>
+                  <div class="sub-section">
+                    <strong class="sub-title accent-short">Fase 1 — Início (1º 1/3)</strong>
+                    <div class="inline-grid two">
+                      <label class="field"><span>Compensação X</span><input id="prStartCompX" type="number" step="500" min="-32767" max="32767" /></label>
+                      <label class="field"><span>Compensação Y</span><input id="prStartCompY" type="number" step="500" min="-32767" max="32767" /></label>
+                    </div>
+                  </div>
+                  <div class="sub-section">
+                    <strong class="sub-title accent-medium">Fase 2 — Meio (2º 1/3)</strong>
+                    <div class="inline-grid two">
+                      <label class="field"><span>Compensação X</span><input id="prMidCompX" type="number" step="500" min="-32767" max="32767" /></label>
+                      <label class="field"><span>Compensação Y</span><input id="prMidCompY" type="number" step="500" min="-32767" max="32767" /></label>
+                    </div>
+                  </div>
+                  <div class="sub-section">
+                    <strong class="sub-title accent-long">Fase 3 — Fim (último 1/3)</strong>
+                    <div class="inline-grid two">
+                      <label class="field"><span>Compensação X</span><input id="prEndCompX" type="number" step="500" min="-32767" max="32767" /></label>
+                      <label class="field"><span>Compensação Y</span><input id="prEndCompY" type="number" step="500" min="-32767" max="32767" /></label>
+                    </div>
+                  </div>
+                  <div class="inline-grid three">
+                    <label class="field"><span>Easing entre fases</span><select id="prPhaseEasing"></select></label>
+                    <label class="field"><span>Ruído anti-padrão</span><input id="prNoiseFactor" type="number" step="0.05" min="0" max="1" /></label>
+                    <label class="field"><span>Escala de sensibilidade</span><input id="prSensitivityScale" type="number" step="0.1" min="0.1" max="5" /></label>
+                  </div>
+                  <p class="hint">Y negativo = puxa para baixo (compensa subida do recoil). Comece com -3000/-5000/-7000 e ajuste.</p>
+                </article>
+
+                <article class="panel form-panel macro-section macro-section-crowbar" id="macroCrowBarCard">
+                  <div class="panel-title accent-crowbar">CrowBar — Anti-Recoil Cooperativo</div>
+                  <p class="section-copy">Amplifica o controle manual de recoil do jogador com um valor fixo HTG. Quanto mais você puxa o analógico para baixo, mais a compensação aumenta. Rapido = 40% assist, Padrao = 90%.</p>
+                  <div class="inline-grid two">
+                    <label class="field"><span>Modo</span><select id="cbMode"></select></label>
+                    <label class="field"><span>Valor HTG Base</span><input id="cbBaseHtg" type="number" step="1" min="1" max="50" /></label>
+                  </div>
+                  <div class="inline-grid two">
+                    <label class="field"><span>Fator de Assist (0..1)</span><input id="cbAssistFactor" type="number" step="0.05" min="0.05" max="1" /></label>
+                    <label class="field"><span>Limiar de Deflexão</span><input id="cbDeflectionThreshold" type="number" step="0.01" min="0" max="0.5" /></label>
+                  </div>
+                  <div class="inline-grid two">
+                    <label class="field"><span>Curva de Deflexão</span><input id="cbDeflectionCurve" type="number" step="0.1" min="0.1" max="3" /></label>
+                    <label class="field"><span>Compensação Máxima</span><input id="cbMaxCompensation" type="number" step="500" min="1000" max="32767" /></label>
+                  </div>
+                  <div class="inline-grid two">
+                    <label class="field"><span>Fator de Ruído</span><input id="cbNoiseFactor" type="number" step="0.05" min="0" max="1" /></label>
+                    <label class="field"><span>Escala HTG (Padrao)</span><input id="cbHtgScalePadrao" type="number" step="0.025" min="1" max="2" /></label>
+                  </div>
+                  <p class="hint">CrowBar só ativa quando o gatilho de tiro está pressionado.</p>
+                </article>
+
+                <article class="panel form-panel macro-section macro-section-script" id="macroCustomScriptCard">
+                  <div class="panel-title accent-script">Script Editor (Cronus Zen-Style)</div>
+                  <p class="section-copy">Crie macros passo a passo. Cada step executa uma ação: pressionar/soltar botão, mover eixo, aguardar, ou repetir.</p>
+                  <div class="inline-grid four">
+                    <label class="field"><span>Modo de Ativação</span><select id="scriptTriggerMode"></select></label>
+                    <label class="field"><span>Velocidade</span><input id="scriptSpeedMultiplier" type="number" step="0.1" min="0.1" max="10" /></label>
+                    <label class="toggle-row fieldless"><span>Auto Loop</span><input id="scriptAutoLoop" type="checkbox" /></label>
+                    <label class="field"><span>Descrição</span><input id="scriptDescription" type="text" placeholder="Ex: Rapid Fire + DropShot" /></label>
+                  </div>
+                  <div class="script-toolbar">
+                    <button class="mini-action" data-script-action="add-press">+ Press</button>
+                    <button class="mini-action" data-script-action="add-release">- Release</button>
+                    <button class="mini-action" data-script-action="add-axis">~ Eixo</button>
+                    <button class="mini-action" data-script-action="add-wait">Wait</button>
+                    <button class="mini-action" data-script-action="duplicate">Duplicar</button>
+                    <button class="mini-action danger" data-script-action="delete">Deletar</button>
+                    <button class="mini-action" data-script-action="move-up">Move Up</button>
+                    <button class="mini-action" data-script-action="move-down">Move Down</button>
+                    <button class="mini-action danger" data-script-action="clear">Limpar Tudo</button>
+                  </div>
+                  <div class="script-shell">
+                    <div id="scriptStepList" class="script-step-list"></div>
+                    <div id="scriptStepEditor" class="script-step-editor">
+                      <span class="hint" id="scriptStepEditorEmpty">Selecione um step para editar.</span>
+                      <div id="scriptStepEditorBody" class="hidden">
+                        <label class="field"><span>Ação</span><select id="scriptStepAction"></select></label>
+                        <label class="field" data-step-show="button"><span>Botão</span><select id="scriptStepButton"></select></label>
+                        <label class="field" data-step-show="axis"><span>Eixo</span><select id="scriptStepAxis"></select></label>
+                        <label class="field" data-step-show="value"><span>Valor</span><input id="scriptStepValue" type="number" step="1000" min="-32767" max="32767" /></label>
+                        <label class="field" data-step-show="duration"><span>Duração (ms)</span><input id="scriptStepDuration" type="number" step="10" min="1" max="10000" /></label>
+                        <label class="field" data-step-show="loopTarget"><span>Voltar para Step #</span><input id="scriptStepLoopTarget" type="number" step="1" min="0" max="999" /></label>
+                        <label class="field" data-step-show="repeatCount"><span>Repetições (0 = infinito)</span><input id="scriptStepRepeatCount" type="number" step="1" min="0" max="9999" /></label>
+                        <label class="field"><span>Comentário</span><input id="scriptStepLabel" type="text" placeholder="opcional" /></label>
+                        <label class="toggle-row"><span>Desativado (pular)</span><input id="scriptStepDisabled" type="checkbox" /></label>
+                      </div>
+                    </div>
+                  </div>
+                </article>
               </div>
             </div>
           </section>
@@ -443,6 +670,9 @@
               <input id="newProfileName" type="text" placeholder="New profile name" />
             </label>
             <button class="primary-action" id="createProfile">Create</button>
+            <div class="toolbar-inline" style="margin-top: 10px;">
+              <button class="mini-action" id="importProfile">Importar Perfil</button>
+            </div>
           </article>
 
           <article class="panel list-panel">

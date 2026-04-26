@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using InputBusX.Application.Interfaces;
 using InputBusX.Domain.Entities;
 using InputBusX.Domain.Enums;
@@ -10,6 +11,14 @@ namespace InputBusX.WebShell;
 public sealed class WebShellBridge
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+
+    private static readonly JsonSerializerOptions PortableJsonOptions = new()
+    {
+        WriteIndented = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) },
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+    };
 
     private readonly IInputPipeline _pipeline;
     private readonly IInputProvider _inputProvider;
@@ -141,6 +150,21 @@ public sealed class WebShellBridge
                 break;
             case "saveMacro":
                 SaveMacro(root);
+                break;
+            case "exportMacro":
+                ExportMacrosToFile(false);
+                break;
+            case "exportAllMacros":
+                ExportMacrosToFile(true);
+                break;
+            case "importMacros":
+                ImportMacrosFromFile();
+                break;
+            case "exportProfile":
+                ExportProfileToFile(ReadString(root, "value", ""));
+                break;
+            case "importProfile":
+                ImportProfileFromFile();
                 break;
             case "toggleWeaponDetection":
                 await ToggleWeaponDetectionAsync();
@@ -643,6 +667,31 @@ public sealed class WebShellBridge
         macro.SlideButton = ParseEnum(ReadString(root, "slideButton", macro.SlideButton.ToString()), macro.SlideButton);
         macro.SlideCancelButton = ParseEnum(ReadString(root, "slideCancelButton", macro.SlideCancelButton.ToString()), macro.SlideCancelButton);
 
+        if (root.TryGetProperty("motion", out var motionElem) && motionElem.ValueKind == JsonValueKind.Object)
+        {
+            ApplyMotion(motionElem, macro.Motion);
+        }
+        if (root.TryGetProperty("trackingAssist", out var taElem) && taElem.ValueKind == JsonValueKind.Object)
+        {
+            ApplyTrackingAssist(taElem, macro.TrackingAssist);
+        }
+        if (root.TryGetProperty("headAssist", out var haElem) && haElem.ValueKind == JsonValueKind.Object)
+        {
+            ApplyHeadAssist(haElem, macro.HeadAssist);
+        }
+        if (root.TryGetProperty("progressiveRecoil", out var prElem) && prElem.ValueKind == JsonValueKind.Object)
+        {
+            ApplyProgressiveRecoil(prElem, macro.ProgressiveRecoil);
+        }
+        if (root.TryGetProperty("crowBar", out var cbElem) && cbElem.ValueKind == JsonValueKind.Object)
+        {
+            ApplyCrowBar(cbElem, macro.CrowBar);
+        }
+        if (root.TryGetProperty("script", out var scriptElem) && scriptElem.ValueKind == JsonValueKind.Object)
+        {
+            ApplyScript(scriptElem, macro.Script);
+        }
+
         _profileManager.SaveProfile(profile);
         _pipeline.InvalidateMacroCache();
 
@@ -1122,6 +1171,301 @@ public sealed class WebShellBridge
         }, JsonOptions));
     }
 
+    private void ExportMacrosToFile(bool all)
+    {
+        var profile = _profileManager.ActiveProfile;
+        var selectedId = _state.SelectedMacroId;
+
+        List<MacroDefinition> toExport;
+        string suggested;
+        if (all)
+        {
+            if (profile.Macros.Count == 0)
+            {
+                ShowToast("warn", "No macros to export.");
+                return;
+            }
+            toExport = [.. profile.Macros];
+            suggested = "ReflexX_Macros_Export.matrixmacros";
+        }
+        else
+        {
+            var selected = profile.Macros.FirstOrDefault(m => m.Id == selectedId);
+            if (selected is null)
+            {
+                ShowToast("warn", "Select a macro to export.");
+                return;
+            }
+            toExport = [selected];
+            suggested = $"{selected.Name.Replace(' ', '_')}.matrixmacros";
+        }
+
+        using var dialog = new SaveFileDialog
+        {
+            Title = "Exportar Macros — ReflexX",
+            Filter = "ReflexX Macros (*.matrixmacros)|*.matrixmacros|All files (*.*)|*.*",
+            DefaultExt = "matrixmacros",
+            FileName = suggested,
+            AddExtension = true,
+        };
+        if (dialog.ShowDialog() != DialogResult.OK) return;
+
+        try
+        {
+            var export = new MacroExportFile("2", DateTimeOffset.UtcNow,
+                System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "?",
+                toExport);
+            File.WriteAllText(dialog.FileName, JsonSerializer.Serialize(export, PortableJsonOptions));
+            ShowToast("info", $"{toExport.Count} macro(s) exportado(s).");
+        }
+        catch (Exception ex)
+        {
+            ShowToast("error", $"Erro ao exportar: {ex.Message}");
+        }
+    }
+
+    private void ImportMacrosFromFile()
+    {
+        using var dialog = new OpenFileDialog
+        {
+            Title = "Importar Macros — ReflexX",
+            Filter = "ReflexX Macros (*.matrixmacros)|*.matrixmacros|All files (*.*)|*.*",
+            CheckFileExists = true,
+        };
+        if (dialog.ShowDialog() != DialogResult.OK) return;
+
+        try
+        {
+            var json = File.ReadAllText(dialog.FileName);
+            var file = JsonSerializer.Deserialize<MacroExportFile>(json, PortableJsonOptions);
+            if (file?.Macros is not { Count: > 0 })
+            {
+                ShowToast("warn", "Arquivo vazio ou inválido.");
+                return;
+            }
+
+            var profile = _profileManager.ActiveProfile;
+            int added = 0;
+            foreach (var m in file.Macros)
+            {
+                m.Id = Guid.NewGuid().ToString("N")[..8];
+                profile.Macros.Add(m);
+                added++;
+            }
+            _profileManager.SaveProfile(profile);
+            _pipeline.InvalidateMacroCache();
+
+            UpdateState(s => s with
+            {
+                Macros = BuildMacros(profile),
+                SelectedMacroId = profile.Macros.LastOrDefault()?.Id ?? s.SelectedMacroId,
+                Profiles = BuildProfiles()
+            });
+            ShowToast("info", $"{added} macro(s) importado(s).");
+        }
+        catch (Exception ex)
+        {
+            ShowToast("error", $"Erro ao importar: {ex.Message}");
+        }
+    }
+
+    private void ExportProfileToFile(string profileId)
+    {
+        var profile = string.IsNullOrWhiteSpace(profileId)
+            ? _profileManager.ActiveProfile
+            : _profileManager.Profiles.FirstOrDefault(p => p.Id == profileId) ?? _profileManager.ActiveProfile;
+
+        using var dialog = new SaveFileDialog
+        {
+            Title = "Exportar Perfil — ReflexX",
+            Filter = "ReflexX Profile (*.json)|*.json|All files (*.*)|*.*",
+            DefaultExt = "json",
+            FileName = $"{profile.Name.Replace(' ', '_')}.json",
+            AddExtension = true,
+        };
+        if (dialog.ShowDialog() != DialogResult.OK) return;
+
+        try
+        {
+            File.WriteAllText(dialog.FileName, JsonSerializer.Serialize(profile, PortableJsonOptions));
+            ShowToast("info", $"Profile '{profile.Name}' exportado.");
+        }
+        catch (Exception ex)
+        {
+            ShowToast("error", $"Erro ao exportar: {ex.Message}");
+        }
+    }
+
+    private void ImportProfileFromFile()
+    {
+        using var dialog = new OpenFileDialog
+        {
+            Title = "Importar Perfil — ReflexX",
+            Filter = "ReflexX Profile (*.json)|*.json|All files (*.*)|*.*",
+            CheckFileExists = true,
+        };
+        if (dialog.ShowDialog() != DialogResult.OK) return;
+
+        try
+        {
+            var json = File.ReadAllText(dialog.FileName);
+            var imported = JsonSerializer.Deserialize<Profile>(json, PortableJsonOptions);
+            if (imported is null)
+            {
+                ShowToast("error", "Arquivo de perfil inválido.");
+                return;
+            }
+
+            var newProfile = _profileManager.CreateProfile(imported.Name);
+            newProfile.Macros = imported.Macros;
+            foreach (var process in imported.AssociatedProcesses)
+            {
+                newProfile.AssociatedProcesses.Add(process);
+            }
+            newProfile.Filters = imported.Filters;
+            _profileManager.SaveProfile(newProfile);
+            _pipeline.InvalidateMacroCache();
+
+            UpdateState(s => s with
+            {
+                Profiles = BuildProfiles(),
+                Macros = BuildMacros(_profileManager.ActiveProfile),
+                Filters = FilterState.From(_profileManager.ActiveProfile.Filters)
+            });
+            ShowToast("info", $"Profile '{newProfile.Name}' importado.");
+        }
+        catch (Exception ex)
+        {
+            ShowToast("error", $"Erro ao importar: {ex.Message}");
+        }
+    }
+
+    private void ShowToast(string level, string message)
+    {
+        StateChanged?.Invoke(this, JsonSerializer.Serialize(new
+        {
+            type = "toast",
+            payload = new { level, message }
+        }, JsonOptions));
+    }
+
+    private static void ApplyMotion(JsonElement root, MotionScript m)
+    {
+        m.Shape = ParseEnum(ReadString(root, "shape", m.Shape.ToString()), m.Shape);
+        m.Target = ParseEnum(ReadString(root, "target", m.Target.ToString()), m.Target);
+        m.RadiusXNorm = ReadDouble(root, "radiusXNorm", m.RadiusXNorm);
+        m.RadiusYNorm = ReadDouble(root, "radiusYNorm", m.RadiusYNorm);
+        m.RotationDeg = ReadDouble(root, "rotationDeg", m.RotationDeg);
+        m.PeriodMs = ReadDouble(root, "periodMs", m.PeriodMs);
+        m.DurationMs = ReadDouble(root, "durationMs", m.DurationMs);
+        m.DirectionDeg = ReadDouble(root, "directionDeg", m.DirectionDeg);
+        m.AmplitudeNorm = ReadDouble(root, "amplitudeNorm", m.AmplitudeNorm);
+        m.StartPhaseDeg = ReadDouble(root, "startPhaseDeg", m.StartPhaseDeg);
+        m.Clockwise = ReadBool(root, "clockwise", m.Clockwise);
+        m.Easing = ParseEnum(ReadString(root, "easing", m.Easing.ToString()), m.Easing);
+        m.IntensityMul = ReadDouble(root, "intensityMul", m.IntensityMul);
+        m.Additive = ReadBool(root, "additive", m.Additive);
+    }
+
+    private static void ApplyTrackingAssist(JsonElement root, TrackingAssistConfig c)
+    {
+        c.Shape = ParseEnum(ReadString(root, "shape", c.Shape.ToString()), c.Shape);
+        c.Target = ParseEnum(ReadString(root, "target", c.Target.ToString()), c.Target);
+        c.BaseRadiusNorm = ReadDouble(root, "baseRadiusNorm", c.BaseRadiusNorm);
+        c.MaxRadiusNorm = ReadDouble(root, "maxRadiusNorm", c.MaxRadiusNorm);
+        c.PeriodMs = ReadDouble(root, "periodMs", c.PeriodMs);
+        c.Clockwise = ReadBool(root, "clockwise", c.Clockwise);
+        c.DeflectionThreshold = ReadDouble(root, "deflectionThreshold", c.DeflectionThreshold);
+        c.ScaleCurve = ReadDouble(root, "scaleCurve", c.ScaleCurve);
+        c.Easing = ParseEnum(ReadString(root, "easing", c.Easing.ToString()), c.Easing);
+        c.IntensityMul = ReadDouble(root, "intensityMul", c.IntensityMul);
+        c.FreeOrbit = ReadBool(root, "freeOrbit", c.FreeOrbit);
+    }
+
+    private static void ApplyHeadAssist(JsonElement root, HeadAssistConfig c)
+    {
+        if (root.TryGetProperty("shortRange", out var s) && s.ValueKind == JsonValueKind.Object)
+            ApplyMotion(s, c.ShortRange);
+        if (root.TryGetProperty("mediumRange", out var m) && m.ValueKind == JsonValueKind.Object)
+            ApplyMotion(m, c.MediumRange);
+        if (root.TryGetProperty("longRange", out var l) && l.ValueKind == JsonValueKind.Object)
+            ApplyMotion(l, c.LongRange);
+        c.DistanceSource = ParseEnum(ReadString(root, "distanceSource", c.DistanceSource.ToString()), c.DistanceSource);
+        c.ShortHoldMsMax = ReadDouble(root, "shortHoldMsMax", c.ShortHoldMsMax);
+        c.MediumHoldMsMax = ReadDouble(root, "mediumHoldMsMax", c.MediumHoldMsMax);
+        c.DeflectionShortMax = ReadDouble(root, "deflectionShortMax", c.DeflectionShortMax);
+        c.DeflectionMediumMax = ReadDouble(root, "deflectionMediumMax", c.DeflectionMediumMax);
+        c.RecoilShortMax = ReadDouble(root, "recoilShortMax", c.RecoilShortMax);
+        c.RecoilMediumMax = ReadDouble(root, "recoilMediumMax", c.RecoilMediumMax);
+        c.WeightTrigger = ReadDouble(root, "weightTrigger", c.WeightTrigger);
+        c.WeightDeflection = ReadDouble(root, "weightDeflection", c.WeightDeflection);
+        c.WeightRecoil = ReadDouble(root, "weightRecoil", c.WeightRecoil);
+        c.CycleButton = ParseNullableButton(ReadString(root, "cycleButton", c.CycleButton?.ToString() ?? "None"));
+        c.ReFireCooldownMs = ReadInt(root, "reFireCooldownMs", c.ReFireCooldownMs);
+        c.MinTriggerHoldMs = ReadInt(root, "minTriggerHoldMs", c.MinTriggerHoldMs);
+        c.FireOnPress = ReadBool(root, "fireOnPress", c.FireOnPress);
+        c.FireOnce = ReadBool(root, "fireOnce", c.FireOnce);
+    }
+
+    private static void ApplyProgressiveRecoil(JsonElement root, ProgressiveRecoilConfig c)
+    {
+        c.TotalAmmo = ReadInt(root, "totalAmmo", c.TotalAmmo);
+        c.FullMagDurationMs = ReadDouble(root, "fullMagDurationMs", c.FullMagDurationMs);
+        c.StartCompX = ReadInt(root, "startCompX", c.StartCompX);
+        c.StartCompY = ReadInt(root, "startCompY", c.StartCompY);
+        c.MidCompX = ReadInt(root, "midCompX", c.MidCompX);
+        c.MidCompY = ReadInt(root, "midCompY", c.MidCompY);
+        c.EndCompX = ReadInt(root, "endCompX", c.EndCompX);
+        c.EndCompY = ReadInt(root, "endCompY", c.EndCompY);
+        c.PhaseEasing = ParseEnum(ReadString(root, "phaseEasing", c.PhaseEasing.ToString()), c.PhaseEasing);
+        c.NoiseFactor = ReadDouble(root, "noiseFactor", c.NoiseFactor);
+        c.SensitivityScale = ReadDouble(root, "sensitivityScale", c.SensitivityScale);
+    }
+
+    private static void ApplyCrowBar(JsonElement root, CrowBarConfig c)
+    {
+        c.Mode = ParseEnum(ReadString(root, "mode", c.Mode.ToString()), c.Mode);
+        c.BaseHtgValue = ReadInt(root, "baseHtgValue", c.BaseHtgValue);
+        c.AssistFactor = ReadDouble(root, "assistFactor", c.AssistFactor);
+        c.DeflectionThreshold = ReadDouble(root, "deflectionThreshold", c.DeflectionThreshold);
+        c.DeflectionCurve = ReadDouble(root, "deflectionCurve", c.DeflectionCurve);
+        c.MaxCompensation = ReadInt(root, "maxCompensation", c.MaxCompensation);
+        c.NoiseFactor = ReadDouble(root, "noiseFactor", c.NoiseFactor);
+        c.HtgScalePadrao = ReadDouble(root, "htgScalePadrao", c.HtgScalePadrao);
+    }
+
+    private static void ApplyScript(JsonElement root, ScriptDefinition d)
+    {
+        d.TriggerMode = ParseEnum(ReadString(root, "triggerMode", d.TriggerMode.ToString()), d.TriggerMode);
+        d.AutoLoop = ReadBool(root, "autoLoop", d.AutoLoop);
+        d.SpeedMultiplier = ReadDouble(root, "speedMultiplier", d.SpeedMultiplier);
+        d.Description = ReadString(root, "description", d.Description);
+        if (root.TryGetProperty("steps", out var stepsElem) && stepsElem.ValueKind == JsonValueKind.Array)
+        {
+            d.Steps = stepsElem.EnumerateArray().Select(ParseScriptStep).ToList();
+        }
+    }
+
+    private static ScriptStep ParseScriptStep(JsonElement root)
+    {
+        var step = new ScriptStep
+        {
+            Action = ParseEnum(ReadString(root, "action", "Wait"), ScriptActionKind.Wait),
+            Button = ParseNullableButton(ReadString(root, "button", "None")),
+            Value = (short)ReadInt(root, "value", 0),
+            DurationMs = ReadInt(root, "durationMs", 16),
+            LoopTargetIndex = ReadInt(root, "loopTargetIndex", 0),
+            RepeatCount = ReadInt(root, "repeatCount", 0),
+            Label = ReadString(root, "label", ""),
+            Disabled = ReadBool(root, "disabled", false),
+        };
+        var axisStr = ReadString(root, "axis", "None");
+        step.Axis = string.Equals(axisStr, "None", StringComparison.OrdinalIgnoreCase) || string.IsNullOrWhiteSpace(axisStr)
+            ? null
+            : ParseEnum<AnalogAxis>(axisStr, AnalogAxis.LeftStickX);
+        return step;
+    }
+
     private static bool ReadBool(JsonElement root, string name, bool fallback) =>
         root.TryGetProperty(name, out var value) && value.ValueKind is JsonValueKind.True or JsonValueKind.False
             ? value.GetBoolean()
@@ -1323,6 +1667,13 @@ public sealed record MacroState
     public int SlideCancelDelayMs { get; init; } = 180;
     public string SlideCancelButton { get; init; } = nameof(GamepadButton.B);
 
+    public MotionScriptState Motion { get; init; } = new();
+    public TrackingAssistStateRec TrackingAssist { get; init; } = new();
+    public HeadAssistStateRec HeadAssist { get; init; } = new();
+    public ProgressiveRecoilStateRec ProgressiveRecoil { get; init; } = new();
+    public CrowBarStateRec CrowBar { get; init; } = new();
+    public ScriptDefinitionStateRec Script { get; init; } = new();
+
     public static MacroState From(MacroDefinition macro) => new()
     {
         Id = macro.Id,
@@ -1353,7 +1704,221 @@ public sealed record MacroState
         BreathButton = macro.BreathButton.ToString(),
         SlideButton = macro.SlideButton.ToString(),
         SlideCancelDelayMs = macro.SlideCancelDelayMs,
-        SlideCancelButton = macro.SlideCancelButton.ToString()
+        SlideCancelButton = macro.SlideCancelButton.ToString(),
+        Motion = MotionScriptState.From(macro.Motion),
+        TrackingAssist = TrackingAssistStateRec.From(macro.TrackingAssist),
+        HeadAssist = HeadAssistStateRec.From(macro.HeadAssist),
+        ProgressiveRecoil = ProgressiveRecoilStateRec.From(macro.ProgressiveRecoil),
+        CrowBar = CrowBarStateRec.From(macro.CrowBar),
+        Script = ScriptDefinitionStateRec.From(macro.Script)
+    };
+}
+
+public sealed record MotionScriptState
+{
+    public string Shape { get; init; } = nameof(ShapeKind.Flick);
+    public string Target { get; init; } = nameof(StickTargetKind.Left);
+    public double RadiusXNorm { get; init; } = 0.35;
+    public double RadiusYNorm { get; init; } = 0.35;
+    public double RotationDeg { get; init; }
+    public double PeriodMs { get; init; } = 400;
+    public double DurationMs { get; init; } = 140;
+    public double DirectionDeg { get; init; } = 90;
+    public double AmplitudeNorm { get; init; } = 0.55;
+    public double StartPhaseDeg { get; init; }
+    public bool Clockwise { get; init; } = true;
+    public string Easing { get; init; } = nameof(EasingKind.EaseOutCubic);
+    public double IntensityMul { get; init; } = 1.0;
+    public bool Additive { get; init; } = true;
+
+    public static MotionScriptState From(MotionScript m) => new()
+    {
+        Shape = m.Shape.ToString(),
+        Target = m.Target.ToString(),
+        RadiusXNorm = m.RadiusXNorm,
+        RadiusYNorm = m.RadiusYNorm,
+        RotationDeg = m.RotationDeg,
+        PeriodMs = m.PeriodMs,
+        DurationMs = m.DurationMs,
+        DirectionDeg = m.DirectionDeg,
+        AmplitudeNorm = m.AmplitudeNorm,
+        StartPhaseDeg = m.StartPhaseDeg,
+        Clockwise = m.Clockwise,
+        Easing = m.Easing.ToString(),
+        IntensityMul = m.IntensityMul,
+        Additive = m.Additive,
+    };
+}
+
+public sealed record TrackingAssistStateRec
+{
+    public string Shape { get; init; } = nameof(ShapeKind.Circle);
+    public string Target { get; init; } = nameof(StickTargetKind.Right);
+    public double BaseRadiusNorm { get; init; } = 0.08;
+    public double MaxRadiusNorm { get; init; } = 0.25;
+    public double PeriodMs { get; init; } = 120;
+    public bool Clockwise { get; init; } = true;
+    public double DeflectionThreshold { get; init; } = 0.10;
+    public double ScaleCurve { get; init; } = 0.7;
+    public string Easing { get; init; } = nameof(EasingKind.EaseInOutSine);
+    public double IntensityMul { get; init; } = 1.0;
+    public bool FreeOrbit { get; init; }
+
+    public static TrackingAssistStateRec From(TrackingAssistConfig c) => new()
+    {
+        Shape = c.Shape.ToString(),
+        Target = c.Target.ToString(),
+        BaseRadiusNorm = c.BaseRadiusNorm,
+        MaxRadiusNorm = c.MaxRadiusNorm,
+        PeriodMs = c.PeriodMs,
+        Clockwise = c.Clockwise,
+        DeflectionThreshold = c.DeflectionThreshold,
+        ScaleCurve = c.ScaleCurve,
+        Easing = c.Easing.ToString(),
+        IntensityMul = c.IntensityMul,
+        FreeOrbit = c.FreeOrbit,
+    };
+}
+
+public sealed record HeadAssistStateRec
+{
+    public MotionScriptState ShortRange { get; init; } = new();
+    public MotionScriptState MediumRange { get; init; } = new();
+    public MotionScriptState LongRange { get; init; } = new();
+    public string DistanceSource { get; init; } = nameof(Domain.Enums.DistanceSource.Auto);
+    public double ShortHoldMsMax { get; init; } = 150;
+    public double MediumHoldMsMax { get; init; } = 500;
+    public double DeflectionShortMax { get; init; } = 0.30;
+    public double DeflectionMediumMax { get; init; } = 0.65;
+    public double RecoilShortMax { get; init; } = 2500;
+    public double RecoilMediumMax { get; init; } = 6000;
+    public double WeightTrigger { get; init; } = 1.0;
+    public double WeightDeflection { get; init; } = 1.0;
+    public double WeightRecoil { get; init; } = 0.5;
+    public string CycleButton { get; init; } = "None";
+    public int ReFireCooldownMs { get; init; } = 250;
+    public int MinTriggerHoldMs { get; init; } = 20;
+    public bool FireOnPress { get; init; } = true;
+    public bool FireOnce { get; init; } = true;
+
+    public static HeadAssistStateRec From(HeadAssistConfig c) => new()
+    {
+        ShortRange = MotionScriptState.From(c.ShortRange),
+        MediumRange = MotionScriptState.From(c.MediumRange),
+        LongRange = MotionScriptState.From(c.LongRange),
+        DistanceSource = c.DistanceSource.ToString(),
+        ShortHoldMsMax = c.ShortHoldMsMax,
+        MediumHoldMsMax = c.MediumHoldMsMax,
+        DeflectionShortMax = c.DeflectionShortMax,
+        DeflectionMediumMax = c.DeflectionMediumMax,
+        RecoilShortMax = c.RecoilShortMax,
+        RecoilMediumMax = c.RecoilMediumMax,
+        WeightTrigger = c.WeightTrigger,
+        WeightDeflection = c.WeightDeflection,
+        WeightRecoil = c.WeightRecoil,
+        CycleButton = c.CycleButton?.ToString() ?? "None",
+        ReFireCooldownMs = c.ReFireCooldownMs,
+        MinTriggerHoldMs = c.MinTriggerHoldMs,
+        FireOnPress = c.FireOnPress,
+        FireOnce = c.FireOnce,
+    };
+}
+
+public sealed record ProgressiveRecoilStateRec
+{
+    public int TotalAmmo { get; init; } = 60;
+    public double FullMagDurationMs { get; init; } = 2500;
+    public int StartCompX { get; init; }
+    public int StartCompY { get; init; } = -3000;
+    public int MidCompX { get; init; }
+    public int MidCompY { get; init; } = -5000;
+    public int EndCompX { get; init; }
+    public int EndCompY { get; init; } = -7000;
+    public string PhaseEasing { get; init; } = nameof(EasingKind.Smoothstep);
+    public double NoiseFactor { get; init; } = 0.15;
+    public double SensitivityScale { get; init; } = 1.0;
+
+    public static ProgressiveRecoilStateRec From(ProgressiveRecoilConfig c) => new()
+    {
+        TotalAmmo = c.TotalAmmo,
+        FullMagDurationMs = c.FullMagDurationMs,
+        StartCompX = c.StartCompX,
+        StartCompY = c.StartCompY,
+        MidCompX = c.MidCompX,
+        MidCompY = c.MidCompY,
+        EndCompX = c.EndCompX,
+        EndCompY = c.EndCompY,
+        PhaseEasing = c.PhaseEasing.ToString(),
+        NoiseFactor = c.NoiseFactor,
+        SensitivityScale = c.SensitivityScale,
+    };
+}
+
+public sealed record CrowBarStateRec
+{
+    public string Mode { get; init; } = nameof(CrowBarMode.Padrao);
+    public int BaseHtgValue { get; init; } = 16;
+    public double AssistFactor { get; init; } = 0.90;
+    public double DeflectionThreshold { get; init; } = 0.05;
+    public double DeflectionCurve { get; init; } = 1.0;
+    public int MaxCompensation { get; init; } = 10000;
+    public double NoiseFactor { get; init; } = 0.10;
+    public double HtgScalePadrao { get; init; } = 1.125;
+
+    public static CrowBarStateRec From(CrowBarConfig c) => new()
+    {
+        Mode = c.Mode.ToString(),
+        BaseHtgValue = c.BaseHtgValue,
+        AssistFactor = c.AssistFactor,
+        DeflectionThreshold = c.DeflectionThreshold,
+        DeflectionCurve = c.DeflectionCurve,
+        MaxCompensation = c.MaxCompensation,
+        NoiseFactor = c.NoiseFactor,
+        HtgScalePadrao = c.HtgScalePadrao,
+    };
+}
+
+public sealed record ScriptStepStateRec
+{
+    public string Action { get; init; } = nameof(ScriptActionKind.Wait);
+    public string Button { get; init; } = "None";
+    public string Axis { get; init; } = "None";
+    public int Value { get; init; }
+    public int DurationMs { get; init; } = 16;
+    public int LoopTargetIndex { get; init; }
+    public int RepeatCount { get; init; }
+    public string Label { get; init; } = "";
+    public bool Disabled { get; init; }
+
+    public static ScriptStepStateRec From(ScriptStep s) => new()
+    {
+        Action = s.Action.ToString(),
+        Button = s.Button?.ToString() ?? "None",
+        Axis = s.Axis?.ToString() ?? "None",
+        Value = s.Value,
+        DurationMs = s.DurationMs,
+        LoopTargetIndex = s.LoopTargetIndex,
+        RepeatCount = s.RepeatCount,
+        Label = s.Label,
+        Disabled = s.Disabled,
+    };
+}
+
+public sealed record ScriptDefinitionStateRec
+{
+    public string TriggerMode { get; init; } = nameof(ScriptTriggerKind.WhileHeld);
+    public bool AutoLoop { get; init; } = true;
+    public double SpeedMultiplier { get; init; } = 1.0;
+    public string Description { get; init; } = "";
+    public ScriptStepStateRec[] Steps { get; init; } = [];
+
+    public static ScriptDefinitionStateRec From(ScriptDefinition d) => new()
+    {
+        TriggerMode = d.TriggerMode.ToString(),
+        AutoLoop = d.AutoLoop,
+        SpeedMultiplier = d.SpeedMultiplier,
+        Description = d.Description,
+        Steps = d.Steps.Select(ScriptStepStateRec.From).ToArray(),
     };
 }
 
@@ -1466,4 +2031,13 @@ public sealed record ButtonState
         DpadLeft = (buttons & GamepadButton.DPadLeft) != 0,
         DpadRight = (buttons & GamepadButton.DPadRight) != 0
     };
+}
+
+internal sealed record MacroExportFile(
+    string Version,
+    DateTimeOffset ExportedAt,
+    string AppVersion,
+    List<MacroDefinition> Macros)
+{
+    public MacroExportFile() : this("2", DateTimeOffset.UtcNow, "?", []) { }
 }

@@ -10,6 +10,15 @@ const macroTypes = [
   'AutoFireNoRecoil', 'InstaDropShot', 'JumpShot', 'StrafeShot', 'HoldBreath',
   'SlideCancel', 'FastDrop', 'CrowBar', 'Custom'
 ];
+const shapeKinds = ['Flick', 'Circle', 'HorizontalOval', 'VerticalOval', 'DiagonalOval'];
+const stickTargets = ['Left', 'Right'];
+const easingKinds = ['Linear', 'EaseOutQuad', 'EaseOutCubic', 'EaseInOutSine', 'EaseOutBack', 'Smoothstep'];
+const distanceSources = ['TriggerHoldTime', 'AimStickDeflection', 'RecoilMagnitude', 'Manual', 'Auto'];
+const crowBarModes = ['Rapido', 'Padrao'];
+const scriptTriggerKinds = ['WhileHeld', 'OnPress', 'Toggle'];
+const scriptActionKinds = ['PressButton', 'ReleaseButton', 'SetAxis', 'SetTrigger', 'Wait', 'LoopBack', 'LoopStart'];
+const analogAxes = ['LeftStickX', 'LeftStickY', 'RightStickX', 'RightStickY', 'LeftTrigger', 'RightTrigger'];
+let selectedScriptStepIndex = -1;
 
 const state = {
   isRunning: false,
@@ -164,6 +173,7 @@ function renderProfiles() {
         <div class="profile-actions">
           <button class="mini-action" data-action="activate" data-id="${profile.id}">${profile.isActive ? 'Active' : 'Use'}</button>
           <button class="mini-action" data-action="duplicate" data-id="${profile.id}">Copy</button>
+          <button class="mini-action" data-action="export" data-id="${profile.id}">Export</button>
           ${profile.isDefault ? '' : `<button class="mini-action danger" data-action="delete" data-id="${profile.id}">Delete</button>`}
         </div>
       </div>
@@ -260,8 +270,169 @@ function renderMacros() {
   $('#strafeAmplitudeValue').textContent = fixed(selected.strafeAmplitude, 2);
   setControlValue($('#strafeIntervalMs'), selected.strafeIntervalMs);
 
+  populateSelect('#motionShape', shapeKinds, selected.motion?.shape);
+  populateSelect('#motionTarget', stickTargets, selected.motion?.target);
+  populateSelect('#motionEasing', easingKinds, selected.motion?.easing);
+  setControlValue($('#motionRadiusX'), selected.motion?.radiusXNorm);
+  setControlValue($('#motionRadiusY'), selected.motion?.radiusYNorm);
+  setControlValue($('#motionRotation'), selected.motion?.rotationDeg);
+  setControlValue($('#motionPeriodMs'), selected.motion?.periodMs);
+  setControlValue($('#motionDurationMs'), selected.motion?.durationMs);
+  setControlValue($('#motionStartPhase'), selected.motion?.startPhaseDeg);
+  setControlValue($('#motionDirection'), selected.motion?.directionDeg);
+  setControlValue($('#motionAmplitude'), selected.motion?.amplitudeNorm);
+  setControlValue($('#motionIntensityMul'), selected.motion?.intensityMul);
+  setControlChecked($('#motionClockwise'), selected.motion?.clockwise);
+  setControlChecked($('#motionAdditive'), selected.motion?.additive);
+
+  populateSelect('#taTarget', stickTargets, selected.trackingAssist?.target);
+  populateSelect('#taShape', shapeKinds, selected.trackingAssist?.shape);
+  populateSelect('#taEasing', easingKinds, selected.trackingAssist?.easing);
+  setControlValue($('#taBaseRadius'), selected.trackingAssist?.baseRadiusNorm);
+  setControlValue($('#taMaxRadius'), selected.trackingAssist?.maxRadiusNorm);
+  setControlValue($('#taPeriodMs'), selected.trackingAssist?.periodMs);
+  setControlValue($('#taDeflectionThreshold'), selected.trackingAssist?.deflectionThreshold);
+  setControlValue($('#taScaleCurve'), selected.trackingAssist?.scaleCurve);
+  setControlValue($('#taIntensityMul'), selected.trackingAssist?.intensityMul);
+  setControlChecked($('#taClockwise'), selected.trackingAssist?.clockwise);
+  setControlChecked($('#taFreeOrbit'), selected.trackingAssist?.freeOrbit);
+
+  const ha = selected.headAssist ?? {};
+  populateSelect('#haTarget', stickTargets, ha.shortRange?.target);
+  populateSelect('#haDistanceSource', distanceSources, ha.distanceSource);
+  populateSelect('#haCycleButton', buttonOptions, ha.cycleButton);
+  setControlChecked($('#haAdditive'), ha.shortRange?.additive);
+  setControlValue($('#haShortAmp'), ha.shortRange?.amplitudeNorm);
+  setControlValue($('#haShortDur'), ha.shortRange?.durationMs);
+  setControlValue($('#haShortDir'), ha.shortRange?.directionDeg);
+  setControlValue($('#haMediumAmp'), ha.mediumRange?.amplitudeNorm);
+  setControlValue($('#haMediumDur'), ha.mediumRange?.durationMs);
+  setControlValue($('#haMediumDir'), ha.mediumRange?.directionDeg);
+  setControlValue($('#haLongAmp'), ha.longRange?.amplitudeNorm);
+  setControlValue($('#haLongDur'), ha.longRange?.durationMs);
+  setControlValue($('#haLongDir'), ha.longRange?.directionDeg);
+  setControlValue($('#haShortHoldMsMax'), ha.shortHoldMsMax);
+  setControlValue($('#haMediumHoldMsMax'), ha.mediumHoldMsMax);
+  setControlValue($('#haDeflectionShortMax'), ha.deflectionShortMax);
+  setControlValue($('#haDeflectionMediumMax'), ha.deflectionMediumMax);
+  setControlValue($('#haRecoilShortMax'), ha.recoilShortMax);
+  setControlValue($('#haRecoilMediumMax'), ha.recoilMediumMax);
+  setControlValue($('#haWeightTrigger'), ha.weightTrigger);
+  setControlValue($('#haWeightDeflection'), ha.weightDeflection);
+  setControlValue($('#haWeightRecoil'), ha.weightRecoil);
+  setControlValue($('#haReFireCooldownMs'), ha.reFireCooldownMs);
+  setControlValue($('#haMinTriggerHoldMs'), ha.minTriggerHoldMs);
+  setControlChecked($('#haFireOnPress'), ha.fireOnPress);
+  setControlChecked($('#haFireOnce'), ha.fireOnce);
+
+  const pr = selected.progressiveRecoil ?? {};
+  populateSelect('#prPhaseEasing', easingKinds, pr.phaseEasing);
+  setControlValue($('#prTotalAmmo'), pr.totalAmmo);
+  setControlValue($('#prFullMagDurationMs'), pr.fullMagDurationMs);
+  setControlValue($('#prStartCompX'), pr.startCompX);
+  setControlValue($('#prStartCompY'), pr.startCompY);
+  setControlValue($('#prMidCompX'), pr.midCompX);
+  setControlValue($('#prMidCompY'), pr.midCompY);
+  setControlValue($('#prEndCompX'), pr.endCompX);
+  setControlValue($('#prEndCompY'), pr.endCompY);
+  setControlValue($('#prNoiseFactor'), pr.noiseFactor);
+  setControlValue($('#prSensitivityScale'), pr.sensitivityScale);
+
+  const cb = selected.crowBar ?? {};
+  populateSelect('#cbMode', crowBarModes, cb.mode);
+  setControlValue($('#cbBaseHtg'), cb.baseHtgValue);
+  setControlValue($('#cbAssistFactor'), cb.assistFactor);
+  setControlValue($('#cbDeflectionThreshold'), cb.deflectionThreshold);
+  setControlValue($('#cbDeflectionCurve'), cb.deflectionCurve);
+  setControlValue($('#cbMaxCompensation'), cb.maxCompensation);
+  setControlValue($('#cbNoiseFactor'), cb.noiseFactor);
+  setControlValue($('#cbHtgScalePadrao'), cb.htgScalePadrao);
+
+  const sd = selected.script ?? { steps: [] };
+  populateSelect('#scriptTriggerMode', scriptTriggerKinds, sd.triggerMode);
+  setControlValue($('#scriptSpeedMultiplier'), sd.speedMultiplier);
+  setControlChecked($('#scriptAutoLoop'), sd.autoLoop);
+  setControlValue($('#scriptDescription'), sd.description);
+  renderScriptSteps(sd.steps ?? []);
+
   const type = selected.type;
   syncMacroTypePanels(type);
+}
+
+function renderScriptSteps(steps) {
+  const list = $('#scriptStepList');
+  list.innerHTML = steps.length
+    ? steps.map((step, i) => `
+      <button type="button" class="script-step ${i === selectedScriptStepIndex ? 'active' : ''} ${step.disabled ? 'disabled' : ''}" data-index="${i}">
+        <span class="step-index">#${i}</span>
+        <span class="step-action">${escapeHtml(step.action)}</span>
+        <span class="step-detail">${escapeHtml(formatStepDetail(step))}</span>
+      </button>`).join('')
+    : '<div class="empty-copy">Nenhum step ainda. Use os botões acima para adicionar.</div>';
+
+  if (selectedScriptStepIndex < 0 || selectedScriptStepIndex >= steps.length) {
+    selectedScriptStepIndex = steps.length > 0 ? 0 : -1;
+  }
+  renderScriptStepEditor(steps[selectedScriptStepIndex]);
+}
+
+function formatStepDetail(step) {
+  switch (step.action) {
+    case 'PressButton':
+    case 'ReleaseButton':
+      return step.button || '';
+    case 'SetAxis':
+    case 'SetTrigger':
+      return `${step.axis ?? ''} = ${step.value ?? 0}`;
+    case 'Wait':
+      return `${step.durationMs ?? 0} ms`;
+    case 'LoopBack':
+      return `→ #${step.loopTargetIndex ?? 0} x${step.repeatCount ?? 0}`;
+    case 'LoopStart':
+      return `x${step.repeatCount ?? 0}`;
+    default:
+      return step.label || '';
+  }
+}
+
+function renderScriptStepEditor(step) {
+  const empty = $('#scriptStepEditorEmpty');
+  const body = $('#scriptStepEditorBody');
+  if (!step) {
+    empty.classList.remove('hidden');
+    body.classList.add('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+  body.classList.remove('hidden');
+
+  populateSelect('#scriptStepAction', scriptActionKinds, step.action);
+  populateSelect('#scriptStepButton', buttonOptions, step.button);
+  populateSelect('#scriptStepAxis', ['None', ...analogAxes], step.axis);
+  setControlValue($('#scriptStepValue'), step.value);
+  setControlValue($('#scriptStepDuration'), step.durationMs);
+  setControlValue($('#scriptStepLoopTarget'), step.loopTargetIndex);
+  setControlValue($('#scriptStepRepeatCount'), step.repeatCount);
+  setControlValue($('#scriptStepLabel'), step.label);
+  setControlChecked($('#scriptStepDisabled'), step.disabled);
+
+  syncScriptStepEditor(step.action);
+}
+
+function syncScriptStepEditor(action) {
+  const showButton = ['PressButton', 'ReleaseButton'].includes(action);
+  const showAxis = ['SetAxis', 'SetTrigger'].includes(action);
+  const showValue = showAxis;
+  const showDuration = action === 'Wait';
+  const showLoopTarget = action === 'LoopBack';
+  const showRepeatCount = ['LoopBack', 'LoopStart'].includes(action);
+
+  $$('#scriptStepEditorBody [data-step-show="button"]').forEach((el) => el.classList.toggle('hidden', !showButton));
+  $$('#scriptStepEditorBody [data-step-show="axis"]').forEach((el) => el.classList.toggle('hidden', !showAxis));
+  $$('#scriptStepEditorBody [data-step-show="value"]').forEach((el) => el.classList.toggle('hidden', !showValue));
+  $$('#scriptStepEditorBody [data-step-show="duration"]').forEach((el) => el.classList.toggle('hidden', !showDuration));
+  $$('#scriptStepEditorBody [data-step-show="loopTarget"]').forEach((el) => el.classList.toggle('hidden', !showLoopTarget));
+  $$('#scriptStepEditorBody [data-step-show="repeatCount"]').forEach((el) => el.classList.toggle('hidden', !showRepeatCount));
 }
 
 function renderWeapons() {
@@ -424,6 +595,7 @@ function collectSettings() {
 function collectMacro() {
   const selected = getSelectedMacro();
   if (!selected) return null;
+  const haAdditive = $('#haAdditive').checked;
   return {
     id: selected.id,
     name: $('#macroName').value,
@@ -453,7 +625,99 @@ function collectMacro() {
     breathButton: $('#breathButton').value,
     slideButton: $('#slideButton').value,
     slideCancelDelayMs: Number($('#slideCancelDelayMs').value),
-    slideCancelButton: $('#slideCancelButton').value
+    slideCancelButton: $('#slideCancelButton').value,
+    motion: {
+      shape: $('#motionShape').value,
+      target: $('#motionTarget').value,
+      radiusXNorm: Number($('#motionRadiusX').value),
+      radiusYNorm: Number($('#motionRadiusY').value),
+      rotationDeg: Number($('#motionRotation').value),
+      periodMs: Number($('#motionPeriodMs').value),
+      durationMs: Number($('#motionDurationMs').value),
+      directionDeg: Number($('#motionDirection').value),
+      amplitudeNorm: Number($('#motionAmplitude').value),
+      startPhaseDeg: Number($('#motionStartPhase').value),
+      clockwise: $('#motionClockwise').checked,
+      easing: $('#motionEasing').value,
+      intensityMul: Number($('#motionIntensityMul').value),
+      additive: $('#motionAdditive').checked
+    },
+    trackingAssist: {
+      shape: $('#taShape').value,
+      target: $('#taTarget').value,
+      baseRadiusNorm: Number($('#taBaseRadius').value),
+      maxRadiusNorm: Number($('#taMaxRadius').value),
+      periodMs: Number($('#taPeriodMs').value),
+      clockwise: $('#taClockwise').checked,
+      deflectionThreshold: Number($('#taDeflectionThreshold').value),
+      scaleCurve: Number($('#taScaleCurve').value),
+      easing: $('#taEasing').value,
+      intensityMul: Number($('#taIntensityMul').value),
+      freeOrbit: $('#taFreeOrbit').checked
+    },
+    headAssist: {
+      shortRange: collectHeadRange('Short', haAdditive),
+      mediumRange: collectHeadRange('Medium', haAdditive),
+      longRange: collectHeadRange('Long', haAdditive),
+      distanceSource: $('#haDistanceSource').value,
+      shortHoldMsMax: Number($('#haShortHoldMsMax').value),
+      mediumHoldMsMax: Number($('#haMediumHoldMsMax').value),
+      deflectionShortMax: Number($('#haDeflectionShortMax').value),
+      deflectionMediumMax: Number($('#haDeflectionMediumMax').value),
+      recoilShortMax: Number($('#haRecoilShortMax').value),
+      recoilMediumMax: Number($('#haRecoilMediumMax').value),
+      weightTrigger: Number($('#haWeightTrigger').value),
+      weightDeflection: Number($('#haWeightDeflection').value),
+      weightRecoil: Number($('#haWeightRecoil').value),
+      cycleButton: $('#haCycleButton').value,
+      reFireCooldownMs: Number($('#haReFireCooldownMs').value),
+      minTriggerHoldMs: Number($('#haMinTriggerHoldMs').value),
+      fireOnPress: $('#haFireOnPress').checked,
+      fireOnce: $('#haFireOnce').checked
+    },
+    progressiveRecoil: {
+      totalAmmo: Number($('#prTotalAmmo').value),
+      fullMagDurationMs: Number($('#prFullMagDurationMs').value),
+      startCompX: Number($('#prStartCompX').value),
+      startCompY: Number($('#prStartCompY').value),
+      midCompX: Number($('#prMidCompX').value),
+      midCompY: Number($('#prMidCompY').value),
+      endCompX: Number($('#prEndCompX').value),
+      endCompY: Number($('#prEndCompY').value),
+      phaseEasing: $('#prPhaseEasing').value,
+      noiseFactor: Number($('#prNoiseFactor').value),
+      sensitivityScale: Number($('#prSensitivityScale').value)
+    },
+    crowBar: {
+      mode: $('#cbMode').value,
+      baseHtgValue: Number($('#cbBaseHtg').value),
+      assistFactor: Number($('#cbAssistFactor').value),
+      deflectionThreshold: Number($('#cbDeflectionThreshold').value),
+      deflectionCurve: Number($('#cbDeflectionCurve').value),
+      maxCompensation: Number($('#cbMaxCompensation').value),
+      noiseFactor: Number($('#cbNoiseFactor').value),
+      htgScalePadrao: Number($('#cbHtgScalePadrao').value)
+    },
+    script: {
+      triggerMode: $('#scriptTriggerMode').value,
+      autoLoop: $('#scriptAutoLoop').checked,
+      speedMultiplier: Number($('#scriptSpeedMultiplier').value),
+      description: $('#scriptDescription').value,
+      steps: (selected.script?.steps ?? []).map((step) => ({ ...step }))
+    }
+  };
+}
+
+function collectHeadRange(prefix, additive) {
+  const selected = getSelectedMacro();
+  const base = selected?.headAssist?.[`${prefix.toLowerCase()}Range`] ?? {};
+  return {
+    ...base,
+    target: $('#haTarget').value,
+    additive,
+    amplitudeNorm: Number($(`#ha${prefix}Amp`).value),
+    durationMs: Number($(`#ha${prefix}Dur`).value),
+    directionDeg: Number($(`#ha${prefix}Dir`).value)
   };
 }
 
@@ -496,10 +760,16 @@ function collectWeaponSettings() {
 }
 
 function syncMacroTypePanels(type = $('#macroType').value) {
-  $('#macroNoRecoilCard').classList.toggle('hidden', !['NoRecoil', 'AutoFireNoRecoil', 'ProgressiveRecoil', 'CrowBar'].includes(type));
+  $('#macroNoRecoilCard').classList.toggle('hidden', !['NoRecoil', 'AutoFireNoRecoil'].includes(type));
   $('#macroButtonsCard').classList.toggle('hidden', !['AutoPing', 'Remap', 'HoldBreath'].includes(type));
   $('#macroAimAssistCard').classList.toggle('hidden', !['AimAssistBuff', 'JumpShot', 'SlideCancel'].includes(type));
   $('#macroMovementCard').classList.toggle('hidden', !['InstaDropShot', 'FastDrop', 'JumpShot', 'StrafeShot', 'HoldBreath', 'SlideCancel'].includes(type));
+  $('#macroScriptedShapeCard').classList.toggle('hidden', type !== 'ScriptedShape');
+  $('#macroTrackingAssistCard').classList.toggle('hidden', type !== 'TrackingAssist');
+  $('#macroHeadAssistCard').classList.toggle('hidden', type !== 'HeadAssist');
+  $('#macroProgressiveRecoilCard').classList.toggle('hidden', type !== 'ProgressiveRecoil');
+  $('#macroCrowBarCard').classList.toggle('hidden', type !== 'CrowBar');
+  $('#macroCustomScriptCard').classList.toggle('hidden', type !== 'Custom');
 }
 
 function saveSelectedMacro() {
@@ -596,6 +866,87 @@ $('#deleteMacro').addEventListener('click', () => {
 $('#saveMacro').addEventListener('click', saveSelectedMacro);
 $('#macroEnabled').addEventListener('change', saveSelectedMacro);
 $('#macroType').addEventListener('change', (event) => syncMacroTypePanels(event.target.value));
+$('#importMacros').addEventListener('click', () => send('importMacros'));
+$('#exportMacro').addEventListener('click', () => send('exportMacro'));
+$('#exportAllMacros').addEventListener('click', () => send('exportAllMacros'));
+$('#importProfile').addEventListener('click', () => send('importProfile'));
+
+$('#scriptStepList').addEventListener('click', (event) => {
+  const button = event.target.closest('.script-step');
+  if (!button) return;
+  selectedScriptStepIndex = Number(button.dataset.index);
+  const selected = getSelectedMacro();
+  renderScriptSteps(selected?.script?.steps ?? []);
+});
+
+document.querySelector('#macroCustomScriptCard .script-toolbar')?.addEventListener('click', (event) => {
+  const button = event.target.closest('button[data-script-action]');
+  if (!button) return;
+  const action = button.dataset.scriptAction;
+  const selected = getSelectedMacro();
+  if (!selected) return;
+  selected.script ??= { steps: [], triggerMode: 'WhileHeld', autoLoop: true, speedMultiplier: 1.0, description: '' };
+  selected.script.steps ??= [];
+  const steps = selected.script.steps;
+
+  if (action === 'add-press') steps.push({ action: 'PressButton', button: 'A', durationMs: 16, value: 0, axis: 'None', loopTargetIndex: 0, repeatCount: 0, label: '', disabled: false });
+  if (action === 'add-release') steps.push({ action: 'ReleaseButton', button: 'A', durationMs: 16, value: 0, axis: 'None', loopTargetIndex: 0, repeatCount: 0, label: '', disabled: false });
+  if (action === 'add-axis') steps.push({ action: 'SetAxis', button: 'None', axis: 'LeftStickX', value: 0, durationMs: 16, loopTargetIndex: 0, repeatCount: 0, label: '', disabled: false });
+  if (action === 'add-wait') steps.push({ action: 'Wait', button: 'None', axis: 'None', value: 0, durationMs: 100, loopTargetIndex: 0, repeatCount: 0, label: '', disabled: false });
+  if (action === 'duplicate' && selectedScriptStepIndex >= 0) {
+    steps.splice(selectedScriptStepIndex + 1, 0, { ...steps[selectedScriptStepIndex] });
+    selectedScriptStepIndex += 1;
+  }
+  if (action === 'delete' && selectedScriptStepIndex >= 0) {
+    steps.splice(selectedScriptStepIndex, 1);
+    if (selectedScriptStepIndex >= steps.length) selectedScriptStepIndex = steps.length - 1;
+  }
+  if (action === 'move-up' && selectedScriptStepIndex > 0) {
+    const t = steps[selectedScriptStepIndex - 1];
+    steps[selectedScriptStepIndex - 1] = steps[selectedScriptStepIndex];
+    steps[selectedScriptStepIndex] = t;
+    selectedScriptStepIndex -= 1;
+  }
+  if (action === 'move-down' && selectedScriptStepIndex >= 0 && selectedScriptStepIndex < steps.length - 1) {
+    const t = steps[selectedScriptStepIndex + 1];
+    steps[selectedScriptStepIndex + 1] = steps[selectedScriptStepIndex];
+    steps[selectedScriptStepIndex] = t;
+    selectedScriptStepIndex += 1;
+  }
+  if (action === 'clear') {
+    steps.length = 0;
+    selectedScriptStepIndex = -1;
+  }
+  if (['add-press', 'add-release', 'add-axis', 'add-wait'].includes(action)) {
+    selectedScriptStepIndex = steps.length - 1;
+  }
+  renderScriptSteps(steps);
+});
+
+const scriptStepInputs = ['scriptStepAction', 'scriptStepButton', 'scriptStepAxis',
+  'scriptStepValue', 'scriptStepDuration', 'scriptStepLoopTarget',
+  'scriptStepRepeatCount', 'scriptStepLabel', 'scriptStepDisabled'];
+
+scriptStepInputs.forEach((id) => {
+  const el = $(`#${id}`);
+  if (!el) return;
+  el.addEventListener('change', () => {
+    const selected = getSelectedMacro();
+    const step = selected?.script?.steps?.[selectedScriptStepIndex];
+    if (!step) return;
+    step.action = $('#scriptStepAction').value;
+    step.button = $('#scriptStepButton').value;
+    step.axis = $('#scriptStepAxis').value;
+    step.value = Number($('#scriptStepValue').value);
+    step.durationMs = Number($('#scriptStepDuration').value);
+    step.loopTargetIndex = Number($('#scriptStepLoopTarget').value);
+    step.repeatCount = Number($('#scriptStepRepeatCount').value);
+    step.label = $('#scriptStepLabel').value;
+    step.disabled = $('#scriptStepDisabled').checked;
+    if (id === 'scriptStepAction') syncScriptStepEditor(step.action);
+    renderScriptSteps(selected.script.steps);
+  });
+});
 $('#toggleWeaponDetection').addEventListener('click', () => send('toggleWeaponDetection'));
 $('#addWeapon').addEventListener('click', () => send('addWeapon'));
 $('#openWeaponLibrary').addEventListener('click', () => openModal('weaponLibraryModal'));
@@ -641,6 +992,7 @@ $('#profilesList').addEventListener('click', (event) => {
   if (action === 'activate') send('activateProfile', { value: id });
   if (action === 'duplicate') send('duplicateProfile', { value: id });
   if (action === 'delete') send('deleteProfile', { value: id });
+  if (action === 'export') send('exportProfile', { value: id });
   if (action === 'remove-process') send('removeProfileProcess', { profileId: id, value });
   if (action === 'add-process') {
     const input = $(`#process-${id}`);
