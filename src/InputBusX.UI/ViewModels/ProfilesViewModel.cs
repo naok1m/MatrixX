@@ -159,7 +159,7 @@ public partial class ProfilesViewModel : ViewModelBase
             var path = await _fileDialog.SaveFileAsync(
                 "Export Profile",
                 $"{SelectedProfile.Name}.json",
-                ("MatrixX Profile", new[] { "*.json" }));
+                ("ReflexX Profile", new[] { "*.json" }));
 
             if (path is null) return;   // user cancelled
 
@@ -182,7 +182,7 @@ public partial class ProfilesViewModel : ViewModelBase
         {
             var path = await _fileDialog.OpenFileAsync(
                 "Import Profile",
-                ("MatrixX Profile", new[] { "*.json" }));
+                ("ReflexX Profile", new[] { "*.json" }));
 
             if (path is null) return;   // user cancelled
 

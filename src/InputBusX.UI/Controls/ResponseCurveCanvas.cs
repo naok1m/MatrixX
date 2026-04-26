@@ -1,12 +1,14 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Media;
 
 namespace InputBusX.UI.Controls;
 
 /// <summary>
-/// Premium response curve visualizer — bright green curve with multi-pass glow halo
-/// and pulsing dot markers along the curve at evenly-spaced intervals.
+/// Premium response curve visualizer — bright green curve with multi-pass glow halo,
+/// fixed sample-point markers along the curve, and an interactive live marker that
+/// follows either the bound CurrentInput value or the user's hover position.
 /// </summary>
 public sealed class ResponseCurveCanvas : Control
 {
@@ -19,14 +21,50 @@ public sealed class ResponseCurveCanvas : Control
     public static readonly StyledProperty<double> ExponentProperty =
         AvaloniaProperty.Register<ResponseCurveCanvas, double>(nameof(Exponent), defaultValue: 1.0);
 
+    public static readonly StyledProperty<double> CurrentInputProperty =
+        AvaloniaProperty.Register<ResponseCurveCanvas, double>(nameof(CurrentInput), defaultValue: double.NaN);
+
+    private bool _hasHoverInput;
+    private double _hoverInput;
+
     static ResponseCurveCanvas()
     {
-        AffectsRender<ResponseCurveCanvas>(DeadzoneProperty, AntiDeadzoneProperty, ExponentProperty);
+        AffectsRender<ResponseCurveCanvas>(DeadzoneProperty, AntiDeadzoneProperty,
+                                           ExponentProperty, CurrentInputProperty);
+    }
+
+    public ResponseCurveCanvas()
+    {
+        PointerMoved   += OnPointerMoved;
+        PointerEntered += OnPointerEntered;
+        PointerExited  += OnPointerExited;
     }
 
     public double Deadzone     { get => GetValue(DeadzoneProperty);     set => SetValue(DeadzoneProperty, value); }
     public double AntiDeadzone { get => GetValue(AntiDeadzoneProperty); set => SetValue(AntiDeadzoneProperty, value); }
     public double Exponent     { get => GetValue(ExponentProperty);     set => SetValue(ExponentProperty, value); }
+    public double CurrentInput { get => GetValue(CurrentInputProperty); set => SetValue(CurrentInputProperty, value); }
+
+    private void OnPointerMoved(object? sender, PointerEventArgs e)
+    {
+        if (Bounds.Width < 2) return;
+        var pos = e.GetPosition(this);
+        _hoverInput = Math.Clamp(pos.X / Bounds.Width, 0, 1);
+        _hasHoverInput = true;
+        InvalidateVisual();
+    }
+
+    private void OnPointerEntered(object? sender, PointerEventArgs e)
+    {
+        _hasHoverInput = true;
+        InvalidateVisual();
+    }
+
+    private void OnPointerExited(object? sender, PointerEventArgs e)
+    {
+        _hasHoverInput = false;
+        InvalidateVisual();
+    }
 
     public override void Render(DrawingContext ctx)
     {
@@ -89,19 +127,40 @@ public sealed class ResponseCurveCanvas : Control
         ctx.DrawGeometry(null, glowNearPen, geo);
         ctx.DrawGeometry(null, curvePen,    geo);
 
-        // ── Glowing marker dots at evenly-spaced inputs ──
+        // ── Fixed sample-point markers at 0.2 / 0.4 / 0.6 / 0.8 / 1.0 ──
         double[] markerInputs = [0.2, 0.4, 0.6, 0.8, 1.0];
         foreach (var input in markerInputs)
         {
             double output = ComputeOutput(input, dz, adz, exp);
             var pt = new Point(input * w, (1.0 - output) * h);
 
-            // Outer soft halo
             ctx.DrawEllipse(markerHaloOuter, null, pt, 12, 12);
-            // Inner halo
             ctx.DrawEllipse(markerHaloInner, null, pt, 7, 7);
-            // Bright green core
             ctx.DrawEllipse(greenBrush, null, pt, 4, 4);
+        }
+
+        // ── Live marker — bound CurrentInput takes priority, falls back to hover ──
+        double liveInput = double.NaN;
+        if (!double.IsNaN(CurrentInput))
+            liveInput = Math.Clamp(CurrentInput, 0, 1);
+        else if (_hasHoverInput)
+            liveInput = _hoverInput;
+
+        if (!double.IsNaN(liveInput))
+        {
+            double liveOutput = ComputeOutput(liveInput, dz, adz, exp);
+            var livePt = new Point(liveInput * w, (1.0 - liveOutput) * h);
+
+            // Vertical guide line — subtle dashed
+            var guidePen = new Pen(new SolidColorBrush(Color.FromArgb(0x40, 0x00, 0xFF, 0x95)), 1,
+                               dashStyle: new DashStyle([3, 4], 0));
+            ctx.DrawLine(guidePen, new Point(livePt.X, 0), new Point(livePt.X, h));
+
+            // Pulsing live marker — larger, brighter than fixed markers
+            ctx.DrawEllipse(markerHaloOuter, null, livePt, 16, 16);
+            ctx.DrawEllipse(markerHaloInner, null, livePt, 10, 10);
+            ctx.DrawEllipse(greenBrush, null, livePt, 5, 5);
+            ctx.DrawEllipse(new SolidColorBrush(Colors.White), null, livePt, 2, 2);
         }
     }
 

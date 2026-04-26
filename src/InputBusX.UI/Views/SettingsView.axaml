@@ -8,14 +8,14 @@
         <StackPanel Margin="0,0,8,0" Spacing="12">
 
             <!-- ── Header ──────────────────────────────────────────────────── -->
-            <Border Classes="card" Padding="18,14">
+            <Border Classes="card card-interactive" Padding="18,14">
                 <TextBlock Text="General Settings"
                            FontSize="18" FontWeight="SemiBold"
                            Foreground="#EAEAEA" />
             </Border>
 
             <!-- ── Performance ─────────────────────────────────────────────── -->
-            <Border Classes="card section-panel"
+                <Border Classes="card section-panel card-interactive"
                     BorderThickness="3,0,0,0"
                     BorderBrush="#00DDFF"
                     Padding="18,16">
@@ -45,7 +45,7 @@
             </Border>
 
             <!-- ── Startup ─────────────────────────────────────────────────── -->
-            <Border Classes="card section-panel"
+                <Border Classes="card section-panel card-interactive"
                     BorderThickness="3,0,0,0"
                     BorderBrush="#00FF9C"
                     Padding="18,16">
@@ -77,7 +77,7 @@
             </Border>
 
             <!-- ── System tray ─────────────────────────────────────────────── -->
-            <Border Classes="card section-panel"
+                <Border Classes="card section-panel card-interactive"
                     BorderThickness="3,0,0,0"
                     BorderBrush="#B388FF"
                     Padding="18,16">
@@ -109,7 +109,7 @@
             </Border>
 
             <!-- ── Logging ─────────────────────────────────────────────────── -->
-            <Border Classes="card section-panel"
+                <Border Classes="card section-panel card-interactive"
                     BorderThickness="3,0,0,0"
                     BorderBrush="#FFD93D"
                     Padding="18,16">
@@ -138,7 +138,7 @@
             </Border>
 
             <!-- ── Save ────────────────────────────────────────────────────── -->
-            <Border Classes="card" Padding="18,14">
+            <Border Classes="card card-interactive" Padding="18,14">
                 <Grid ColumnDefinitions="*,Auto,Auto">
 
                     <TextBlock Grid.Column="0"

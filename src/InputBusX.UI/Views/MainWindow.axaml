@@ -4,7 +4,7 @@
         xmlns:views="using:InputBusX.UI.Views"
         x:Class="InputBusX.UI.Views.MainWindow"
         x:DataType="vm:MainViewModel"
-        Title="MatrixX"
+        Title="ReflexX"
         Width="1280" Height="800"
         MinWidth="1100" MinHeight="680"
         WindowStartupLocation="CenterScreen"
@@ -17,16 +17,15 @@
     </Window.KeyBindings>
 
     <Panel>
-    <Grid RowDefinitions="60,*,40">
+    <Grid RowDefinitions="80,*,32">
 
         <!-- ═══════════════════════════════════════════════════════════════
              TOP NAV — logo + horizontal tabs + game chip + connection
             ═══════════════════════════════════════════════════════════════ -->
         <Border Grid.Row="0"
-                Background="#0A0C12"
-                BorderBrush="#1F2533"
-                BorderThickness="0,0,0,1">
-            <Grid ColumnDefinitions="Auto,*,Auto" Margin="20,0">
+                Classes="topbar-shell"
+                Margin="18,14,18,8">
+            <Grid ColumnDefinitions="Auto,*,Auto" Margin="10,0">
 
                 <!-- Brand -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10"
@@ -34,11 +33,11 @@
                     <Border CornerRadius="8" Width="32" Height="32"
                             ClipToBounds="True"
                             BoxShadow="0 0 16 0 #6000FF95">
-                        <Image Source="avares://MatrixX/Assets/matrixx-icon.png"
+                           <Image Source="avares://ReflexX/Assets/logo%20ReflexX.png"
                                Width="32" Height="32"
                                Stretch="UniformToFill" />
                     </Border>
-                    <TextBlock Text="MatrixX"
+                    <TextBlock Text="ReflexX"
                                FontSize="16" FontWeight="Bold"
                                Foreground="#F0F2F8"
                                VerticalAlignment="Center" />
@@ -65,11 +64,11 @@
                 <ListBox Grid.Column="1"
                          SelectedIndex="{Binding SelectedTabIndex}"
                          HorizontalAlignment="Center"
-                         VerticalAlignment="Stretch"
+                         VerticalAlignment="Center"
                          AutomationProperties.Name="Main navigation">
                     <ListBox.ItemsPanel>
                         <ItemsPanelTemplate>
-                            <StackPanel Orientation="Horizontal" Spacing="2" />
+                            <StackPanel Orientation="Horizontal" Spacing="10" />
                         </ItemsPanelTemplate>
                     </ListBox.ItemsPanel>
                     <ListBoxItem Classes="tab" Content="Home" />
@@ -84,6 +83,15 @@
                 <!-- Right cluster: update banner + connection pill -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal"
                             Spacing="10" VerticalAlignment="Center">
+
+                    <!-- Active game chip (reference style) -->
+                    <ComboBox Classes="topbar-chip"
+                              ItemsSource="{Binding GameProfiles}"
+                              SelectedItem="{Binding SelectedGameProfile}"
+                              Width="140"
+                              HorizontalContentAlignment="Center"
+                              VerticalContentAlignment="Center"
+                              AutomationProperties.Name="Game profile selector" />
 
                     <!-- Update banner (only when available) -->
                     <Border Classes="pill pill-accent"
@@ -119,7 +127,7 @@
         <!-- ═══════════════════════════════════════════════════════════════
              CONTENT AREA
             ═══════════════════════════════════════════════════════════════ -->
-        <Border Grid.Row="1" Padding="24">
+        <Border Grid.Row="1" Padding="18,8,18,14">
             <ContentControl Content="{Binding CurrentView}"
                             Opacity="{Binding ContentOpacity}">
                 <ContentControl.Transitions>
@@ -189,7 +197,7 @@
                 <StackPanel Grid.Column="2" Orientation="Horizontal"
                             Spacing="14" VerticalAlignment="Center">
                     <TextBlock Classes="muted"
-                               Text="MatrixX — Premium Controller Engine"
+                               Text="ReflexX — Precision In Every Input"
                                VerticalAlignment="Center" />
                 </StackPanel>
             </Grid>

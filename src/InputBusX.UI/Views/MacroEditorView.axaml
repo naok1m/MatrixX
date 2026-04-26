@@ -6,7 +6,7 @@
 
     <Grid ColumnDefinitions="300,*" Margin="4">
         <!-- Macro List Sidebar -->
-        <Border Classes="card" Grid.Column="0" Margin="0,0,10,0" Padding="16">
+        <Border Classes="card card-interactive" Grid.Column="0" Margin="0,0,10,0" Padding="16">
             <DockPanel>
 
                 <!-- Header row: label + Add button -->
@@ -96,7 +96,7 @@
                     </ListBox.Styles>
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <Border CornerRadius="10" Padding="12,10"
+                                <Border Classes="item-card" CornerRadius="10" Padding="12,10"
                                     Background="#161A24"
                                     BorderThickness="1"
                                     BorderBrush="#1F2533">
@@ -130,7 +130,7 @@
         </Border>
 
         <!-- Macro Editor Panel -->
-        <Border Classes="card" Grid.Column="1">
+        <Border Classes="card card-interactive" Grid.Column="1">
             <Panel>
 
             <!-- Empty state when no macro selected -->
@@ -356,8 +356,10 @@
                                     </TextBlock.Text>
                                 </TextBlock>
                                 <Slider Value="{Binding MacroIntensity}" Minimum="0" Maximum="2" TickFrequency="0.05"
-                                        AutomationProperties.Name="Recoil intensity"
-                                        ToolTip.Tip="Scales the compensation values. 100% = full strength. 50% = half the recoil correction. Values above 100% amplify the correction beyond the configured values." />
+                                    ToolTip.Placement="Top"
+                                    ToolTip.ShowDelay="0"
+                                    ToolTip.Tip="{Binding MacroIntensity, StringFormat='Intensity {0:P0}'}"
+                                    AutomationProperties.Name="Recoil intensity" />
                             </StackPanel>
 
                             <StackPanel Spacing="4">
@@ -370,8 +372,10 @@
                                     </TextBlock.Text>
                                 </TextBlock>
                                 <Slider Value="{Binding MacroRandomization}" Minimum="0" Maximum="1"
-                                        AutomationProperties.Name="Recoil randomization"
-                                        ToolTip.Tip="Adds a small random offset to each frame's compensation so the pattern is never perfectly identical. Recommended: 10–20%." />
+                                    ToolTip.Placement="Top"
+                                    ToolTip.ShowDelay="0"
+                                    ToolTip.Tip="{Binding MacroRandomization, StringFormat='Randomization {0:P0}'}"
+                                    AutomationProperties.Name="Recoil randomization" />
                                 <TextBlock Text="Adds random variation to avoid detection patterns"
                                            FontSize="10" Foreground="#4A4F5A" />
                             </StackPanel>
@@ -407,8 +411,10 @@
                                 </TextBlock>
                                 <Slider Value="{Binding FlickStrength}"
                                         Minimum="5000" Maximum="32767" TickFrequency="1000"
-                                        AutomationProperties.Name="Flick strength"
-                                        ToolTip.Tip="Raw stick axis units for each flick. 32767 = full deflection left/right. Higher = stronger aim assist bubble interaction." />
+                                    ToolTip.Placement="Top"
+                                    ToolTip.ShowDelay="0"
+                                    ToolTip.Tip="{Binding FlickStrength, StringFormat='Flick {0:F0}'}"
+                                    AutomationProperties.Name="Flick strength" />
                                 <TextBlock Text="32767 = deflexão máxima (recomendado para Warzone)"
                                            FontSize="10" Foreground="#4A4F5A" />
                             </StackPanel>
@@ -918,7 +924,10 @@
                                 </StackPanel>
                                 <StackPanel Grid.Column="1" Spacing="4">
                                     <TextBlock Text="Randomização" Classes="label" />
-                                    <Slider Value="{Binding MacroRandomization}" Minimum="0" Maximum="1" />
+                                        <Slider Value="{Binding MacroRandomization}" Minimum="0" Maximum="1"
+                                            ToolTip.Placement="Top"
+                                            ToolTip.ShowDelay="0"
+                                            ToolTip.Tip="{Binding MacroRandomization, StringFormat='Randomization {0:P0}'}" />
                                 </StackPanel>
                             </Grid>
                             <Grid ColumnDefinitions="*,*">

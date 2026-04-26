@@ -18,7 +18,7 @@
         <StackPanel Margin="0,0,4,0" Spacing="12">
 
             <!-- ── Header ─────────────────────────────────────────────── -->
-            <Border Classes="card" Padding="18,14">
+            <Border Classes="card card-interactive" Padding="18,14">
                 <Grid ColumnDefinitions="*,Auto">
 
                     <StackPanel Grid.Column="0" Spacing="4">
@@ -45,7 +45,7 @@
             </Border>
 
             <!-- ── Status ─────────────────────────────────────────────── -->
-            <Border Classes="card section-panel"
+                <Border Classes="card section-panel card-interactive"
                     BorderThickness="3,0,0,0"
                     BorderBrush="#00FF9C"
                     Padding="18,14">
@@ -73,7 +73,7 @@
             </Border>
 
             <!-- ── Capture region ─────────────────────────────────────── -->
-            <Border Classes="card section-panel"
+                <Border Classes="card section-panel card-interactive"
                     BorderThickness="3,0,0,0"
                     BorderBrush="#00DDFF"
                     Padding="14,12">
@@ -261,7 +261,7 @@
             </Border>
 
             <!-- ── Weapons list ───────────────────────────────────────── -->
-            <Border Classes="card" Padding="18,14">
+            <Border Classes="card card-interactive" Padding="18,14">
                 <StackPanel Spacing="12">
 
                     <!-- Header row -->
@@ -314,7 +314,7 @@
                     <ItemsControl ItemsSource="{Binding Weapons}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate DataType="vm:WeaponProfileItemViewModel">
-                                <Border Background="#0D0F13"
+                                <Border Classes="item-card" Background="#0D0F13"
                                         CornerRadius="6"
                                         Padding="8,6"
                                         Margin="0,0,0,6">

@@ -4,7 +4,7 @@ using System.Text.Json;
 namespace InputBusX.UI.Services;
 
 /// <summary>
-/// Checks the GitHub releases API for a newer version of MatrixX.
+/// Checks the GitHub releases API for a newer version of ReflexX.
 /// Non-blocking — all exceptions are swallowed so a network failure
 /// never breaks startup.
 /// </summary>
@@ -12,14 +12,14 @@ public sealed class GitHubUpdateService : IUpdateService
 {
     // ── Change these when the repo goes public ──────────────────────────
     private const string ReleasesUrl =
-        "https://api.github.com/repos/naoki-dev/matrixx/releases/latest";
+        "https://api.github.com/repos/naok1m/MatrixX/releases/latest";
 
     public async Task<(bool Available, string LatestVersion)> CheckAsync()
     {
         try
         {
             using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(8) };
-            client.DefaultRequestHeaders.Add("User-Agent", "MatrixX-UpdateCheck/1.0");
+            client.DefaultRequestHeaders.Add("User-Agent", "ReflexX-UpdateCheck/1.0");
 
             var json = await client.GetStringAsync(ReleasesUrl).ConfigureAwait(false);
             using var doc = JsonDocument.Parse(json);

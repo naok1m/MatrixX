@@ -34,7 +34,7 @@ public class App : Avalonia.Application
             catch { /* best-effort crash log */ }
 
             NativeDialog.ShowError(
-                "MatrixX — Startup Error",
+                "ReflexX — Startup Error",
                 $"The application failed to initialize.\n\n{ex.Message}\n\nA crash log was written to:\n{crashLog}");
 
             Environment.Exit(1);
@@ -63,7 +63,7 @@ public class App : Avalonia.Application
             catch (Exception ex)
             {
                 NativeDialog.ShowError(
-                    "MatrixX — Window Error",
+                    "ReflexX — Window Error",
                     $"Failed to create main window.\n\n{ex.Message}");
                 Environment.Exit(1);
                 return;

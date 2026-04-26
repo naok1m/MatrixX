@@ -6,12 +6,12 @@ namespace InputBusX.UI;
 
 internal static class Program
 {
-    private const string MutexName = "Global\\MatrixX_SingleInstance";
+    private const string MutexName = "Global\\ReflexX_SingleInstance";
 
     [STAThread]
     public static void Main(string[] args)
     {
-        // Kill any previous MatrixX instance before starting.
+        // Kill any previous ReflexX instance before starting.
         // This prevents ViGEm virtual devices from accumulating when the user
         // replaces the exe with a newer version without closing the old one first.
         KillPreviousInstances();
@@ -24,8 +24,8 @@ internal static class Program
             [DllImport("user32.dll", CharSet = CharSet.Unicode)]
             static extern int MessageBoxW(IntPtr h, string t, string c, uint f);
             MessageBoxW(IntPtr.Zero,
-                "MatrixX is already running.\nClose it before starting a new instance.",
-                "MatrixX", 0x00000030 /* MB_ICONWARNING */);
+                "ReflexX is already running.\nClose it before starting a new instance.",
+                "ReflexX", 0x00000030 /* MB_ICONWARNING */);
             return;
         }
 
@@ -39,14 +39,14 @@ internal static class Program
             .LogToTrace();
 
     /// <summary>
-    /// Finds all other MatrixX / InputBusX.UI processes and terminates them gracefully
+    /// Finds all other ReflexX / MatrixX / InputBusX.UI processes and terminates them gracefully
     /// (giving them 3 s to exit so ViGEm can clean up its virtual devices),
     /// then force-kills any that are still alive.
     /// </summary>
     private static void KillPreviousInstances()
     {
         var current = Process.GetCurrentProcess();
-        var names   = new[] { "MatrixX", "InputBusX.UI" };
+        var names   = new[] { "ReflexX", "MatrixX", "InputBusX.UI" };
 
         var old = names
             .SelectMany(n => Process.GetProcessesByName(n))

@@ -5,8 +5,8 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>InputBusX.UI</RootNamespace>
-    <AssemblyName>MatrixX</AssemblyName>
-    <Product>MatrixX</Product>
+    <AssemblyName>ReflexX</AssemblyName>
+    <Product>ReflexX</Product>
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <ApplicationIcon>Assets\matrixx-icon.ico</ApplicationIcon>
     <Version>2.9.5</Version>
@@ -21,6 +21,7 @@
   </PropertyGroup>
   <ItemGroup>
     <AvaloniaResource Include="Assets\matrixx-icon.png" />
+    <AvaloniaResource Include="Assets\logo ReflexX.png" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="..\..\config\**\*">
