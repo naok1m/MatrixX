@@ -22,7 +22,7 @@ jobs:
         id: ver
         shell: pwsh
         run: |
-          $v = ([xml](Get-Content src/InputBusX.WebShell/InputBusX.WebShell.csproj)).Project.PropertyGroup.Version
+          $v = ([xml](Get-Content src/InputBusX.UI/InputBusX.UI.csproj)).Project.PropertyGroup.Version
           "VERSION=$v"  | Out-File $env:GITHUB_OUTPUT -Append
           "TAG=v$v"     | Out-File $env:GITHUB_OUTPUT -Append
 
@@ -46,7 +46,7 @@ jobs:
         if: steps.guard.outputs.SKIP == 'false'
         shell: pwsh
         run: |
-          dotnet publish src/InputBusX.WebShell/InputBusX.WebShell.csproj `
+          dotnet publish src/InputBusX.UI/InputBusX.UI.csproj `
             -c Release `
             -r win-x64 `
             --self-contained `
