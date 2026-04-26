@@ -17,16 +17,15 @@
     </Window.KeyBindings>
 
     <Panel>
-    <Grid RowDefinitions="60,*,40">
+    <Grid RowDefinitions="72,*,32">
 
         <!-- ═══════════════════════════════════════════════════════════════
              TOP NAV — logo + horizontal tabs + game chip + connection
             ═══════════════════════════════════════════════════════════════ -->
         <Border Grid.Row="0"
-                Background="#0A0C12"
-                BorderBrush="#1F2533"
-                BorderThickness="0,0,0,1">
-            <Grid ColumnDefinitions="Auto,*,Auto" Margin="20,0">
+                Classes="topbar-shell"
+                Margin="18,14,18,8">
+            <Grid ColumnDefinitions="Auto,*,Auto" Margin="10,0">
 
                 <!-- Brand -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10"
@@ -34,7 +33,7 @@
                     <Border CornerRadius="8" Width="32" Height="32"
                             ClipToBounds="True"
                             BoxShadow="0 0 16 0 #6000FF95">
-                        <Image Source="avares://ReflexX/Assets/matrixx-icon.png"
+                           <Image Source="avares://ReflexX/Assets/logo%20ReflexX.png"
                                Width="32" Height="32"
                                Stretch="UniformToFill" />
                     </Border>
@@ -65,11 +64,11 @@
                 <ListBox Grid.Column="1"
                          SelectedIndex="{Binding SelectedTabIndex}"
                          HorizontalAlignment="Center"
-                         VerticalAlignment="Stretch"
+                         VerticalAlignment="Center"
                          AutomationProperties.Name="Main navigation">
                     <ListBox.ItemsPanel>
                         <ItemsPanelTemplate>
-                            <StackPanel Orientation="Horizontal" Spacing="8" />
+                            <StackPanel Orientation="Horizontal" Spacing="10" />
                         </ItemsPanelTemplate>
                     </ListBox.ItemsPanel>
                     <ListBoxItem Classes="tab" Content="Home" />
@@ -86,24 +85,13 @@
                             Spacing="10" VerticalAlignment="Center">
 
                     <!-- Active game chip (reference style) -->
-                    <Border Classes="chip"
-                            Background="#0F131D"
-                            BorderBrush="#2A3345"
-                            BorderThickness="1"
-                            Padding="12,6"
-                            CornerRadius="10">
-                        <StackPanel Orientation="Horizontal" Spacing="6">
-                            <TextBlock Text="GP" FontSize="10" VerticalAlignment="Center" Foreground="#8B92A8" />
-                            <TextBlock Text="Warzone"
-                                       FontSize="11"
-                                       Foreground="#F0F2F8"
-                                       VerticalAlignment="Center" />
-                            <TextBlock Text="v"
-                                       FontSize="10"
-                                       Foreground="#00FF95"
-                                       VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Border>
+                    <ComboBox Classes="topbar-chip"
+                              ItemsSource="{Binding GameProfiles}"
+                              SelectedItem="{Binding SelectedGameProfile}"
+                              Width="140"
+                              HorizontalContentAlignment="Center"
+                              VerticalContentAlignment="Center"
+                              AutomationProperties.Name="Game profile selector" />
 
                     <!-- Update banner (only when available) -->
                     <Border Classes="pill pill-accent"
@@ -139,7 +127,7 @@
         <!-- ═══════════════════════════════════════════════════════════════
              CONTENT AREA
             ═══════════════════════════════════════════════════════════════ -->
-        <Border Grid.Row="1" Padding="24">
+        <Border Grid.Row="1" Padding="18,8,18,14">
             <ContentControl Content="{Binding CurrentView}"
                             Opacity="{Binding ContentOpacity}">
                 <ContentControl.Transitions>

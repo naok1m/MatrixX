@@ -9,9 +9,9 @@
     <Product>ReflexX</Product>
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <ApplicationIcon>Assets\matrixx-icon.ico</ApplicationIcon>
-    <Version>2.9.2</Version>
-    <AssemblyVersion>2.9.2.0</AssemblyVersion>
-    <FileVersion>2.9.2.0</FileVersion>
+    <Version>2.9.3</Version>
+    <AssemblyVersion>2.9.3.0</AssemblyVersion>
+    <FileVersion>2.9.3.0</FileVersion>
     <!--
       OpenCvSharp ships OpenCvSharpExtern.dll as a native dependency. For single-file
       publish, extract native libs to a temp dir at runtime so the P/Invoke loader
@@ -21,6 +21,7 @@
   </PropertyGroup>
   <ItemGroup>
     <AvaloniaResource Include="Assets\matrixx-icon.png" />
+    <AvaloniaResource Include="Assets\logo ReflexX.png" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="..\..\config\**\*">
