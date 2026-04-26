@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ReflexX</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark"><img src="./logo.png" alt="ReflexX" /></div>
+      </div>
+
+      <nav class="nav" aria-label="Primary">
+        <button class="nav-item active" data-view="dashboard">HOME</button>
+        <button class="nav-item" data-view="macros">MACROS</button>
+        <button class="nav-item" data-view="curve">CURVE</button>
+        <button class="nav-item" data-view="profiles">PROFILES</button>
+        <button class="nav-item" data-view="weapons">WEAPONS</button>
+        <button class="nav-item" data-view="logs">LOGS</button>
+        <button class="nav-item" data-view="settings">SETTINGS</button>
+      </nav>
+
+      <div class="top-actions">
+        <div class="game-chip">
+          <span class="game-icon">◆</span>
+          <select id="gameProfile" aria-label="Game profile">
+            <option>Warzone</option>
+            <option>Apex</option>
+            <option>Fortnite</option>
+            <option>Valorant</option>
+          </select>
+        </div>
+      </div>
+    </header>
+
+    <main class="view-stack">
+      <section class="view active" data-view-panel="dashboard">
+        <div class="page-heading">
+          <div>
+            <span class="eyebrow">HOME</span>
+            <h1>Dashboard</h1>
+          </div>
+          <div class="status-pill" id="connectionPill">
+            <span class="pulse-dot"></span>
+            <span id="connectionText">Disconnected</span>
+          </div>
+        </div>
+
+        <div class="stats-grid">
+          <article class="panel stat-panel">
+            <div class="panel-label"><span class="dot muted"></span> Connection</div>
+            <strong id="connectionStatus">Disconnected</strong>
+            <button class="primary-action" id="toggleConnection">Start</button>
+          </article>
+
+          <article class="panel stat-panel">
+            <div class="panel-label"><span class="dot blue"></span> Active Profile</div>
+            <strong class="accent-text" id="activeProfile">Default</strong>
+            <p>Macros and filters are resolved from this profile.</p>
+          </article>
+
+          <article class="panel stat-panel">
+            <div class="panel-label"><span class="dot amber"></span> Devices</div>
+            <div id="deviceList" class="device-list">No devices connected</div>
+          </article>
+        </div>
+
+        <article class="panel visualizer">
+          <div class="panel-header">
+            <div class="panel-title"><span class="dot amber"></span> Real-time Input</div>
+            <div class="legend">
+              <span><i class="dot muted"></i> Raw input</span>
+              <span><i class="dot green"></i> Output</span>
+            </div>
+          </div>
+
+          <div class="visual-grid">
+            <div class="stick-module">
+              <span>Left Stick</span>
+              <div class="stick"><i id="leftStick"></i></div>
+              <code id="leftStickReadout">X:0.00&nbsp;&nbsp;Y:0.00</code>
+            </div>
+
+            <div class="trigger-module">
+              <div>
+                <span>LT</span>
+                <div class="trigger"><i id="leftTrigger"></i></div>
+                <code id="leftTriggerReadout">0%</code>
+              </div>
+              <div>
+                <span>RT</span>
+                <div class="trigger"><i id="rightTrigger"></i></div>
+                <code id="rightTriggerReadout">0%</code>
+              </div>
+            </div>
+
+            <div class="stick-module">
+              <span>Right Stick</span>
+              <div class="stick cyan"><i id="rightStick"></i></div>
+              <code id="rightStickReadout">X:0.00&nbsp;&nbsp;Y:0.00</code>
+            </div>
+          </div>
+
+          <div class="input-matrix">
+            <div class="cluster">
+              <h3>D-Pad</h3>
+              <div class="diamond" data-group="raw-dpad">
+                <i data-key="dpadUp"></i><i data-key="dpadLeft"></i><i data-key="dpadRight"></i><i data-key="dpadDown"></i>
+              </div>
+            </div>
+            <div class="cluster">
+              <h3>Buttons</h3>
+              <div class="diamond" data-group="raw-buttons">
+                <i data-key="y"></i><i data-key="x"></i><i data-key="b"></i><i data-key="a"></i>
+              </div>
+            </div>
+            <div class="cluster shoulder">
+              <h3>Shoulder</h3>
+              <div><i data-key="lb">LB</i><i data-key="rb">RB</i></div>
+            </div>
+            <div class="matrix-split"></div>
+            <div class="cluster output">
+              <h3>D-Pad Out</h3>
+              <div class="diamond" data-group="out-dpad">
+                <i data-key="dpadUp"></i><i data-key="dpadLeft"></i><i data-key="dpadRight"></i><i data-key="dpadDown"></i>
+              </div>
+            </div>
+            <div class="cluster output">
+              <h3>Buttons Out</h3>
+              <div class="diamond" data-group="out-buttons">
+                <i data-key="y"></i><i data-key="x"></i><i data-key="b"></i><i data-key="a"></i>
+              </div>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section class="view" data-view-panel="macros"><div class="coming-soon">Macro Studio</div></section>
+      <section class="view" data-view-panel="curve"><div class="coming-soon">Curve Lab</div></section>
+      <section class="view" data-view-panel="profiles"><div class="coming-soon">Profiles</div></section>
+      <section class="view" data-view-panel="weapons"><div class="coming-soon">Weapon Detection</div></section>
+      <section class="view" data-view-panel="logs"><div class="coming-soon">Telemetry Logs</div></section>
+      <section class="view" data-view-panel="settings"><div class="coming-soon">Settings</div></section>
+    </main>
+
+    <footer class="statusbar">
+      <span><i class="dot blue"></i> Profile <strong id="footerProfile">Default</strong></span>
+      <span id="footerStatus">Ready</span>
+      <span>Precision in every input</span>
+    </footer>
+  </div>
+
+  <script src="./app.js"></script>
+</body>
+</html>
