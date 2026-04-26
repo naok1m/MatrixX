@@ -249,38 +249,43 @@
          Active tab gets a glowing underline.
         ═══════════════════════════════════════════════════════════════════ -->
     <Style Selector="ListBoxItem.tab">
-        <Setter Property="Padding" Value="16,0" />
+        <Setter Property="Padding" Value="20,0" />
         <Setter Property="MinHeight" Value="60" />
         <Setter Property="Background" Value="Transparent" />
-        <Setter Property="Foreground" Value="#8B92A8" />
+        <Setter Property="Foreground" Value="#6F7689" />
         <Setter Property="FontSize" Value="13" />
         <Setter Property="FontWeight" Value="Medium" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="CornerRadius" Value="0" />
-        <Setter Property="BorderThickness" Value="0,0,0,3" />
+        <Setter Property="BorderThickness" Value="0,0,0,2" />
         <Setter Property="BorderBrush" Value="Transparent" />
         <Setter Property="Transitions">
             <Setter.Value>
                 <Transitions>
-                    <BrushTransition Property="Foreground" Duration="0:0:0.15" />
-                    <BrushTransition Property="BorderBrush" Duration="0:0:0.18" />
+                    <BrushTransition Property="Foreground" Duration="0:0:0.18" Easing="CubicEaseOut" />
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.22" Easing="CubicEaseOut" />
                 </Transitions>
             </Setter.Value>
         </Setter>
     </Style>
+    <!-- Hover: text brightens to white, no underline -->
     <Style Selector="ListBoxItem.tab:pointerover">
-        <Setter Property="Foreground" Value="#D0D4E0" />
+        <Setter Property="Foreground" Value="#FFFFFF" />
     </Style>
     <Style Selector="ListBoxItem.tab:pointerover /template/ ContentPresenter">
         <Setter Property="Background" Value="Transparent" />
     </Style>
+    <!-- Selected: green text + subtle 2px green underline (no weight change) -->
     <Style Selector="ListBoxItem.tab:selected">
         <Setter Property="Foreground" Value="#00FF95" />
         <Setter Property="BorderBrush" Value="#00FF95" />
-        <Setter Property="FontWeight" Value="SemiBold" />
     </Style>
     <Style Selector="ListBoxItem.tab:selected /template/ ContentPresenter">
         <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <!-- Selected + hover: keep green, slight brightness boost -->
+    <Style Selector="ListBoxItem.tab:selected:pointerover">
+        <Setter Property="Foreground" Value="#22FFAB" />
     </Style>
 
     <!-- ═══ Sidebar nav (vertical) — used inside views (e.g. Macros categories) ═ -->
@@ -347,17 +352,11 @@
         <Setter Property="MinHeight" Value="28" />
     </Style>
 
-    <!-- Filled (decrease) track — gradient green → cyan -->
+    <!-- Filled (decrease) track — solid green with strong glow halo -->
     <Style Selector="Slider /template/ Track > Border">
         <Setter Property="CornerRadius" Value="2" />
-        <Setter Property="Background">
-            <Setter.Value>
-                <LinearGradientBrush StartPoint="0%,50%" EndPoint="100%,50%">
-                    <GradientStop Color="#00FF95" Offset="0" />
-                    <GradientStop Color="#00B7FF" Offset="1" />
-                </LinearGradientBrush>
-            </Setter.Value>
-        </Setter>
+        <Setter Property="Background" Value="#00FF95" />
+        <Setter Property="BoxShadow" Value="0 0 8 0 #6000FF95, 0 0 16 0 #3000FF95" />
     </Style>
 
     <!-- Unfilled (increase) track — dark base -->
@@ -366,13 +365,13 @@
         <Setter Property="CornerRadius" Value="2" />
     </Style>
 
-    <!-- Thumb — green dot with glow, smooth size transition -->
+    <!-- Thumb — bright green dot with strong glow halo -->
     <Style Selector="Slider /template/ Thumb /template/ Border">
         <Setter Property="Background" Value="#00FF95" />
         <Setter Property="CornerRadius" Value="100" />
         <Setter Property="Width" Value="16" />
         <Setter Property="Height" Value="16" />
-        <Setter Property="BoxShadow" Value="0 0 0 3 #3000FF95, 0 0 10 0 #3000FF95" />
+        <Setter Property="BoxShadow" Value="0 0 0 4 #5000FF95, 0 0 14 2 #6000FF95, 0 0 28 6 #3000FF95" />
         <Setter Property="Transitions">
             <Setter.Value>
                 <Transitions>
@@ -384,11 +383,11 @@
         </Setter>
     </Style>
 
-    <!-- Thumb hover — slightly larger + stronger glow -->
+    <!-- Thumb hover — larger + brighter glow -->
     <Style Selector="Slider /template/ Thumb:pointerover /template/ Border">
         <Setter Property="Width" Value="18" />
         <Setter Property="Height" Value="18" />
-        <Setter Property="BoxShadow" Value="0 0 0 5 #5000FF95, 0 0 16 2 #5000FF95" />
+        <Setter Property="BoxShadow" Value="0 0 0 6 #6000FF95, 0 0 20 4 #8000FF95, 0 0 36 8 #4000FF95" />
     </Style>
 
     <!-- Thumb press — max size + brightest glow -->
@@ -396,7 +395,7 @@
         <Setter Property="Width" Value="20" />
         <Setter Property="Height" Value="20" />
         <Setter Property="Background" Value="#22FFAB" />
-        <Setter Property="BoxShadow" Value="0 0 0 7 #6000FF95, 0 0 24 4 #6000FF95" />
+        <Setter Property="BoxShadow" Value="0 0 0 8 #8000FF95, 0 0 28 6 #A000FF95, 0 0 48 10 #5000FF95" />
     </Style>
 
     <!-- ═══ Toggle (CheckBox styled as iOS-pill) ═══════════════════════════ -->
