@@ -8,7 +8,7 @@
     <Grid ColumnDefinitions="300,*" Margin="4">
 
         <!-- ═══ Profile list sidebar ═══════════════════════════════════════ -->
-        <Border Classes="card" Grid.Column="0" Margin="0,0,10,0" Padding="16">
+        <Border Classes="card card-interactive" Grid.Column="0" Margin="0,0,10,0" Padding="16">
             <DockPanel>
 
                 <!-- Header row -->
@@ -81,7 +81,7 @@
                     </ListBox.Styles>
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <Border CornerRadius="10" Padding="12,10"
+                                <Border Classes="item-card" CornerRadius="10" Padding="12,10"
                                     Background="#161A24"
                                     BorderThickness="1" BorderBrush="#1F2533">
                                 <Grid ColumnDefinitions="Auto,*,Auto">
@@ -117,7 +117,7 @@
         </Border>
 
         <!-- ═══ Profile detail panel ════════════════════════════════════════ -->
-        <Border Classes="card" Grid.Column="1">
+        <Border Classes="card card-interactive" Grid.Column="1">
             <ScrollViewer>
                 <StackPanel Spacing="20"
                             IsEnabled="{Binding SelectedProfile, Converter={x:Static ObjectConverters.IsNotNull}}">
@@ -159,7 +159,7 @@
                         <ItemsControl ItemsSource="{Binding SelectedProfile.AssociatedProcesses}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Background="#161A24" BorderBrush="#2A3345"
+                                        <Border Classes="item-card" Background="#161A24" BorderBrush="#2A3345"
                                             BorderThickness="1" CornerRadius="8"
                                             Padding="12,8" Margin="0,0,0,6">
                                         <Grid ColumnDefinitions="*,Auto">

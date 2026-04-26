@@ -69,7 +69,7 @@
                          AutomationProperties.Name="Main navigation">
                     <ListBox.ItemsPanel>
                         <ItemsPanelTemplate>
-                            <StackPanel Orientation="Horizontal" Spacing="2" />
+                            <StackPanel Orientation="Horizontal" Spacing="8" />
                         </ItemsPanelTemplate>
                     </ListBox.ItemsPanel>
                     <ListBoxItem Classes="tab" Content="Home" />

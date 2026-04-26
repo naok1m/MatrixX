@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Media;
 
 namespace InputBusX.UI.Controls;
@@ -15,9 +16,22 @@ public sealed class ResponseCurveCanvas : Control
     public static readonly StyledProperty<double> ExponentProperty =
         AvaloniaProperty.Register<ResponseCurveCanvas, double>(nameof(Exponent), defaultValue: 1.0);
 
+    public static readonly StyledProperty<double> CurrentInputProperty =
+        AvaloniaProperty.Register<ResponseCurveCanvas, double>(nameof(CurrentInput), defaultValue: double.NaN);
+
+    private bool _hasHoverInput;
+    private double _hoverInput;
+
     static ResponseCurveCanvas()
     {
-        AffectsRender<ResponseCurveCanvas>(DeadzoneProperty, AntiDeadzoneProperty, ExponentProperty);
+        AffectsRender<ResponseCurveCanvas>(DeadzoneProperty, AntiDeadzoneProperty, ExponentProperty, CurrentInputProperty);
+    }
+
+    public ResponseCurveCanvas()
+    {
+        PointerMoved += OnPointerMoved;
+        PointerEntered += OnPointerEntered;
+        PointerExited += OnPointerExited;
     }
 
     public double Deadzone
@@ -38,6 +52,12 @@ public sealed class ResponseCurveCanvas : Control
         set => SetValue(ExponentProperty, value);
     }
 
+    public double CurrentInput
+    {
+        get => GetValue(CurrentInputProperty);
+        set => SetValue(CurrentInputProperty, value);
+    }
+
     public override void Render(DrawingContext ctx)
     {
         double w = Bounds.Width;
@@ -48,7 +68,7 @@ public sealed class ResponseCurveCanvas : Control
         var bgBrush = new SolidColorBrush(Color.Parse("#080B11"));
 
         // Very subtle grid — barely visible, doesn't compete with curve
-        var gridPen = new Pen(new SolidColorBrush(Color.Parse("#0E1520")), 1);
+        var gridPen = new Pen(new SolidColorBrush(Color.Parse("#111928")), 1);
 
         // Deadzone shading
         var dzFill    = new SolidColorBrush(Color.Parse("#0C1018"));
@@ -56,13 +76,13 @@ public sealed class ResponseCurveCanvas : Control
                             dashStyle: new DashStyle([3, 4], 0));
 
         // Reference 1:1 line — dotted gray, subtle
-        var linearPen = new Pen(new SolidColorBrush(Color.Parse("#2A3345")), 1,
+        var linearPen = new Pen(new SolidColorBrush(Color.Parse("#5A667E")), 1,
                             dashStyle: new DashStyle([5, 5], 0));
 
         // Curve glow passes — wide outer, medium inner
-        var glowOuterPen = new Pen(new SolidColorBrush(Color.Parse("#1800B7FF")), 12,
+        var glowOuterPen = new Pen(new SolidColorBrush(Color.Parse("#1A00B7FF")), 14,
                                lineCap: PenLineCap.Round, lineJoin: PenLineJoin.Round);
-        var glowInnerPen = new Pen(new SolidColorBrush(Color.Parse("#3000B7FF")), 6,
+        var glowInnerPen = new Pen(new SolidColorBrush(Color.Parse("#3600B7FF")), 7,
                                lineCap: PenLineCap.Round, lineJoin: PenLineJoin.Round);
 
         // Curve — cyan gradient stroke
@@ -77,8 +97,12 @@ public sealed class ResponseCurveCanvas : Control
                 new GradientStop(Color.Parse("#00B7FF"), 1.0),
             ]
         };
-        var curvePen = new Pen(curveBrush, 2.5,
+        var curvePen = new Pen(curveBrush, 3.2,
                            lineCap: PenLineCap.Round, lineJoin: PenLineJoin.Round);
+
+        var markerGlowBrush = new SolidColorBrush(Color.Parse("#5000B7FF"));
+        var markerBrush = new SolidColorBrush(Color.Parse("#00B7FF"));
+        var markerRingPen = new Pen(new SolidColorBrush(Color.Parse("#B000FF95")), 1.5);
 
         var borderPen = new Pen(new SolidColorBrush(Color.Parse("#1F2533")), 1);
 
@@ -117,8 +141,59 @@ public sealed class ResponseCurveCanvas : Control
         ctx.DrawGeometry(null, glowInnerPen, geo);
         ctx.DrawGeometry(null, curvePen, geo);
 
+        // Live marker follows either bound input or user hover to make the curve interactive.
+        double markerInput = double.NaN;
+        if (!double.IsNaN(CurrentInput))
+        {
+            markerInput = Math.Clamp(CurrentInput, 0, 1);
+        }
+        else if (_hasHoverInput)
+        {
+            markerInput = Math.Clamp(_hoverInput, 0, 1);
+        }
+
+        if (!double.IsNaN(markerInput))
+        {
+            double markerOutput = ComputeOutput(markerInput, dz, adz, exp);
+            var markerPoint = new Point(markerInput * w, (1.0 - markerOutput) * h);
+
+            ctx.FillEllipse(markerGlowBrush, markerPoint, 9, 9);
+            ctx.FillEllipse(markerBrush, markerPoint, 4.5, 4.5);
+            ctx.DrawEllipse(null, markerRingPen, markerPoint, 6, 6);
+        }
+
         // ── Border ───────────────────────────────────────────────────────────
         ctx.DrawRectangle(null, borderPen, new Rect(0.5, 0.5, w - 1, h - 1));
+    }
+
+    private void OnPointerEntered(object? sender, PointerEventArgs e)
+    {
+        UpdateHoverInput(e);
+    }
+
+    private void OnPointerMoved(object? sender, PointerEventArgs e)
+    {
+        UpdateHoverInput(e);
+    }
+
+    private void OnPointerExited(object? sender, PointerEventArgs e)
+    {
+        _hasHoverInput = false;
+        InvalidateVisual();
+    }
+
+    private void UpdateHoverInput(PointerEventArgs e)
+    {
+        if (Bounds.Width <= 0)
+        {
+            _hasHoverInput = false;
+            return;
+        }
+
+        var point = e.GetPosition(this);
+        _hoverInput = Math.Clamp(point.X / Bounds.Width, 0, 1);
+        _hasHoverInput = true;
+        InvalidateVisual();
     }
 
     private static StreamGeometry BuildCurveGeometry(

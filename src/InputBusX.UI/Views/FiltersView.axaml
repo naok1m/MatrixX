@@ -20,7 +20,7 @@
             <StackPanel Spacing="10">
 
                 <!-- Deadzone -->
-                <Border Classes="card">
+                <Border Classes="card card-interactive">
                     <StackPanel Spacing="12">
                         <TextBlock Text="Deadzone" Classes="section-header" />
 
@@ -34,6 +34,9 @@
                             </TextBlock>
                             <Slider Value="{Binding LeftStickDeadzone}"
                                     Minimum="0" Maximum="0.5"
+                                    ToolTip.Tip="{Binding LeftStickDeadzone, StringFormat='Left Stick {0:P0}'}"
+                                    ToolTip.ShowDelay="0"
+                                    ToolTip.Placement="Top"
                                     AutomationProperties.Name="Left stick deadzone" />
                         </StackPanel>
 
@@ -47,6 +50,9 @@
                             </TextBlock>
                             <Slider Value="{Binding RightStickDeadzone}"
                                     Minimum="0" Maximum="0.5"
+                                    ToolTip.Tip="{Binding RightStickDeadzone, StringFormat='Right Stick {0:P0}'}"
+                                    ToolTip.ShowDelay="0"
+                                    ToolTip.Placement="Top"
                                     AutomationProperties.Name="Right stick deadzone" />
                         </StackPanel>
 
@@ -60,13 +66,16 @@
                             </TextBlock>
                             <Slider Value="{Binding TriggerDeadzone}"
                                     Minimum="0" Maximum="0.5"
+                                    ToolTip.Tip="{Binding TriggerDeadzone, StringFormat='Trigger {0:P0}'}"
+                                    ToolTip.ShowDelay="0"
+                                    ToolTip.Placement="Top"
                                     AutomationProperties.Name="Trigger deadzone" />
                         </StackPanel>
                     </StackPanel>
                 </Border>
 
                 <!-- Anti-Deadzone -->
-                <Border Classes="card">
+                <Border Classes="card card-interactive">
                     <StackPanel Spacing="12">
                         <TextBlock Text="Anti-Deadzone" Classes="section-header" />
                         <TextBlock Text="Adds minimum output to compensate for in-game deadzones."
@@ -82,6 +91,9 @@
                             </TextBlock>
                             <Slider Value="{Binding LeftStickAntiDeadzone}"
                                     Minimum="0" Maximum="0.5"
+                                    ToolTip.Tip="{Binding LeftStickAntiDeadzone, StringFormat='Left Stick {0:P0}'}"
+                                    ToolTip.ShowDelay="0"
+                                    ToolTip.Placement="Top"
                                     AutomationProperties.Name="Left stick anti-deadzone" />
                         </StackPanel>
 
@@ -95,13 +107,16 @@
                             </TextBlock>
                             <Slider Value="{Binding RightStickAntiDeadzone}"
                                     Minimum="0" Maximum="0.5"
+                                    ToolTip.Tip="{Binding RightStickAntiDeadzone, StringFormat='Right Stick {0:P0}'}"
+                                    ToolTip.ShowDelay="0"
+                                    ToolTip.Placement="Top"
                                     AutomationProperties.Name="Right stick anti-deadzone" />
                         </StackPanel>
                     </StackPanel>
                 </Border>
 
                 <!-- Response Curve -->
-                <Border Classes="card">
+                <Border Classes="card card-interactive">
                     <StackPanel Spacing="12">
                         <TextBlock Text="Response Curve" Classes="section-header" />
                         <TextBlock Classes="label" TextWrapping="Wrap">
@@ -125,13 +140,16 @@
                                     Minimum="0.1" Maximum="4.0"
                                     TickFrequency="0.05"
                                     IsSnapToTickEnabled="True"
+                                    ToolTip.Tip="{Binding ResponseCurveExponent, StringFormat='Exponent {0:F2}'}"
+                                    ToolTip.ShowDelay="0"
+                                    ToolTip.Placement="Top"
                                     AutomationProperties.Name="Response curve exponent" />
                         </StackPanel>
                     </StackPanel>
                 </Border>
 
                 <!-- Smoothing -->
-                <Border Classes="card">
+                <Border Classes="card card-interactive">
                     <StackPanel Spacing="12">
                         <TextBlock Text="Smoothing" Classes="section-header" />
 
@@ -148,6 +166,9 @@
                                 </TextBlock.Text>
                             </TextBlock>
                             <Slider Value="{Binding SmoothingFactor}"
+                                    ToolTip.Tip="{Binding SmoothingFactor, StringFormat='Factor {0:P0}'}"
+                                    ToolTip.ShowDelay="0"
+                                    ToolTip.Placement="Top"
                                     AutomationProperties.Name="Smoothing factor" />
                             <TextBlock Text="Higher = smoother but adds latency."
                                        Classes="muted" />
@@ -173,7 +194,7 @@
 
         <!-- ── Right: live response curve preview ───────────────────────── -->
         <Border Grid.Row="1" Grid.Column="1"
-                Classes="card"
+            Classes="card card-interactive"
                 Width="240"
                 VerticalAlignment="Top"
                 Margin="0,0,4,4">
@@ -188,7 +209,12 @@
                 </StackPanel>
 
                 <!-- The canvas — mirrors exactly what the filter produces -->
-                <Border CornerRadius="6" ClipToBounds="True">
+                <Border CornerRadius="12"
+                        BorderBrush="#1F2533"
+                        BorderThickness="1"
+                        Background="#0B0E14"
+                        Padding="8"
+                        ClipToBounds="True">
                     <controls:ResponseCurveCanvas
                         Deadzone="{Binding LeftStickDeadzone}"
                         AntiDeadzone="{Binding LeftStickAntiDeadzone}"

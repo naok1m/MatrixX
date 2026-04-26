@@ -70,7 +70,7 @@
 
     <Style Selector="TextBlock.muted">
         <Setter Property="FontSize" Value="11" />
-        <Setter Property="Foreground" Value="#4A5066" />
+        <Setter Property="Foreground" Value="#7B869E" />
     </Style>
 
     <!-- Numbers / stats — monospace for technical feel -->
@@ -87,7 +87,7 @@
     <Style Selector="Border.card">
         <Setter Property="Background" Value="#0F1218" />
         <Setter Property="CornerRadius" Value="14" />
-        <Setter Property="Padding" Value="20" />
+        <Setter Property="Padding" Value="22" />
         <Setter Property="BorderBrush" Value="#1F2533" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="BoxShadow" Value="0 4 32 0 #60000000, 0 1 0 0 #0DFFFFFF" />
@@ -116,8 +116,8 @@
         </Setter>
     </Style>
     <Style Selector="Border.card-interactive:pointerover">
-        <Setter Property="BorderBrush" Value="#3A4A60" />
-        <Setter Property="BoxShadow" Value="0 12 48 0 #90000000, 0 0 24 4 #4000FF95" />
+        <Setter Property="BorderBrush" Value="#2F3A4E" />
+        <Setter Property="BoxShadow" Value="0 12 48 0 #90000000, 0 0 18 2 #2800FF95" />
         <Setter Property="RenderTransform" Value="translateY(-2px)" />
     </Style>
 
@@ -129,6 +129,77 @@
         <Setter Property="BorderBrush" Value="#2000FF95" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="BoxShadow" Value="0 0 32 8 #2A00FF95, 0 4 32 0 #60000000" />
+    </Style>
+
+    <!-- section-panel: card subsection with colored left rail and hover lift -->
+    <Style Selector="Border.section-panel">
+        <Setter Property="Background" Value="#0F1218" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="BorderBrush" Value="#1F2533" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="18,16" />
+        <Setter Property="RenderTransform" Value="translateY(0px)" />
+        <Setter Property="Transitions">
+            <Setter.Value>
+                <Transitions>
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.2" />
+                    <BoxShadowsTransition Property="BoxShadow" Duration="0:0:0.2" />
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.2" Easing="CubicEaseOut" />
+                </Transitions>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style Selector="Border.section-panel:pointerover">
+        <Setter Property="BoxShadow" Value="0 10 28 0 #70000000" />
+        <Setter Property="RenderTransform" Value="translateY(-2px)" />
+    </Style>
+
+    <!-- stat-card: dashboard metric cards with subtle premium hover -->
+    <Style Selector="Border.stat-card">
+        <Setter Property="Background" Value="#0F1218" />
+        <Setter Property="CornerRadius" Value="14" />
+        <Setter Property="Padding" Value="18,16" />
+        <Setter Property="BorderBrush" Value="#1F2533" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="BoxShadow" Value="0 4 24 0 #50000000" />
+        <Setter Property="RenderTransform" Value="translateY(0px)" />
+        <Setter Property="Transitions">
+            <Setter.Value>
+                <Transitions>
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.2" />
+                    <BoxShadowsTransition Property="BoxShadow" Duration="0:0:0.2" />
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.2" Easing="CubicEaseOut" />
+                </Transitions>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style Selector="Border.stat-card:pointerover">
+        <Setter Property="BorderBrush" Value="#2F3A4E" />
+        <Setter Property="BoxShadow" Value="0 10 34 0 #70000000" />
+        <Setter Property="RenderTransform" Value="translateY(-2px)" />
+    </Style>
+
+    <!-- item-card: compact row/card used in list items -->
+    <Style Selector="Border.item-card">
+        <Setter Property="Background" Value="#161A24" />
+        <Setter Property="BorderBrush" Value="#1F2533" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="RenderTransform" Value="translateY(0px)" />
+        <Setter Property="Transitions">
+            <Setter.Value>
+                <Transitions>
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.18" />
+                    <BoxShadowsTransition Property="BoxShadow" Duration="0:0:0.18" />
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.18" Easing="CubicEaseOut" />
+                </Transitions>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style Selector="Border.item-card:pointerover">
+        <Setter Property="BorderBrush" Value="#2F3A4E" />
+        <Setter Property="BoxShadow" Value="0 8 18 0 #50000000" />
+        <Setter Property="RenderTransform" Value="translateY(-1px)" />
     </Style>
 
     <Style Selector="Border.card-flush">
@@ -154,11 +225,14 @@
         <Setter Property="Transitions">
             <Setter.Value>
                 <Transitions>
-                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.12" />
-                    <BrushTransition Property="Background" Duration="0:0:0.12" />
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.2" Easing="CubicEaseOut" />
+                    <BrushTransition Property="Background" Duration="0:0:0.18" />
                 </Transitions>
             </Setter.Value>
         </Setter>
+    </Style>
+    <Style Selector="Button:pointerover">
+        <Setter Property="RenderTransform" Value="scale(1.015)" />
     </Style>
     <Style Selector="Button:pressed">
         <Setter Property="RenderTransform" Value="scale(0.97)" />
@@ -249,7 +323,7 @@
          Active tab gets a glowing underline.
         ═══════════════════════════════════════════════════════════════════ -->
     <Style Selector="ListBoxItem.tab">
-        <Setter Property="Padding" Value="16,0" />
+        <Setter Property="Padding" Value="20,0" />
         <Setter Property="MinHeight" Value="60" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="#8B92A8" />
@@ -257,27 +331,34 @@
         <Setter Property="FontWeight" Value="Medium" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="CornerRadius" Value="0" />
-        <Setter Property="BorderThickness" Value="0,0,0,3" />
+        <Setter Property="BorderThickness" Value="0,0,0,1" />
         <Setter Property="BorderBrush" Value="Transparent" />
         <Setter Property="Transitions">
             <Setter.Value>
                 <Transitions>
-                    <BrushTransition Property="Foreground" Duration="0:0:0.15" />
-                    <BrushTransition Property="BorderBrush" Duration="0:0:0.18" />
+                    <BrushTransition Property="Foreground" Duration="0:0:0.2" />
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.2" />
+                    <ThicknessTransition Property="BorderThickness" Duration="0:0:0.2" Easing="CubicEaseOut" />
                 </Transitions>
             </Setter.Value>
         </Setter>
     </Style>
     <Style Selector="ListBoxItem.tab:pointerover">
         <Setter Property="Foreground" Value="#D0D4E0" />
+        <Setter Property="BorderThickness" Value="0,0,0,2" />
+        <Setter Property="BorderBrush" Value="#5000FF95" />
     </Style>
     <Style Selector="ListBoxItem.tab:pointerover /template/ ContentPresenter">
         <Setter Property="Background" Value="Transparent" />
     </Style>
     <Style Selector="ListBoxItem.tab:selected">
         <Setter Property="Foreground" Value="#00FF95" />
+        <Setter Property="BorderThickness" Value="0,0,0,3" />
         <Setter Property="BorderBrush" Value="#00FF95" />
         <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="ListBoxItem.tab:selected /template/ ContentPresenter">
+        <Setter Property="BoxShadow" Value="0 8 20 0 #1800FF95" />
     </Style>
     <Style Selector="ListBoxItem.tab:selected /template/ ContentPresenter">
         <Setter Property="Background" Value="Transparent" />
@@ -347,6 +428,14 @@
         <Setter Property="MinHeight" Value="28" />
     </Style>
 
+    <Style Selector="Slider /template/ Track">
+        <Setter Property="Height" Value="4" />
+    </Style>
+
+    <Style Selector="Slider:pointerover /template/ Track > RepeatButton:last-child /template/ Border">
+        <Setter Property="Background" Value="#252C3D" />
+    </Style>
+
     <!-- Filled (decrease) track — gradient green → cyan -->
     <Style Selector="Slider /template/ Track > Border">
         <Setter Property="CornerRadius" Value="2" />
@@ -370,15 +459,15 @@
     <Style Selector="Slider /template/ Thumb /template/ Border">
         <Setter Property="Background" Value="#00FF95" />
         <Setter Property="CornerRadius" Value="100" />
-        <Setter Property="Width" Value="16" />
-        <Setter Property="Height" Value="16" />
+        <Setter Property="Width" Value="15" />
+        <Setter Property="Height" Value="15" />
         <Setter Property="BoxShadow" Value="0 0 0 3 #3000FF95, 0 0 10 0 #3000FF95" />
         <Setter Property="Transitions">
             <Setter.Value>
                 <Transitions>
-                    <DoubleTransition Property="Width" Duration="0:0:0.15" Easing="CubicEaseOut" />
-                    <DoubleTransition Property="Height" Duration="0:0:0.15" Easing="CubicEaseOut" />
-                    <BoxShadowsTransition Property="BoxShadow" Duration="0:0:0.15" />
+                    <DoubleTransition Property="Width" Duration="0:0:0.18" Easing="CubicEaseOut" />
+                    <DoubleTransition Property="Height" Duration="0:0:0.18" Easing="CubicEaseOut" />
+                    <BoxShadowsTransition Property="BoxShadow" Duration="0:0:0.18" />
                 </Transitions>
             </Setter.Value>
         </Setter>
@@ -386,15 +475,15 @@
 
     <!-- Thumb hover — slightly larger + stronger glow -->
     <Style Selector="Slider /template/ Thumb:pointerover /template/ Border">
-        <Setter Property="Width" Value="18" />
-        <Setter Property="Height" Value="18" />
+        <Setter Property="Width" Value="16" />
+        <Setter Property="Height" Value="16" />
         <Setter Property="BoxShadow" Value="0 0 0 5 #5000FF95, 0 0 16 2 #5000FF95" />
     </Style>
 
     <!-- Thumb press — max size + brightest glow -->
     <Style Selector="Slider /template/ Thumb:pressed /template/ Border">
-        <Setter Property="Width" Value="20" />
-        <Setter Property="Height" Value="20" />
+        <Setter Property="Width" Value="18" />
+        <Setter Property="Height" Value="18" />
         <Setter Property="Background" Value="#22FFAB" />
         <Setter Property="BoxShadow" Value="0 0 0 7 #6000FF95, 0 0 24 4 #6000FF95" />
     </Style>

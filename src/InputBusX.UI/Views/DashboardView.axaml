@@ -40,19 +40,8 @@
 
             <!-- ═══ Stat row ═══════════════════════════════════════════════════ -->
             <Grid ColumnDefinitions="*,*,*" Margin="0" HorizontalAlignment="Stretch">
-                <Grid.Styles>
-                    <Style Selector="Border.stat-card">
-                        <Setter Property="Background" Value="#0F1218" />
-                        <Setter Property="CornerRadius" Value="14" />
-                        <Setter Property="Padding" Value="18,16" />
-                        <Setter Property="BorderBrush" Value="#1F2533" />
-                        <Setter Property="BorderThickness" Value="1" />
-                        <Setter Property="BoxShadow" Value="0 4 24 0 #50000000" />
-                    </Style>
-                </Grid.Styles>
-
                 <!-- Connection card -->
-                <Border Classes="stat-card" Grid.Column="0" Margin="0,0,8,0">
+                <Border Classes="stat-card card-interactive" Grid.Column="0" Margin="0,0,8,0">
                     <StackPanel Spacing="12">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <Ellipse Width="8" Height="8" VerticalAlignment="Center"
@@ -72,7 +61,7 @@
                 </Border>
 
                 <!-- Profile card -->
-                <Border Classes="stat-card" Grid.Column="1" Margin="0,0,8,0">
+                <Border Classes="stat-card card-interactive" Grid.Column="1" Margin="0,0,8,0">
                     <StackPanel Spacing="12">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <Ellipse Width="8" Height="8" VerticalAlignment="Center" Fill="#00B7FF" />
@@ -86,7 +75,7 @@
                 </Border>
 
                 <!-- Devices card -->
-                <Border Classes="stat-card" Grid.Column="2">
+                <Border Classes="stat-card card-interactive" Grid.Column="2">
                     <StackPanel Spacing="12">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <Ellipse Width="8" Height="8" VerticalAlignment="Center" Fill="#FFB547" />
@@ -109,7 +98,7 @@
             </Grid>
 
             <!-- ═══ Live Input Visualizer ══════════════════════════════════════ -->
-            <Border Classes="card" Padding="20">
+            <Border Classes="card card-interactive" Padding="20">
                 <StackPanel Spacing="18">
 
                     <!-- Section title -->
