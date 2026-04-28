@@ -24,6 +24,15 @@ internal static class Program
         ApplicationConfiguration.Initialize();
         using var services = new WebShellServices();
         services.Initialize();
+
+        // Defensive shutdown: if the process exits abnormally (unhandled
+        // exception, taskbar close, log-off) FormClosing may not fire and
+        // the ViGEm virtual controller stays plugged in the driver until
+        // reboot — which then makes Windows refuse to recognize the next
+        // virtual instance. Hook ProcessExit to disconnect cleanly.
+        AppDomain.CurrentDomain.ProcessExit += (_, _) => services.Shutdown();
+        AppDomain.CurrentDomain.UnhandledException += (_, _) => services.Shutdown();
+
         System.Windows.Forms.Application.Run(new ShellForm(services));
     }
 

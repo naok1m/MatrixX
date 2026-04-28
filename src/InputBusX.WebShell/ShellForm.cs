@@ -58,16 +58,26 @@ public sealed class ShellForm : Form
 
             _bridge.StateChanged += (_, json) =>
             {
-                if (IsDisposed || _webView.CoreWebView2 is null) return;
+                // Do NOT touch _webView.CoreWebView2 here — this handler fires on
+                // background threads (pipeline, log sink, device events) and the
+                // CoreWebView2 getter throws "can only be accessed from the UI
+                // thread" on newer WebView2 SDKs. Marshal first, check after.
+                if (IsDisposed || !IsHandleCreated) return;
                 try
                 {
                     BeginInvoke(() =>
                     {
-                        if (!IsDisposed && _webView.CoreWebView2 is not null)
-                        {
-                            _webView.CoreWebView2.PostWebMessageAsJson(json);
-                        }
+                        if (IsDisposed || _webView.IsDisposed) return;
+                        var core = _webView.CoreWebView2;
+                        if (core is null) return;
+                        try { core.PostWebMessageAsJson(json); }
+                        catch (ObjectDisposedException) { /* shutting down */ }
+                        catch (InvalidOperationException) { /* shutting down */ }
                     });
+                }
+                catch (ObjectDisposedException)
+                {
+                    // Stop button can race with form disposal.
                 }
                 catch (InvalidOperationException)
                 {
@@ -91,22 +101,36 @@ public sealed class ShellForm : Form
 
     private async void OnWebMessageReceived(object? sender, CoreWebView2WebMessageReceivedEventArgs e)
     {
+        var json = e.WebMessageAsJson;
         try
         {
-            await _bridge.HandleAsync(e.WebMessageAsJson);
+            await _bridge.HandleAsync(json);
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "WebShell command failed: {Message}", e.WebMessageAsJson);
-            if (_webView.CoreWebView2 is not null)
+            Log.Error(ex, "WebShell command failed: {Message}", json);
+            var payload = System.Text.Json.JsonSerializer.Serialize(new
             {
-                var payload = System.Text.Json.JsonSerializer.Serialize(new
+                type = "toast",
+                payload = new { level = "error", message = ex.Message }
+            });
+            // Continuation after await may resume on a thread-pool thread —
+            // marshal back to the UI thread before touching CoreWebView2.
+            if (IsDisposed || !IsHandleCreated) return;
+            try
+            {
+                BeginInvoke(() =>
                 {
-                    type = "toast",
-                    payload = new { level = "error", message = ex.Message }
+                    if (IsDisposed || _webView.IsDisposed) return;
+                    var core = _webView.CoreWebView2;
+                    if (core is null) return;
+                    try { core.PostWebMessageAsJson(payload); }
+                    catch (ObjectDisposedException) { }
+                    catch (InvalidOperationException) { }
                 });
-                _webView.CoreWebView2.PostWebMessageAsJson(payload);
             }
+            catch (ObjectDisposedException) { }
+            catch (InvalidOperationException) { }
         }
     }
 
