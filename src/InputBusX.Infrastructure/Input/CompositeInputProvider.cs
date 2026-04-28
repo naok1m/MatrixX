@@ -14,6 +14,7 @@ public sealed class CompositeInputProvider : IInputProvider
     private readonly XInputProvider _xinput;
     private readonly DirectInputProvider _dinput;
     private readonly ILogger<CompositeInputProvider> _logger;
+    private int _xinputConnectedCount;
 
     public event Action<InputDevice>? DeviceConnected;
     public event Action<InputDevice>? DeviceDisconnected;
@@ -28,13 +29,28 @@ public sealed class CompositeInputProvider : IInputProvider
         _dinput = dinput;
         _logger = logger;
 
-        _xinput.DeviceConnected    += d => DeviceConnected?.Invoke(d);
-        _xinput.DeviceDisconnected += d => DeviceDisconnected?.Invoke(d);
+        _xinput.DeviceConnected += d =>
+        {
+            Interlocked.Increment(ref _xinputConnectedCount);
+            DeviceConnected?.Invoke(d);
+        };
+        _xinput.DeviceDisconnected += d =>
+        {
+            Interlocked.Decrement(ref _xinputConnectedCount);
+            DeviceDisconnected?.Invoke(d);
+        };
         _xinput.StateUpdated       += (id, s) => StateUpdated?.Invoke(id, s);
 
         _dinput.DeviceConnected    += d => DeviceConnected?.Invoke(d);
         _dinput.DeviceDisconnected += d => DeviceDisconnected?.Invoke(d);
-        _dinput.StateUpdated       += (id, s) => StateUpdated?.Invoke(id, s);
+        // Suppress DInput state updates whenever an XInput controller is connected.
+        // The static &IG_ HID filter fails on some systems and the same physical pad
+        // gets read twice, fighting the pipeline. XInput wins when both see input.
+        _dinput.StateUpdated += (id, s) =>
+        {
+            if (Volatile.Read(ref _xinputConnectedCount) > 0) return;
+            StateUpdated?.Invoke(id, s);
+        };
     }
 
     public async Task StartAsync(CancellationToken ct)
