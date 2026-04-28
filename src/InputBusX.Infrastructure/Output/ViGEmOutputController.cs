@@ -90,18 +90,37 @@ public sealed class ViGEmOutputController : IOutputController
         {
             _controller?.Disconnect();
         }
-        catch { }
+        catch (Exception ex)
+        {
+            // Driver may already be down or the device unplugged — not fatal,
+            // but worth recording so a stuck virtual slot can be diagnosed.
+            _logger.LogDebug(ex, "ViGEm controller.Disconnect() threw during teardown");
+        }
 
         _controller = null;
         _virtualSlot = null;
-        _client?.Dispose();
+        try
+        {
+            _client?.Dispose();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "ViGEm client.Dispose() threw during teardown");
+        }
         _client = null;
         _logger.LogInformation("ViGEm controller disconnected");
     }
 
+    // Guards against log-flooding when ViGEmBus dies under us. SubmitReport
+    // is called ~1000 Hz; logging every failed call would write megabytes of
+    // identical errors. Cap to one log per second.
+    private long _lastErrorLogTicks;
+    private long _suppressedErrors;
+
     public void Update(GamepadState state)
     {
-        if (_controller is null) return;
+        var controller = _controller;
+        if (controller is null) return;
 
         var buttons = state.Buttons;
         short lx = state.LeftStick.X,  ly = state.LeftStick.Y;
@@ -117,36 +136,56 @@ public sealed class ViGEmOutputController : IOutputController
             lt == _lastLT && rt == _lastRT)
             return;
 
-        _lastButtons = buttons;
-        _lastLX = lx; _lastLY = ly;
-        _lastRX = rx; _lastRY = ry;
-        _lastLT = lt; _lastRT = rt;
+        try
+        {
+            controller.SetButtonState(Xbox360Button.A,            state.IsButtonPressed(GamepadButton.A));
+            controller.SetButtonState(Xbox360Button.B,            state.IsButtonPressed(GamepadButton.B));
+            controller.SetButtonState(Xbox360Button.X,            state.IsButtonPressed(GamepadButton.X));
+            controller.SetButtonState(Xbox360Button.Y,            state.IsButtonPressed(GamepadButton.Y));
+            controller.SetButtonState(Xbox360Button.Start,        state.IsButtonPressed(GamepadButton.Start));
+            controller.SetButtonState(Xbox360Button.Back,         state.IsButtonPressed(GamepadButton.Back));
+            controller.SetButtonState(Xbox360Button.LeftShoulder, state.IsButtonPressed(GamepadButton.LeftShoulder));
+            controller.SetButtonState(Xbox360Button.RightShoulder,state.IsButtonPressed(GamepadButton.RightShoulder));
+            controller.SetButtonState(Xbox360Button.LeftThumb,    state.IsButtonPressed(GamepadButton.LeftThumb));
+            controller.SetButtonState(Xbox360Button.RightThumb,   state.IsButtonPressed(GamepadButton.RightThumb));
+            controller.SetButtonState(Xbox360Button.Guide,        state.IsButtonPressed(GamepadButton.Guide));
+            controller.SetButtonState(Xbox360Button.Up,           state.IsButtonPressed(GamepadButton.DPadUp));
+            controller.SetButtonState(Xbox360Button.Down,         state.IsButtonPressed(GamepadButton.DPadDown));
+            controller.SetButtonState(Xbox360Button.Left,         state.IsButtonPressed(GamepadButton.DPadLeft));
+            controller.SetButtonState(Xbox360Button.Right,        state.IsButtonPressed(GamepadButton.DPadRight));
 
-        _controller.SetButtonState(Xbox360Button.A,            state.IsButtonPressed(GamepadButton.A));
-        _controller.SetButtonState(Xbox360Button.B,            state.IsButtonPressed(GamepadButton.B));
-        _controller.SetButtonState(Xbox360Button.X,            state.IsButtonPressed(GamepadButton.X));
-        _controller.SetButtonState(Xbox360Button.Y,            state.IsButtonPressed(GamepadButton.Y));
-        _controller.SetButtonState(Xbox360Button.Start,        state.IsButtonPressed(GamepadButton.Start));
-        _controller.SetButtonState(Xbox360Button.Back,         state.IsButtonPressed(GamepadButton.Back));
-        _controller.SetButtonState(Xbox360Button.LeftShoulder, state.IsButtonPressed(GamepadButton.LeftShoulder));
-        _controller.SetButtonState(Xbox360Button.RightShoulder,state.IsButtonPressed(GamepadButton.RightShoulder));
-        _controller.SetButtonState(Xbox360Button.LeftThumb,    state.IsButtonPressed(GamepadButton.LeftThumb));
-        _controller.SetButtonState(Xbox360Button.RightThumb,   state.IsButtonPressed(GamepadButton.RightThumb));
-        _controller.SetButtonState(Xbox360Button.Guide,        state.IsButtonPressed(GamepadButton.Guide));
-        _controller.SetButtonState(Xbox360Button.Up,           state.IsButtonPressed(GamepadButton.DPadUp));
-        _controller.SetButtonState(Xbox360Button.Down,         state.IsButtonPressed(GamepadButton.DPadDown));
-        _controller.SetButtonState(Xbox360Button.Left,         state.IsButtonPressed(GamepadButton.DPadLeft));
-        _controller.SetButtonState(Xbox360Button.Right,        state.IsButtonPressed(GamepadButton.DPadRight));
+            controller.SetAxisValue(Xbox360Axis.LeftThumbX,  lx);
+            controller.SetAxisValue(Xbox360Axis.LeftThumbY,  ly);
+            controller.SetAxisValue(Xbox360Axis.RightThumbX, rx);
+            controller.SetAxisValue(Xbox360Axis.RightThumbY, ry);
 
-        _controller.SetAxisValue(Xbox360Axis.LeftThumbX,  lx);
-        _controller.SetAxisValue(Xbox360Axis.LeftThumbY,  ly);
-        _controller.SetAxisValue(Xbox360Axis.RightThumbX, rx);
-        _controller.SetAxisValue(Xbox360Axis.RightThumbY, ry);
+            controller.SetSliderValue(Xbox360Slider.LeftTrigger,  lt);
+            controller.SetSliderValue(Xbox360Slider.RightTrigger, rt);
 
-        _controller.SetSliderValue(Xbox360Slider.LeftTrigger,  lt);
-        _controller.SetSliderValue(Xbox360Slider.RightTrigger, rt);
+            controller.SubmitReport();
 
-        _controller.SubmitReport();
+            _lastButtons = buttons;
+            _lastLX = lx; _lastLY = ly;
+            _lastRX = rx; _lastRY = ry;
+            _lastLT = lt; _lastRT = rt;
+        }
+        catch (Exception ex)
+        {
+            // ViGEmBus driver crashed, was restarted, or the virtual device was
+            // forcibly removed. The pipeline calls Update() ~1000Hz so we must
+            // not log every failure — coalesce and report at most once/second.
+            Interlocked.Increment(ref _suppressedErrors);
+            long now = Environment.TickCount64;
+            long last = Interlocked.Read(ref _lastErrorLogTicks);
+            if (now - last >= 1000 &&
+                Interlocked.CompareExchange(ref _lastErrorLogTicks, now, last) == last)
+            {
+                long count = Interlocked.Exchange(ref _suppressedErrors, 0);
+                _logger.LogWarning(ex,
+                    "ViGEm Update failed (this and {Count} similar). Driver may be down — call Disconnect/Connect to recover.",
+                    count);
+            }
+        }
     }
 
     public void Dispose()

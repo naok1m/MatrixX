@@ -60,7 +60,7 @@ public sealed class XInputProvider : IInputProvider
         return Task.CompletedTask;
     }
 
-    public Task StopAsync()
+    public async Task StopAsync()
     {
         try
         {
@@ -71,19 +71,33 @@ public sealed class XInputProvider : IInputProvider
             // Stop/Dispose can be reached twice through the DI graph during app shutdown.
         }
 
-        try
+        // Await the poll task instead of blocking with .Wait(). A blocking
+        // wait inside a Task-returning method deadlocks if a caller
+        // synchronously waits on us from a thread with a SynchronizationContext
+        // (UI thread, test runner). Use a timeout via WaitAsync so a stuck
+        // poll loop can't hang shutdown indefinitely.
+        var task = _pollTask;
+        if (task is not null)
         {
-            _pollTask?.Wait(TimeSpan.FromSeconds(2));
-        }
-        catch (AggregateException ex) when (ex.InnerExceptions.All(e => e is OperationCanceledException))
-        {
+            try
+            {
+                await task.WaitAsync(TimeSpan.FromSeconds(2)).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) { /* expected on cancel */ }
+            catch (TimeoutException)
+            {
+                _logger.LogWarning("XInput poll task did not stop within 2s");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "XInput poll task ended with an error during shutdown");
+            }
         }
 
         _cts?.Dispose();
         _cts = null;
         _pollTask = null;
         _logger.LogInformation("XInput provider stopped");
-        return Task.CompletedTask;
     }
 
     public IReadOnlyList<InputDevice> GetConnectedDevices()

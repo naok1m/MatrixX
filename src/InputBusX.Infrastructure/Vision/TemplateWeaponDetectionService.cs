@@ -307,7 +307,17 @@ public sealed class TemplateWeaponDetectionService : IWeaponDetectionService, ID
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Detection loop error: {Msg}", ex.Message);
-                try { await Task.Delay(1000, ct); } catch (OperationCanceledException) { break; }
+
+                // Backoff after an error. Bail out cleanly if cancellation
+                // races us, and don't let the CTS-already-disposed case
+                // (which can happen during shutdown) crash the loop task.
+                if (ct.IsCancellationRequested) break;
+                try
+                {
+                    await Task.Delay(1000, ct);
+                }
+                catch (OperationCanceledException) { break; }
+                catch (ObjectDisposedException) { break; }
             }
         }
     }

@@ -120,10 +120,14 @@ public sealed class JsonConfigurationStore : IConfigurationStore, IDisposable
         if ((DateTime.UtcNow - _lastWriteTime).TotalSeconds < 1)
             return;
 
+        // FileSystemWatcher can fire Changed before the external writer has
+        // finished flushing — and a fixed Thread.Sleep(100) is unreliable on
+        // slow disks or when the writer holds the handle longer. Retry the
+        // load with backoff while the file is still locked / partially
+        // written, then surface the failure if it really won't open.
         try
         {
-            Thread.Sleep(100); // brief delay to ensure file write is complete
-            var config = Load();
+            var config = LoadWithRetry();
             ConfigurationChanged?.Invoke(config);
             _logger.LogInformation("Configuration hot-reloaded");
         }
@@ -131,6 +135,39 @@ public sealed class JsonConfigurationStore : IConfigurationStore, IDisposable
         {
             _logger.LogWarning(ex, "Failed to hot-reload configuration");
         }
+    }
+
+    private AppConfiguration LoadWithRetry()
+    {
+        const int maxAttempts = 8;
+        int delay = 25;
+        Exception? last = null;
+
+        for (int attempt = 0; attempt < maxAttempts; attempt++)
+        {
+            try
+            {
+                // Open with shared read so we don't trip on the writer's handle.
+                using var stream = new FileStream(
+                    _filePath, FileMode.Open, FileAccess.Read,
+                    FileShare.ReadWrite | FileShare.Delete);
+                using var reader = new StreamReader(stream);
+                var json = reader.ReadToEnd();
+                if (string.IsNullOrWhiteSpace(json))
+                    throw new IOException("Configuration file is empty (writer may not have flushed yet)");
+
+                var config = JsonSerializer.Deserialize<AppConfiguration>(json, JsonOptions);
+                return config ?? CreateDefaultConfig();
+            }
+            catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException)
+            {
+                last = ex;
+                Thread.Sleep(delay);
+                delay = Math.Min(delay * 2, 500);
+            }
+        }
+
+        throw last ?? new IOException("Configuration reload failed for an unknown reason");
     }
 
     private static AppConfiguration CreateDefaultConfig()
