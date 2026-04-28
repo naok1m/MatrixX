@@ -40,17 +40,7 @@ public sealed class ShellForm : Form
     {
         try
         {
-            var userDataFolder = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "ReflexX",
-                "WebView2");
-            Directory.CreateDirectory(userDataFolder);
-            _webView.CreationProperties = new CoreWebView2CreationProperties
-            {
-                UserDataFolder = userDataFolder
-            };
-
-            await _webView.EnsureCoreWebView2Async();
+            await InitializeWebViewAsync();
 
             _webView.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false;
             _webView.CoreWebView2.Settings.AreDevToolsEnabled = true;
@@ -109,6 +99,43 @@ public sealed class ShellForm : Form
                 MessageBoxIcon.Error);
             Close();
         }
+    }
+
+    private async Task InitializeWebViewAsync()
+    {
+        var userDataFolder = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "ReflexX",
+            "WebView2");
+
+        Directory.CreateDirectory(userDataFolder);
+
+        try
+        {
+            await EnsureWebViewCoreAsync(userDataFolder);
+        }
+        catch (ArgumentException ex) when (ex.Message.Contains("expected range", StringComparison.OrdinalIgnoreCase))
+        {
+            Log.Warning(ex, "WebView2 initialization failed with an invalid profile state. Resetting profile and retrying once.");
+            ResetWebViewProfile(userDataFolder);
+            await EnsureWebViewCoreAsync(userDataFolder);
+        }
+    }
+
+    private async Task EnsureWebViewCoreAsync(string userDataFolder)
+    {
+        var environment = await CoreWebView2Environment.CreateAsync(userDataFolder: userDataFolder);
+        await _webView.EnsureCoreWebView2Async(environment);
+    }
+
+    private static void ResetWebViewProfile(string userDataFolder)
+    {
+        if (Directory.Exists(userDataFolder))
+        {
+            Directory.Delete(userDataFolder, recursive: true);
+        }
+
+        Directory.CreateDirectory(userDataFolder);
     }
 
     private void NotifyUpdateAvailable(string version)
