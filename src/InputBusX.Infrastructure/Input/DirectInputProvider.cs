@@ -12,6 +12,8 @@ namespace InputBusX.Infrastructure.Input;
 public sealed class DirectInputProvider : IInputProvider
 {
     private readonly ILogger<DirectInputProvider> _logger;
+    private readonly Dictionary<string, InputDevice> _connected = new();
+    private readonly object _connectedLock = new();
     private CancellationTokenSource? _cts;
     private Task? _pollTask;
     private int _pollingRateMs = 4;
@@ -52,7 +54,11 @@ public sealed class DirectInputProvider : IInputProvider
         _logger.LogInformation("DirectInput provider stopped");
     }
 
-    public IReadOnlyList<InputDevice> GetConnectedDevices() => [];
+    public IReadOnlyList<InputDevice> GetConnectedDevices()
+    {
+        lock (_connectedLock)
+            return _connected.Values.Where(d => d.IsConnected).ToList();
+    }
 
     public void Dispose() => StopAsync().GetAwaiter().GetResult();
 
@@ -112,6 +118,7 @@ public sealed class DirectInputProvider : IInputProvider
                         // Device truly gone
                         active.Remove(guid);
                         entry.Info.IsConnected = false;
+                        lock (_connectedLock) { _connected.Remove(entry.Info.Id); }
                         DeviceDisconnected?.Invoke(entry.Info);
                         _logger.LogInformation("DirectInput: disconnected [{Name}]", entry.Info.Name);
                         try { entry.Joystick.Unacquire(); entry.Joystick.Dispose(); } catch { }
@@ -129,6 +136,7 @@ public sealed class DirectInputProvider : IInputProvider
                 try { e.Joystick.Unacquire(); e.Joystick.Dispose(); } catch { }
             }
             active.Clear();
+            lock (_connectedLock) { _connected.Clear(); }
             di.Dispose();
         }
     }
@@ -179,6 +187,7 @@ public sealed class DirectInputProvider : IInputProvider
             };
 
             active[inst.InstanceGuid] = new ActiveEntry(joystick, info, layout);
+            lock (_connectedLock) { _connected[info.Id] = info; }
             DeviceConnected?.Invoke(info);
             _logger.LogInformation("DirectInput: connected [{Name}] layout={Layout}", info.Name, layout);
         }
@@ -249,7 +258,7 @@ public sealed class DirectInputProvider : IInputProvider
         static int Clamp(int v) => Math.Clamp(v, 0, 65535);
 
         static short NormalizeStick(int v) =>
-            (short)Math.Clamp((Clamp(v) - 32767L) * 32767L / 32767L, short.MinValue, short.MaxValue);
+            (short)Math.Clamp(Clamp(v) - 32767, short.MinValue, short.MaxValue);
 
         static byte NormalizeTrigger(int v) =>
             (byte)Math.Clamp(Clamp(v) * 255L / 65535L, 0, 255);
