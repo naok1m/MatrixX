@@ -76,7 +76,7 @@ public sealed class ShellForm : Form
                 }
             };
 
-            _webView.CoreWebView2.NavigateToString(LoadShellHtml());
+            _webView.CoreWebView2.Navigate(PrepareShellFiles().AbsoluteUri);
 
             // Background update check. Delayed so the UI loads first and the
             // user isn't blocked. Runs only once per launch — Velopack does
@@ -214,34 +214,30 @@ public sealed class ShellForm : Form
         }
     }
 
-    private static string LoadShellHtml()
+    private static Uri PrepareShellFiles()
     {
-        var html = ReadResourceText("wwwroot/index.html");
-        var css = ReadResourceText("wwwroot/styles.css");
-        var js = ReadResourceText("wwwroot/app.js");
-        var logo = ReadResourceBase64("wwwroot/logo-small.png");
+        var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "dev";
+        var shellFolder = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "ReflexX",
+            "WebShell",
+            version);
 
-        return html
-            .Replace("<link rel=\"stylesheet\" href=\"./styles.css\" />", $"<style>{css}</style>")
-            .Replace("<img src=\"./logo.png\" alt=\"ReflexX\" />", $"<img src=\"data:image/png;base64,{logo}\" alt=\"ReflexX\" />")
-            .Replace("<script src=\"./app.js\"></script>", $"<script>{js}</script>");
+        Directory.CreateDirectory(shellFolder);
+        WriteResourceFile("wwwroot/index.html", Path.Combine(shellFolder, "index.html"));
+        WriteResourceFile("wwwroot/styles.css", Path.Combine(shellFolder, "styles.css"));
+        WriteResourceFile("wwwroot/app.js", Path.Combine(shellFolder, "app.js"));
+        WriteResourceFile("wwwroot/logo-small.png", Path.Combine(shellFolder, "logo.png"));
+
+        return new Uri(Path.Combine(shellFolder, "index.html"));
     }
 
-    private static string ReadResourceText(string name)
+    private static void WriteResourceFile(string name, string destination)
     {
         using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(name)
             ?? throw new InvalidOperationException($"Missing embedded resource: {name}");
-        using var reader = new StreamReader(stream);
-        return reader.ReadToEnd();
-    }
-
-    private static string ReadResourceBase64(string name)
-    {
-        using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(name)
-            ?? throw new InvalidOperationException($"Missing embedded resource: {name}");
-        using var memory = new MemoryStream();
-        stream.CopyTo(memory);
-        return Convert.ToBase64String(memory.ToArray());
+        using var file = File.Create(destination);
+        stream.CopyTo(file);
     }
 
     private static class WindowChrome
