@@ -10,10 +10,10 @@
     <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);MSB3277</MSBuildWarningsAsMessages>
     <AssemblyName>ReflexX</AssemblyName>
     <Product>ReflexX</Product>
-    <ApplicationIcon>..\InputBusX.UI\Assets\matrixx-icon.ico</ApplicationIcon>
-    <Version>3.0.0</Version>
-    <AssemblyVersion>3.0.0.0</AssemblyVersion>
-    <FileVersion>3.0.0.0</FileVersion>
+    <ApplicationIcon>..\InputBusX.UI\Assets\reflexx-icon.ico</ApplicationIcon>
+    <Version>3.0.1</Version>
+    <AssemblyVersion>3.0.1.0</AssemblyVersion>
+    <FileVersion>3.0.1.0</FileVersion>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
   </PropertyGroup>
 

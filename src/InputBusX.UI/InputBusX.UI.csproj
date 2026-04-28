@@ -8,7 +8,7 @@
     <AssemblyName>ReflexX</AssemblyName>
     <Product>ReflexX</Product>
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
-    <ApplicationIcon>Assets\matrixx-icon.ico</ApplicationIcon>
+    <ApplicationIcon>Assets\reflexx-icon.ico</ApplicationIcon>
     <Version>2.9.9</Version>
     <AssemblyVersion>2.9.9.0</AssemblyVersion>
     <FileVersion>2.9.9.0</FileVersion>
@@ -20,8 +20,9 @@
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
   </PropertyGroup>
   <ItemGroup>
-    <AvaloniaResource Include="Assets\matrixx-icon.png" />
     <AvaloniaResource Include="Assets\logo ReflexX.png" />
+    <AvaloniaResource Include="Assets\logoReflex.png" />
+    <AvaloniaResource Include="Assets\reflexx-icon.ico" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="..\..\config\**\*">

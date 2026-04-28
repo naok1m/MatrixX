@@ -66,27 +66,22 @@ button, select, input { font: inherit; }
 }
 
 .brand-mark {
-  width: 56px;
-  height: 40px;
   display: grid;
   place-items: center;
-  border: 1px solid #173d35;
-  border-radius: 8px;
-  background: #07100f;
-  box-shadow: 0 0 24px rgba(0,245,184,.24);
-  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+  padding: 0 4px;
+  transition: transform .18s ease, filter .18s ease;
 }
 
 .brand-mark:hover {
-  transform: translateY(-1px) scale(1.035);
-  border-color: var(--accent);
-  box-shadow: 0 0 34px rgba(0,245,184,.46);
+  transform: translateY(-1px) scale(1.04);
+  filter: drop-shadow(0 0 12px rgba(0, 245, 184, .55));
 }
 
 .brand-mark img {
-  width: 34px;
   height: 34px;
+  width: auto;
   object-fit: contain;
+  filter: drop-shadow(0 0 8px rgba(0, 245, 184, .35));
 }
 
 .nav {
