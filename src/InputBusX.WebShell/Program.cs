@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using Velopack;
 
 namespace InputBusX.WebShell;
 
@@ -8,8 +9,15 @@ internal static class Program
     private const string MutexName = "Global\\ReflexX_SingleInstance";
 
     [STAThread]
-    private static void Main()
+    private static void Main(string[] args)
     {
+        // VelopackApp.Build().Run() MUST be called before any other startup
+        // work. During an update, Setup.exe / Update.exe re-launches us with
+        // hook arguments (--veloapp-install, --veloapp-updated, ...) and we
+        // must handle them and exit BEFORE doing anything else (no UI, no
+        // services, no mutex). Failure to respect this corrupts the install.
+        VelopackApp.Build().Run();
+
         KillPreviousInstances();
 
         using var mutex = new Mutex(initiallyOwned: true, MutexName, out var createdNew);

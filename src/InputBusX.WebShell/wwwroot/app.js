@@ -1065,7 +1065,24 @@ window.chrome?.webview?.addEventListener('message', (event) => {
     }];
     if (activeView === 'logs') renderLogs();
   }
+  if (event.data?.type === 'updateAvailable') {
+    showUpdateBanner(event.data.payload?.version ?? '');
+  }
 });
+
+function showUpdateBanner(version) {
+  if (document.getElementById('updateBanner')) return;
+  const banner = document.createElement('div');
+  banner.id = 'updateBanner';
+  banner.style.cssText = 'position:fixed;bottom:18px;right:18px;z-index:9999;background:#0d1622;border:1px solid #2bd3a3;border-radius:10px;padding:14px 18px;color:#dfe8f5;font:600 13px system-ui;box-shadow:0 8px 32px rgba(0,0,0,.45);display:flex;gap:14px;align-items:center;';
+  banner.innerHTML =
+    '<div>ReflexX <strong>' + version + '</strong> is ready.<div style="font-weight:400;font-size:11px;opacity:.7;margin-top:2px">Click "Install" to apply and restart.</div></div>' +
+    '<button id="updateApply" style="background:#00f5b8;border:0;border-radius:6px;color:#03150d;padding:8px 14px;font-weight:700;cursor:pointer">Install</button>' +
+    '<button id="updateLater" style="background:transparent;border:1px solid #334258;border-radius:6px;color:#dfe8f5;padding:8px 12px;font-weight:600;cursor:pointer">Later</button>';
+  document.body.appendChild(banner);
+  document.getElementById('updateApply').addEventListener('click', () => send('applyUpdate'));
+  document.getElementById('updateLater').addEventListener('click', () => banner.remove());
+}
 
 render(state);
 populateSelect('#macroType', macroTypes, 'NoRecoil');

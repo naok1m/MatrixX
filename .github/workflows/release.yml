@@ -46,19 +46,52 @@ jobs:
         if: steps.guard.outputs.SKIP == 'false'
         shell: pwsh
         run: |
+          # Velopack is incompatible with PublishSingleFile (it manages files
+          # itself). Publish multi-file self-contained — vpk pack will then
+          # produce both the legacy ZIP and the installer / update feed.
           dotnet publish src/InputBusX.WebShell/InputBusX.WebShell.csproj `
             -c Release `
             -r win-x64 `
             --self-contained `
             -f net8.0-windows10.0.19041.0 `
-            -p:PublishSingleFile=true `
             -p:PublishTrimmed=false `
             -p:DebugType=None `
             -p:DebugSymbols=false `
             -o dist
           Get-ChildItem dist -Recurse -Include *.pdb,*.xml | Remove-Item -Force
 
-      # ── Package ───────────────────────────────────────────────────────────
+      # ── Velopack: installer + update feed ─────────────────────────────────
+      - name: Install Velopack CLI
+        if: steps.guard.outputs.SKIP == 'false'
+        shell: pwsh
+        run: dotnet tool install -g vpk
+
+      - name: Pack release
+        if: steps.guard.outputs.SKIP == 'false'
+        shell: pwsh
+        run: |
+          # Download previous releases so vpk produces a delta package.
+          # First-time runs gracefully no-op when no prior release exists.
+          New-Item -ItemType Directory -Force -Path releases | Out-Null
+          try {
+            vpk download github `
+              --repoUrl "https://github.com/${{ github.repository }}" `
+              --outputDir releases
+          } catch {
+            Write-Host "No prior Velopack release found — building first full package."
+          }
+
+          vpk pack `
+            --packId ReflexX `
+            --packVersion ${{ steps.ver.outputs.VERSION }} `
+            --packDir dist `
+            --mainExe ReflexX.exe `
+            --packTitle "ReflexX" `
+            --packAuthors "ReflexX" `
+            --icon src/InputBusX.UI/Assets/matrixx-icon.ico `
+            --outputDir releases
+
+      # ── Legacy portable ZIP (kept for users on <3.0 manual installs) ──────
       - name: Package ZIP
         if: steps.guard.outputs.SKIP == 'false'
         shell: pwsh
@@ -87,7 +120,14 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: pwsh
         run: |
+          # Upload the Velopack artefacts (Setup.exe, *-full.nupkg, *-delta.nupkg,
+          # releases.win.json) plus the legacy portable ZIP.
+          $assets = @(
+            "${{ steps.pkg.outputs.ZIP }}"
+          )
+          Get-ChildItem releases -File | ForEach-Object { $assets += $_.FullName }
+
           gh release create "${{ steps.ver.outputs.TAG }}" `
-            "${{ steps.pkg.outputs.ZIP }}" `
+            $assets `
             --title "ReflexX ${{ steps.ver.outputs.TAG }}" `
             --notes-file release-notes.md

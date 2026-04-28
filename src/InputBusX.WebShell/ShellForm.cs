@@ -11,6 +11,7 @@ public sealed class ShellForm : Form
     private readonly WebShellServices _services;
     private readonly WebShellBridge _bridge;
     private readonly WebView2 _webView = new() { Dock = DockStyle.Fill };
+    private readonly UpdateService _updateService = new();
 
     public ShellForm(WebShellServices services)
     {
@@ -86,6 +87,17 @@ public sealed class ShellForm : Form
             };
 
             _webView.CoreWebView2.NavigateToString(LoadShellHtml());
+
+            // Background update check. Delayed so the UI loads first and the
+            // user isn't blocked. Runs only once per launch — Velopack does
+            // its own caching and noop'ing when no update is available.
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
+                var version = await _updateService.CheckAndDownloadAsync().ConfigureAwait(false);
+                if (version is null) return;
+                NotifyUpdateAvailable(version);
+            });
         }
         catch (Exception ex)
         {
@@ -99,9 +111,50 @@ public sealed class ShellForm : Form
         }
     }
 
+    private void NotifyUpdateAvailable(string version)
+    {
+        if (IsDisposed || !IsHandleCreated) return;
+        var payload = System.Text.Json.JsonSerializer.Serialize(new
+        {
+            type = "updateAvailable",
+            payload = new { version }
+        });
+        try
+        {
+            BeginInvoke(() =>
+            {
+                if (IsDisposed || _webView.IsDisposed) return;
+                var core = _webView.CoreWebView2;
+                if (core is null) return;
+                try { core.PostWebMessageAsJson(payload); }
+                catch (ObjectDisposedException) { }
+                catch (InvalidOperationException) { }
+            });
+        }
+        catch (ObjectDisposedException) { }
+        catch (InvalidOperationException) { }
+    }
+
     private async void OnWebMessageReceived(object? sender, CoreWebView2WebMessageReceivedEventArgs e)
     {
         var json = e.WebMessageAsJson;
+
+        // Intercept the update-apply command before delegating to the bridge.
+        // ApplyUpdatesAndRestart kills the process, so anything after must
+        // not be relied on.
+        if (json.Contains("\"applyUpdate\"", StringComparison.Ordinal))
+        {
+            try
+            {
+                _services.Shutdown(); // unplug ViGEm before the updater takes over
+                if (_updateService.ApplyAndRestart()) return;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Apply-update failed");
+            }
+        }
+
         try
         {
             await _bridge.HandleAsync(json);
