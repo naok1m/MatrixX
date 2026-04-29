@@ -78,7 +78,7 @@ button, select, input { font: inherit; }
 }
 
 .brand-mark img {
-  height: 34px;
+  height: 38px;
   width: auto;
   object-fit: contain;
   filter: drop-shadow(0 0 8px rgba(0, 245, 184, .35));
