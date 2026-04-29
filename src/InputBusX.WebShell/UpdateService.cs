@@ -14,7 +14,7 @@ public sealed class UpdateService
     private const string GitHubRepoUrl = "https://github.com/naok1m/MatrixX";
 
     private readonly UpdateManager? _manager;
-    private UpdateInfo? _pendingUpdate;
+    private VelopackAsset? _pendingUpdate;
 
     public UpdateService()
     {
@@ -23,6 +23,7 @@ public sealed class UpdateService
             // Pre-release: false. Switch to true once a beta channel exists.
             var source = new GithubSource(GitHubRepoUrl, accessToken: null, prerelease: false);
             _manager = new UpdateManager(source);
+            _pendingUpdate = _manager.UpdatePendingRestart;
         }
         catch (Exception ex)
         {
@@ -36,7 +37,7 @@ public sealed class UpdateService
     }
 
     public bool IsInstalled => _manager?.IsInstalled ?? false;
-    public string? PendingVersion => _pendingUpdate?.TargetFullRelease?.Version?.ToString();
+    public string? PendingVersion => _pendingUpdate?.Version?.ToString();
 
     /// <summary>
     /// Checks GitHub for a newer release. Returns the version string if
@@ -48,13 +49,21 @@ public sealed class UpdateService
 
         try
         {
+            _pendingUpdate ??= _manager.UpdatePendingRestart;
+            if (_pendingUpdate is not null)
+            {
+                var pendingVersion = _pendingUpdate.Version?.ToString() ?? "?";
+                Log.Information("Update {Version} is already staged and pending restart", pendingVersion);
+                return pendingVersion;
+            }
+
             var info = await _manager.CheckForUpdatesAsync().ConfigureAwait(false);
             if (info is null) return null;
 
             await _manager.DownloadUpdatesAsync(info, cancelToken: ct).ConfigureAwait(false);
-            _pendingUpdate = info;
+            _pendingUpdate = _manager.UpdatePendingRestart ?? info.TargetFullRelease;
 
-            var v = info.TargetFullRelease?.Version?.ToString() ?? "?";
+            var v = _pendingUpdate?.Version?.ToString() ?? info.TargetFullRelease?.Version?.ToString() ?? "?";
             Log.Information("Update {Version} downloaded and ready to apply", v);
             return v;
         }
@@ -73,9 +82,12 @@ public sealed class UpdateService
     /// </summary>
     public bool ApplyAndRestart()
     {
-        if (_manager is null || _pendingUpdate is null) return false;
+        if (_manager is null) return false;
         try
         {
+            _pendingUpdate ??= _manager.UpdatePendingRestart;
+            if (_pendingUpdate is null) return false;
+
             _manager.ApplyUpdatesAndRestart(_pendingUpdate);
             return true;
         }
