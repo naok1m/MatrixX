@@ -15,6 +15,7 @@ internal static class Program
         // This prevents ViGEm virtual devices from accumulating when the user
         // replaces the exe with a newer version without closing the old one first.
         KillPreviousInstances();
+        EnableLowLatencyProcessMode();
 
         using var mutex = new Mutex(initiallyOwned: true, MutexName, out bool createdNew);
 
@@ -81,5 +82,17 @@ internal static class Program
 
         // Brief pause so the OS and ViGEm driver finish cleanup
         Thread.Sleep(500);
+    }
+
+    private static void EnableLowLatencyProcessMode()
+    {
+        try
+        {
+            Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.High;
+        }
+        catch
+        {
+            // Priority changes are best-effort; keep startup resilient.
+        }
     }
 }

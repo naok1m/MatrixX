@@ -19,6 +19,7 @@ internal static class Program
         VelopackApp.Build().Run();
 
         KillPreviousInstances();
+        EnableLowLatencyProcessMode();
 
         using var mutex = new Mutex(initiallyOwned: true, MutexName, out var createdNew);
         if (!createdNew)
@@ -88,5 +89,18 @@ internal static class Program
         }
 
         Thread.Sleep(500);
+    }
+
+    private static void EnableLowLatencyProcessMode()
+    {
+        try
+        {
+            Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.High;
+        }
+        catch
+        {
+            // Some environments disallow priority changes; polling threads still raise
+            // their own priority when the input pipeline starts.
+        }
     }
 }

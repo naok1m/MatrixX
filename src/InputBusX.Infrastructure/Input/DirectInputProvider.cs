@@ -68,6 +68,8 @@ public sealed class DirectInputProvider : IInputProvider
 
     private void PollLoop(CancellationToken ct)
     {
+        TrySetThreadPriority();
+
         DirectInput? di;
         try
         {
@@ -314,6 +316,12 @@ public sealed class DirectInputProvider : IInputProvider
 
     [DllImport("user32.dll")]
     private static extern IntPtr GetDesktopWindow();
+
+    private void TrySetThreadPriority()
+    {
+        try { Thread.CurrentThread.Priority = ThreadPriority.Highest; }
+        catch (Exception ex) { _logger.LogDebug(ex, "DirectInput: failed to raise poll thread priority"); }
+    }
 
     // -----------------------------------------------------------------------
     // Internal types

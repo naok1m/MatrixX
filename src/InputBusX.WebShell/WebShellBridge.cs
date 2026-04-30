@@ -32,8 +32,16 @@ public sealed class WebShellBridge
 
     private readonly object _sync = new();
     private ShellState _state = new();
-    private long _lastUiTick;
     private long _lastInputPublishTick;
+    private int _inputPublishQueued;
+    private int _latestLeftStickX;
+    private int _latestLeftStickY;
+    private int _latestRightStickX;
+    private int _latestRightStickY;
+    private int _latestLeftTrigger;
+    private int _latestRightTrigger;
+    private int _latestRawButtons;
+    private int _latestOutputButtons;
 
     public event EventHandler<string>? StateChanged;
 
@@ -1087,39 +1095,33 @@ public sealed class WebShellBridge
 
     private void OnRawInput(GamepadState state)
     {
-        if (Environment.TickCount64 - _lastUiTick < 16)
-        {
-            return;
-        }
-
-        _lastUiTick = Environment.TickCount64;
-
-        UpdateState(s => s with
-        {
-            LeftStickX = state.LeftStick.X / (double)short.MaxValue,
-            LeftStickY = state.LeftStick.Y / (double)short.MaxValue,
-            RightStickX = state.RightStick.X / (double)short.MaxValue,
-            RightStickY = state.RightStick.Y / (double)short.MaxValue,
-            LeftTrigger = state.LeftTrigger.Normalized,
-            RightTrigger = state.RightTrigger.Normalized,
-            RawButtons = ButtonState.From(state.Buttons)
-        }, publish: false);
+        Volatile.Write(ref _latestLeftStickX, state.LeftStick.X);
+        Volatile.Write(ref _latestLeftStickY, state.LeftStick.Y);
+        Volatile.Write(ref _latestRightStickX, state.RightStick.X);
+        Volatile.Write(ref _latestRightStickY, state.RightStick.Y);
+        Volatile.Write(ref _latestLeftTrigger, state.LeftTrigger.Value);
+        Volatile.Write(ref _latestRightTrigger, state.RightTrigger.Value);
+        Volatile.Write(ref _latestRawButtons, (int)state.Buttons);
     }
 
     private void OnProcessedInput(GamepadState state)
     {
+        Volatile.Write(ref _latestOutputButtons, (int)state.Buttons);
+
         var now = Environment.TickCount64;
-        var shouldPublish = now - Interlocked.Read(ref _lastInputPublishTick) >= 33;
-        if (shouldPublish)
+        var lastPublish = Interlocked.Read(ref _lastInputPublishTick);
+        if (now - lastPublish < 33 ||
+            Interlocked.CompareExchange(ref _lastInputPublishTick, now, lastPublish) != lastPublish ||
+            Interlocked.Exchange(ref _inputPublishQueued, 1) != 0)
         {
-            Interlocked.Exchange(ref _lastInputPublishTick, now);
+            return;
         }
 
-        UpdateState(s => s with { OutputButtons = ButtonState.From(state.Buttons) }, publish: false);
-        if (shouldPublish)
+        ThreadPool.QueueUserWorkItem(_ =>
         {
-            PublishInputState();
-        }
+            try { PublishInputState(); }
+            finally { Volatile.Write(ref _inputPublishQueued, 0); }
+        });
     }
 
     private void UpdateState(Func<ShellState, ShellState> update, bool publish = true)
@@ -1148,25 +1150,28 @@ public sealed class WebShellBridge
 
     private void PublishInputState()
     {
-        ShellState snapshot;
-        lock (_sync)
-        {
-            snapshot = _state;
-        }
+        var leftStickX = Volatile.Read(ref _latestLeftStickX) / (double)short.MaxValue;
+        var leftStickY = Volatile.Read(ref _latestLeftStickY) / (double)short.MaxValue;
+        var rightStickX = Volatile.Read(ref _latestRightStickX) / (double)short.MaxValue;
+        var rightStickY = Volatile.Read(ref _latestRightStickY) / (double)short.MaxValue;
+        var leftTrigger = Volatile.Read(ref _latestLeftTrigger) / 255d;
+        var rightTrigger = Volatile.Read(ref _latestRightTrigger) / 255d;
+        var rawButtons = ButtonState.From((GamepadButton)Volatile.Read(ref _latestRawButtons));
+        var outputButtons = ButtonState.From((GamepadButton)Volatile.Read(ref _latestOutputButtons));
 
         StateChanged?.Invoke(this, JsonSerializer.Serialize(new
         {
             type = "inputState",
             payload = new
             {
-                snapshot.LeftStickX,
-                snapshot.LeftStickY,
-                snapshot.RightStickX,
-                snapshot.RightStickY,
-                snapshot.LeftTrigger,
-                snapshot.RightTrigger,
-                snapshot.RawButtons,
-                snapshot.OutputButtons
+                LeftStickX = leftStickX,
+                LeftStickY = leftStickY,
+                RightStickX = rightStickX,
+                RightStickY = rightStickY,
+                LeftTrigger = leftTrigger,
+                RightTrigger = rightTrigger,
+                RawButtons = rawButtons,
+                OutputButtons = outputButtons
             }
         }, JsonOptions));
     }

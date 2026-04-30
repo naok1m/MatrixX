@@ -138,29 +138,30 @@ public sealed class ViGEmOutputController : IOutputController
 
         try
         {
-            controller.SetButtonState(Xbox360Button.A,            state.IsButtonPressed(GamepadButton.A));
-            controller.SetButtonState(Xbox360Button.B,            state.IsButtonPressed(GamepadButton.B));
-            controller.SetButtonState(Xbox360Button.X,            state.IsButtonPressed(GamepadButton.X));
-            controller.SetButtonState(Xbox360Button.Y,            state.IsButtonPressed(GamepadButton.Y));
-            controller.SetButtonState(Xbox360Button.Start,        state.IsButtonPressed(GamepadButton.Start));
-            controller.SetButtonState(Xbox360Button.Back,         state.IsButtonPressed(GamepadButton.Back));
-            controller.SetButtonState(Xbox360Button.LeftShoulder, state.IsButtonPressed(GamepadButton.LeftShoulder));
-            controller.SetButtonState(Xbox360Button.RightShoulder,state.IsButtonPressed(GamepadButton.RightShoulder));
-            controller.SetButtonState(Xbox360Button.LeftThumb,    state.IsButtonPressed(GamepadButton.LeftThumb));
-            controller.SetButtonState(Xbox360Button.RightThumb,   state.IsButtonPressed(GamepadButton.RightThumb));
-            controller.SetButtonState(Xbox360Button.Guide,        state.IsButtonPressed(GamepadButton.Guide));
-            controller.SetButtonState(Xbox360Button.Up,           state.IsButtonPressed(GamepadButton.DPadUp));
-            controller.SetButtonState(Xbox360Button.Down,         state.IsButtonPressed(GamepadButton.DPadDown));
-            controller.SetButtonState(Xbox360Button.Left,         state.IsButtonPressed(GamepadButton.DPadLeft));
-            controller.SetButtonState(Xbox360Button.Right,        state.IsButtonPressed(GamepadButton.DPadRight));
+            var changedButtons = buttons ^ _lastButtons;
+            SetButtonIfChanged(controller, changedButtons, buttons, GamepadButton.A, Xbox360Button.A);
+            SetButtonIfChanged(controller, changedButtons, buttons, GamepadButton.B, Xbox360Button.B);
+            SetButtonIfChanged(controller, changedButtons, buttons, GamepadButton.X, Xbox360Button.X);
+            SetButtonIfChanged(controller, changedButtons, buttons, GamepadButton.Y, Xbox360Button.Y);
+            SetButtonIfChanged(controller, changedButtons, buttons, GamepadButton.Start, Xbox360Button.Start);
+            SetButtonIfChanged(controller, changedButtons, buttons, GamepadButton.Back, Xbox360Button.Back);
+            SetButtonIfChanged(controller, changedButtons, buttons, GamepadButton.LeftShoulder, Xbox360Button.LeftShoulder);
+            SetButtonIfChanged(controller, changedButtons, buttons, GamepadButton.RightShoulder, Xbox360Button.RightShoulder);
+            SetButtonIfChanged(controller, changedButtons, buttons, GamepadButton.LeftThumb, Xbox360Button.LeftThumb);
+            SetButtonIfChanged(controller, changedButtons, buttons, GamepadButton.RightThumb, Xbox360Button.RightThumb);
+            SetButtonIfChanged(controller, changedButtons, buttons, GamepadButton.Guide, Xbox360Button.Guide);
+            SetButtonIfChanged(controller, changedButtons, buttons, GamepadButton.DPadUp, Xbox360Button.Up);
+            SetButtonIfChanged(controller, changedButtons, buttons, GamepadButton.DPadDown, Xbox360Button.Down);
+            SetButtonIfChanged(controller, changedButtons, buttons, GamepadButton.DPadLeft, Xbox360Button.Left);
+            SetButtonIfChanged(controller, changedButtons, buttons, GamepadButton.DPadRight, Xbox360Button.Right);
 
-            controller.SetAxisValue(Xbox360Axis.LeftThumbX,  lx);
-            controller.SetAxisValue(Xbox360Axis.LeftThumbY,  ly);
-            controller.SetAxisValue(Xbox360Axis.RightThumbX, rx);
-            controller.SetAxisValue(Xbox360Axis.RightThumbY, ry);
+            if (lx != _lastLX) controller.SetAxisValue(Xbox360Axis.LeftThumbX, lx);
+            if (ly != _lastLY) controller.SetAxisValue(Xbox360Axis.LeftThumbY, ly);
+            if (rx != _lastRX) controller.SetAxisValue(Xbox360Axis.RightThumbX, rx);
+            if (ry != _lastRY) controller.SetAxisValue(Xbox360Axis.RightThumbY, ry);
 
-            controller.SetSliderValue(Xbox360Slider.LeftTrigger,  lt);
-            controller.SetSliderValue(Xbox360Slider.RightTrigger, rt);
+            if (lt != _lastLT) controller.SetSliderValue(Xbox360Slider.LeftTrigger, lt);
+            if (rt != _lastRT) controller.SetSliderValue(Xbox360Slider.RightTrigger, rt);
 
             controller.SubmitReport();
 
@@ -186,6 +187,17 @@ public sealed class ViGEmOutputController : IOutputController
                     count);
             }
         }
+    }
+
+    private static void SetButtonIfChanged(
+        IXbox360Controller controller,
+        GamepadButton changedButtons,
+        GamepadButton currentButtons,
+        GamepadButton source,
+        Xbox360Button target)
+    {
+        if ((changedButtons & source) != 0)
+            controller.SetButtonState(target, (currentButtons & source) != 0);
     }
 
     public void Dispose()

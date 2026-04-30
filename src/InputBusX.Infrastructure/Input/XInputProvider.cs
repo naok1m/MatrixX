@@ -108,6 +108,8 @@ public sealed class XInputProvider : IInputProvider
 
     private void PollLoop(CancellationToken ct)
     {
+        TrySetThreadPriority();
+
         var state = new XInputNative.XINPUT_STATE();
 
         // Set Windows timer resolution to 1ms so Thread.Sleep(1) actually sleeps ~1ms
@@ -191,6 +193,12 @@ public sealed class XInputProvider : IInputProvider
         {
             WinMm.timeEndPeriod(1);
         }
+    }
+
+    private void TrySetThreadPriority()
+    {
+        try { Thread.CurrentThread.Priority = ThreadPriority.Highest; }
+        catch (Exception ex) { _logger.LogDebug(ex, "XInput: failed to raise poll thread priority"); }
     }
 
     private static GamepadState ConvertState(ref XInputNative.XINPUT_STATE state)
