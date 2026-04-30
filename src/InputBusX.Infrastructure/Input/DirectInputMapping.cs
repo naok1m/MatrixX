@@ -51,6 +51,7 @@ public sealed record DirectInputDeviceIdentity(
 
 public enum DirectInputAxisLayout
 {
+    SonyHid,
     Modern,
     Legacy,
 }
@@ -67,12 +68,12 @@ public sealed record DirectInputProfile(
         {
             return identity.ProductId switch
             {
-                0x05C4 => new DirectInputProfile("Sony DualShock 4", DirectInputAxisLayout.Modern, true, true),
-                0x09CC => new DirectInputProfile("Sony DualShock 4 v2", DirectInputAxisLayout.Modern, true, true),
-                0x0BA0 => new DirectInputProfile("Sony DualShock 4 Wireless Adapter", DirectInputAxisLayout.Modern, true, true),
-                0x0CE6 => new DirectInputProfile("Sony DualSense", DirectInputAxisLayout.Modern, true, true),
-                0x0DF2 => new DirectInputProfile("Sony DualSense Edge", DirectInputAxisLayout.Modern, true, true),
-                _ => new DirectInputProfile("Sony DirectInput Gamepad", DirectInputAxisLayout.Modern, true, true),
+                0x05C4 => new DirectInputProfile("Sony DualShock 4", DirectInputAxisLayout.SonyHid, true, true),
+                0x09CC => new DirectInputProfile("Sony DualShock 4 v2", DirectInputAxisLayout.SonyHid, true, true),
+                0x0BA0 => new DirectInputProfile("Sony DualShock 4 Wireless Adapter", DirectInputAxisLayout.SonyHid, true, true),
+                0x0CE6 => new DirectInputProfile("Sony DualSense", DirectInputAxisLayout.SonyHid, true, true),
+                0x0DF2 => new DirectInputProfile("Sony DualSense Edge", DirectInputAxisLayout.SonyHid, true, true),
+                _ => new DirectInputProfile("Sony DirectInput Gamepad", DirectInputAxisLayout.SonyHid, true, true),
             };
         }
 
@@ -96,6 +97,7 @@ public sealed record DirectInputSnapshot(
     int RotationX,
     int RotationY,
     int RotationZ,
+    IReadOnlyList<int> Sliders,
     IReadOnlyList<bool> Buttons,
     IReadOnlyList<int> PointOfViewControllers)
 {
@@ -107,6 +109,7 @@ public sealed record DirectInputSnapshot(
             state.RotationX,
             state.RotationY,
             state.RotationZ,
+            state.Sliders,
             state.Buttons,
             state.PointOfViewControllers);
 }
@@ -122,7 +125,7 @@ public sealed class DirectInputMappingSession
     private const int TriggerHysteresisDeadzone = 12;
 
     private readonly DirectInputProfile _profile;
-    private readonly AxisCalibration[] _axes = Enumerable.Range(0, 6)
+    private readonly AxisCalibration[] _axes = Enumerable.Range(0, 8)
         .Select(_ => new AxisCalibration())
         .ToArray();
     private int _sampleCount;
@@ -185,7 +188,18 @@ public sealed class DirectInputMappingSession
         AxisCalibration leftTriggerCalibration;
         AxisCalibration rightTriggerCalibration;
 
-        if (_profile.Layout == DirectInputAxisLayout.Modern)
+        if (_profile.Layout == DirectInputAxisLayout.SonyHid)
+        {
+            rightXRaw = raw[2];
+            rightYRaw = raw[5];
+            leftTriggerRaw = raw[6];
+            rightTriggerRaw = raw[7];
+            rightXCalibration = _axes[2];
+            rightYCalibration = _axes[5];
+            leftTriggerCalibration = _axes[6];
+            rightTriggerCalibration = _axes[7];
+        }
+        else if (_profile.Layout == DirectInputAxisLayout.Modern)
         {
             rightXRaw = raw[2];
             rightYRaw = raw[3];
@@ -228,7 +242,9 @@ public sealed class DirectInputMappingSession
     {
         for (var i = 0; i < _axes.Length; i++)
         {
-            var unstableRange = i >= 4 ? TriggerUnstableRange : AxisUnstableRange;
+            var unstableRange = i >= 6 || (_profile.Layout != DirectInputAxisLayout.SonyHid && i >= 4)
+                ? TriggerUnstableRange
+                : AxisUnstableRange;
             _axes[i].Finalize(unstableRange);
         }
 
@@ -243,6 +259,8 @@ public sealed class DirectInputMappingSession
         ClampAxis(snapshot.RotationX),
         ClampAxis(snapshot.RotationY),
         ClampAxis(snapshot.RotationZ),
+        ClampOptionalAxis(snapshot.Sliders, 0),
+        ClampOptionalAxis(snapshot.Sliders, 1),
     ];
 
     private static GamepadButton MapButtons(DirectInputSnapshot snapshot)
@@ -315,6 +333,9 @@ public sealed class DirectInputMappingSession
     }
 
     private static int ClampAxis(int value) => Math.Clamp(value, 0, 65535);
+
+    private static int ClampOptionalAxis(IReadOnlyList<int> values, int index) =>
+        index < values.Count ? ClampAxis(values[index]) : 32767;
 
     private sealed class AxisCalibration
     {

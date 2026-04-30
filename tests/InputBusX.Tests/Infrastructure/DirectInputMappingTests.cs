@@ -33,8 +33,8 @@ public class DirectInputMappingTests
     public void DualSense_Profile_ShouldMapModernRightStickAndTriggers()
     {
         var profile = DirectInputProfile.For(Identity(0x054C, 0x0CE6, "DualSense Wireless Controller"));
-        var rest = Snapshot(ry: 32767, rz: 32767);
-        var pressed = Snapshot(z: 65535, rx: 0, ry: 65535, rz: 65535);
+        var rest = Snapshot(rz: 32767, lt: 32767, rt: 32767);
+        var pressed = Snapshot(z: 65535, rz: 0, lt: 65535, rt: 65535);
 
         var state = DirectInputMappingSession.MapAfterCalibration(profile, Repeat(rest), pressed);
 
@@ -46,6 +46,19 @@ public class DirectInputMappingTests
         state.RightTrigger.Value.Should().Be(255);
     }
 
+    [Fact]
+    public void DualSense_RightStickDown_ShouldNotTriggerR2()
+    {
+        var profile = DirectInputProfile.For(Identity(0x054C, 0x0CE6, "DualSense Wireless Controller"));
+        var rest = Snapshot(rz: 32767, lt: 32767, rt: 32767);
+        var rightStickDown = Snapshot(rz: 65535, lt: 32767, rt: 32767);
+
+        var state = DirectInputMappingSession.MapAfterCalibration(profile, Repeat(rest), rightStickDown);
+
+        state.RightStick.Y.Should().BeLessThan(-30000);
+        state.RightTrigger.Value.Should().Be(0);
+    }
+
     [Theory]
     [InlineData(0, 65535)]
     [InlineData(32767, 65535)]
@@ -53,12 +66,12 @@ public class DirectInputMappingTests
     public void TriggerRestCalibration_ShouldTreatRestAsNeutral(int restValue, int pressedValue)
     {
         var profile = DirectInputProfile.For(Identity(0x054C, 0x0CE6, "DualSense Wireless Controller"));
-        var rest = Snapshot(ry: restValue, rz: restValue);
+        var rest = Snapshot(lt: restValue, rt: restValue);
         var atRest = DirectInputMappingSession.MapAfterCalibration(profile, Repeat(rest), rest);
         var pressed = DirectInputMappingSession.MapAfterCalibration(
             profile,
             Repeat(rest),
-            Snapshot(ry: pressedValue, rz: pressedValue));
+            Snapshot(lt: pressedValue, rt: pressedValue));
 
         atRest.LeftTrigger.Value.Should().Be(0);
         atRest.RightTrigger.Value.Should().Be(0);
@@ -128,9 +141,11 @@ public class DirectInputMappingTests
         int rx = 32767,
         int ry = 0,
         int rz = 0,
+        int lt = 0,
+        int rt = 0,
         IReadOnlyList<bool>? buttons = null,
         int pov = -1) =>
-        new(x, y, z, rx, ry, rz, buttons ?? Buttons(), [pov]);
+        new(x, y, z, rx, ry, rz, [lt, rt], buttons ?? Buttons(), [pov]);
 
     private static InputDevice Device(
         string id,
