@@ -139,7 +139,8 @@ public sealed class XInputProvider : IInputProvider
                             Type = DeviceType.XInput,
                             PlayerIndex = i,
                             IsConnected = true,
-                            LastSeen = DateTime.UtcNow
+                            LastSeen = DateTime.UtcNow,
+                            PhysicalIdentity = $"xinput:slot:{i}"
                         };
                         lock (_devicesLock) { _devices[i] = device; }
                         _wasConnected[i] = true;

@@ -2,7 +2,6 @@ using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using InputBusX.Domain.Entities;
 using InputBusX.Domain.Interfaces;
-using InputBusX.Domain.ValueObjects;
 using Microsoft.Extensions.Logging;
 using SharpDX.DirectInput;
 using DomainDeviceType = InputBusX.Domain.Enums.DeviceType;
@@ -103,7 +102,9 @@ public sealed class DirectInputProvider : IInputProvider
                     {
                         entry.Joystick.Poll();
                         var js = entry.Joystick.GetCurrentState();
-                        StateUpdated?.Invoke(entry.Info.Id, ConvertState(js, entry.Layout));
+                        var state = entry.Mapping.TryMap(DirectInputSnapshot.From(js));
+                        if (state is not null)
+                            StateUpdated?.Invoke(entry.Info.Id, state);
                     }
                     catch (SharpDX.SharpDXException sdxEx) when (
                         unchecked((uint)sdxEx.ResultCode.Code) == 0x8007001E || // DIERR_INPUTLOST
@@ -175,152 +176,45 @@ public sealed class DirectInputProvider : IInputProvider
                 CooperativeLevel.Background | CooperativeLevel.NonExclusive);
             joystick.Acquire();
 
-            var layout = DetectAxisLayout(inst.ProductGuid, inst.InstanceName);
+            var identity = DirectInputDeviceIdentity.From(
+                inst.ProductGuid,
+                inst.InstanceGuid,
+                inst.InstanceName);
+            var profile = DirectInputProfile.For(identity);
             var info = new InputDevice
             {
-                Id   = $"dinput_{inst.InstanceGuid:N}",
-                Name = inst.InstanceName.Trim('\0'),
+                Id = $"dinput_{inst.InstanceGuid:N}",
+                Name = identity.Name,
                 Type = DomainDeviceType.DirectInput,
                 PlayerIndex = _nextIndex++,
                 IsConnected = true,
-                LastSeen    = DateTime.UtcNow
+                LastSeen = DateTime.UtcNow,
+                PhysicalIdentity = identity.StableKey,
+                VendorId = identity.VendorId,
+                ProductId = identity.ProductId,
+                ProductGuid = identity.ProductGuid,
+                InstanceGuid = identity.InstanceGuid,
+                DevicePath = identity.DevicePath
             };
 
-            active[inst.InstanceGuid] = new ActiveEntry(joystick, info, layout);
+            active[inst.InstanceGuid] = new ActiveEntry(
+                joystick,
+                info,
+                new DirectInputMappingSession(profile),
+                profile);
             lock (_connectedLock) { _connected[info.Id] = info; }
             DeviceConnected?.Invoke(info);
-            _logger.LogInformation("DirectInput: connected [{Name}] layout={Layout}", info.Name, layout);
+            _logger.LogInformation(
+                "DirectInput: connected [{Name}] profile={Profile} vid={Vid:X4} pid={Pid:X4}",
+                info.Name,
+                profile.Name,
+                identity.VendorId,
+                identity.ProductId);
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "DirectInput: failed to open [{Name}]", inst.InstanceName);
         }
-    }
-
-    // -----------------------------------------------------------------------
-    // Axis layout detection
-    // -----------------------------------------------------------------------
-
-    private enum AxisLayout
-    {
-        /// <summary>
-        /// PS4 / PS5 / Flydigi Vader / most modern non-XInput gamepads.
-        /// X=LStick.X  Y=LStick.Y  Z=RStick.X  Rx=RStick.Y  Ry=LT  Rz=RT
-        /// </summary>
-        Modern,
-
-        /// <summary>
-        /// Older generic DInput pads (Logitech, etc.).
-        /// X=LStick.X  Y=LStick.Y  Z=LT  Rx=RStick.X  Ry=RStick.Y  Rz=RT
-        /// </summary>
-        Legacy,
-    }
-
-    private static AxisLayout DetectAxisLayout(Guid productGuid, string instanceName)
-    {
-        var b   = productGuid.ToByteArray();
-        ushort vid = BitConverter.ToUInt16(b, 0);
-
-        return vid switch
-        {
-            0x054C => AxisLayout.Modern,  // Sony (PS4, PS5)
-            0x2F24 => AxisLayout.Modern,  // Flydigi (Vader 4 Pro, Apex)
-            0x2DC8 => AxisLayout.Modern,  // 8BitDo
-            0x0C12 => AxisLayout.Modern,  // Zeroplus / IFYOO
-            0x2563 => AxisLayout.Modern,  // Betop / IFYOO
-            0x05AC => AxisLayout.Modern,  // GameSir (some models use Apple VID)
-            0x046D => AxisLayout.Legacy,  // Logitech
-            _ => AxisLayout.Modern        // Default: modern layout is more common today
-        };
-    }
-
-    // -----------------------------------------------------------------------
-    // State conversion
-    //
-    // Modern layout (PS4 / PS5 / Flydigi Vader 4 / most modern non-XInput):
-    //   X  = Left Stick X        Y  = Left Stick Y (inverted)
-    //   Z  = Right Stick X       Rx = Right Stick Y (inverted)
-    //   Ry = Left Trigger        Rz = Right Trigger
-    //
-    // Legacy layout (older DInput pads):
-    //   X  = Left Stick X        Y  = Left Stick Y (inverted)
-    //   Z  = Left Trigger        Rx = Right Stick X
-    //   Ry = Right Stick Y (inv) Rz = Right Trigger
-    //
-    // All axis values from DInput: 0–65535 (sticks center at 32767).
-    // Y-axis inverted: push up → value decreases → negate after normalizing.
-    // -----------------------------------------------------------------------
-
-    private static GamepadState ConvertState(JoystickState js, AxisLayout layout)
-    {
-        // Clamp to valid DInput range before any math — guards against
-        // occasional garbage values from drivers or USB glitches.
-        static int Clamp(int v) => Math.Clamp(v, 0, 65535);
-
-        static short NormalizeStick(int v) =>
-            (short)Math.Clamp(Clamp(v) - 32767, short.MinValue, short.MaxValue);
-
-        static byte NormalizeTrigger(int v) =>
-            (byte)Math.Clamp(Clamp(v) * 255L / 65535L, 0, 255);
-
-        var buttons = Domain.Enums.GamepadButton.None;
-
-        void Btn(int i, Domain.Enums.GamepadButton f)
-        {
-            if (i < js.Buttons.Length && js.Buttons[i]) buttons |= f;
-        }
-
-        Btn(0,  Domain.Enums.GamepadButton.X);             // Square  / West
-        Btn(1,  Domain.Enums.GamepadButton.A);             // Cross   / South
-        Btn(2,  Domain.Enums.GamepadButton.B);             // Circle  / East
-        Btn(3,  Domain.Enums.GamepadButton.Y);             // Triangle / North
-        Btn(4,  Domain.Enums.GamepadButton.LeftShoulder);  // L1 / LB
-        Btn(5,  Domain.Enums.GamepadButton.RightShoulder); // R1 / RB
-        Btn(8,  Domain.Enums.GamepadButton.Back);          // Share / Create
-        Btn(9,  Domain.Enums.GamepadButton.Start);         // Options / Menu
-        Btn(10, Domain.Enums.GamepadButton.LeftThumb);     // L3
-        Btn(11, Domain.Enums.GamepadButton.RightThumb);    // R3
-
-        // D-Pad from POV[0] in hundredths of a degree; -1 = centered
-        if (js.PointOfViewControllers.Length > 0)
-        {
-            int pov = js.PointOfViewControllers[0];
-            if (pov != -1)
-            {
-                if (pov >= 31500 || pov <= 4500)  buttons |= Domain.Enums.GamepadButton.DPadUp;
-                if (pov >= 4500  && pov <= 13500) buttons |= Domain.Enums.GamepadButton.DPadRight;
-                if (pov >= 13500 && pov <= 22500) buttons |= Domain.Enums.GamepadButton.DPadDown;
-                if (pov >= 22500 && pov <= 31500) buttons |= Domain.Enums.GamepadButton.DPadLeft;
-            }
-        }
-
-        StickPosition leftStick, rightStick;
-        TriggerValue  leftTrigger, rightTrigger;
-
-        if (layout == AxisLayout.Modern)
-        {
-            leftStick    = new StickPosition(NormalizeStick(js.X),         (short)-NormalizeStick(js.Y));
-            rightStick   = new StickPosition(NormalizeStick(js.Z),         (short)-NormalizeStick(js.RotationX));
-            leftTrigger  = new TriggerValue(NormalizeTrigger(js.RotationY));
-            rightTrigger = new TriggerValue(NormalizeTrigger(js.RotationZ));
-        }
-        else // Legacy
-        {
-            leftStick    = new StickPosition(NormalizeStick(js.X),           (short)-NormalizeStick(js.Y));
-            rightStick   = new StickPosition(NormalizeStick(js.RotationX),   (short)-NormalizeStick(js.RotationY));
-            leftTrigger  = new TriggerValue(NormalizeTrigger(js.Z));
-            rightTrigger = new TriggerValue(NormalizeTrigger(js.RotationZ));
-        }
-
-        return new GamepadState
-        {
-            Buttons        = buttons,
-            LeftStick      = leftStick,
-            RightStick     = rightStick,
-            LeftTrigger    = leftTrigger,
-            RightTrigger   = rightTrigger,
-            TimestampTicks = Environment.TickCount64
-        };
     }
 
     // -----------------------------------------------------------------------
@@ -407,7 +301,11 @@ public sealed class DirectInputProvider : IInputProvider
     // Internal types
     // -----------------------------------------------------------------------
 
-    private sealed record ActiveEntry(Joystick Joystick, InputDevice Info, AxisLayout Layout);
+    private sealed record ActiveEntry(
+        Joystick Joystick,
+        InputDevice Info,
+        DirectInputMappingSession Mapping,
+        DirectInputProfile Profile);
 
     private static class NativeSetup
     {
