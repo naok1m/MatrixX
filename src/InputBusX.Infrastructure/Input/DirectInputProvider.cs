@@ -15,7 +15,7 @@ public sealed class DirectInputProvider : IInputProvider
     private readonly object _connectedLock = new();
     private CancellationTokenSource? _cts;
     private Task? _pollTask;
-    private int _pollingRateMs = 4;
+    private int _pollingRateMs = 1;
     private int _nextIndex = 10;
 
     // Events fired from the poll thread — consumers must be thread-safe
@@ -84,6 +84,7 @@ public sealed class DirectInputProvider : IInputProvider
         var xinputVidPids = ScanXInputVidPids();
         int scanCounter = 0;
         int scanInterval = Math.Max(1, 2000 / _pollingRateMs);
+        WinMm.timeBeginPeriod(1);
 
         try
         {
@@ -138,6 +139,7 @@ public sealed class DirectInputProvider : IInputProvider
             }
             active.Clear();
             lock (_connectedLock) { _connected.Clear(); }
+            WinMm.timeEndPeriod(1);
             di.Dispose();
         }
     }

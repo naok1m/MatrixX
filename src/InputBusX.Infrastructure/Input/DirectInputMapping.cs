@@ -116,7 +116,7 @@ public sealed record DirectInputSnapshot(
 
 public sealed class DirectInputMappingSession
 {
-    private const int RequiredCalibrationSamples = 16;
+    private const int RequiredCalibrationSamples = 8;
     private const int AxisUnstableRange = 8192;
     private const int TriggerUnstableRange = 4096;
     private const int StickDeadzone = 2500;
@@ -192,12 +192,12 @@ public sealed class DirectInputMappingSession
         {
             rightXRaw = raw[2];
             rightYRaw = raw[5];
-            leftTriggerRaw = raw[6];
-            rightTriggerRaw = raw[7];
+            leftTriggerRaw = raw[3];
+            rightTriggerRaw = raw[4];
             rightXCalibration = _axes[2];
             rightYCalibration = _axes[5];
-            leftTriggerCalibration = _axes[6];
-            rightTriggerCalibration = _axes[7];
+            leftTriggerCalibration = _axes[3];
+            rightTriggerCalibration = _axes[4];
         }
         else if (_profile.Layout == DirectInputAxisLayout.Modern)
         {
@@ -242,7 +242,7 @@ public sealed class DirectInputMappingSession
     {
         for (var i = 0; i < _axes.Length; i++)
         {
-            var unstableRange = i >= 6 || (_profile.Layout != DirectInputAxisLayout.SonyHid && i >= 4)
+            var unstableRange = IsTriggerAxis(i)
                 ? TriggerUnstableRange
                 : AxisUnstableRange;
             _axes[i].Finalize(unstableRange);
@@ -336,6 +336,11 @@ public sealed class DirectInputMappingSession
 
     private static int ClampOptionalAxis(IReadOnlyList<int> values, int index) =>
         index < values.Count ? ClampAxis(values[index]) : 32767;
+
+    private bool IsTriggerAxis(int index) =>
+        _profile.Layout == DirectInputAxisLayout.SonyHid
+            ? index is 3 or 4
+            : index >= 4;
 
     private sealed class AxisCalibration
     {

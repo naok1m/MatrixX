@@ -33,8 +33,8 @@ public class DirectInputMappingTests
     public void DualSense_Profile_ShouldMapModernRightStickAndTriggers()
     {
         var profile = DirectInputProfile.For(Identity(0x054C, 0x0CE6, "DualSense Wireless Controller"));
-        var rest = Snapshot(rz: 32767, lt: 32767, rt: 32767);
-        var pressed = Snapshot(z: 65535, rz: 0, lt: 65535, rt: 65535);
+        var rest = Snapshot(rx: 32767, ry: 32767, rz: 32767);
+        var pressed = Snapshot(z: 65535, rz: 0, rx: 65535, ry: 65535);
 
         var state = DirectInputMappingSession.MapAfterCalibration(profile, Repeat(rest), pressed);
 
@@ -50,8 +50,8 @@ public class DirectInputMappingTests
     public void DualSense_RightStickDown_ShouldNotTriggerR2()
     {
         var profile = DirectInputProfile.For(Identity(0x054C, 0x0CE6, "DualSense Wireless Controller"));
-        var rest = Snapshot(rz: 32767, lt: 32767, rt: 32767);
-        var rightStickDown = Snapshot(rz: 65535, lt: 32767, rt: 32767);
+        var rest = Snapshot(rx: 32767, ry: 32767, rz: 32767);
+        var rightStickDown = Snapshot(rz: 65535, rx: 32767, ry: 32767);
 
         var state = DirectInputMappingSession.MapAfterCalibration(profile, Repeat(rest), rightStickDown);
 
@@ -66,12 +66,12 @@ public class DirectInputMappingTests
     public void TriggerRestCalibration_ShouldTreatRestAsNeutral(int restValue, int pressedValue)
     {
         var profile = DirectInputProfile.For(Identity(0x054C, 0x0CE6, "DualSense Wireless Controller"));
-        var rest = Snapshot(lt: restValue, rt: restValue);
+        var rest = Snapshot(rx: restValue, ry: restValue);
         var atRest = DirectInputMappingSession.MapAfterCalibration(profile, Repeat(rest), rest);
         var pressed = DirectInputMappingSession.MapAfterCalibration(
             profile,
             Repeat(rest),
-            Snapshot(lt: pressedValue, rt: pressedValue));
+            Snapshot(rx: pressedValue, ry: pressedValue));
 
         atRest.LeftTrigger.Value.Should().Be(0);
         atRest.RightTrigger.Value.Should().Be(0);
@@ -123,7 +123,7 @@ public class DirectInputMappingTests
     }
 
     private static IEnumerable<DirectInputSnapshot> Repeat(DirectInputSnapshot snapshot) =>
-        Enumerable.Repeat(snapshot, 16);
+        Enumerable.Repeat(snapshot, 8);
 
     private static bool[] Buttons(params int[] pressed)
     {
