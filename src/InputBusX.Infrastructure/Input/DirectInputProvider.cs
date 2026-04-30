@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using InputBusX.Domain.Entities;
@@ -85,6 +86,9 @@ public sealed class DirectInputProvider : IInputProvider
         int scanCounter = 0;
         int scanInterval = Math.Max(1, 2000 / _pollingRateMs);
         WinMm.timeBeginPeriod(1);
+        var sw = Stopwatch.StartNew();
+        long targetTicks = sw.ElapsedTicks;
+        long ticksPerMs = Stopwatch.Frequency / 1000L;
 
         try
         {
@@ -128,7 +132,19 @@ public sealed class DirectInputProvider : IInputProvider
                 }
 
                 if (_pollingRateMs > 0)
-                    Thread.Sleep(_pollingRateMs);
+                {
+                    targetTicks += _pollingRateMs * ticksPerMs;
+                    long sleepUntil = targetTicks - (ticksPerMs / 2);
+                    long remaining = sleepUntil - sw.ElapsedTicks;
+                    if (remaining > ticksPerMs)
+                        Thread.Sleep((int)(remaining / ticksPerMs));
+
+                    while (sw.ElapsedTicks < targetTicks)
+                        Thread.SpinWait(10);
+
+                    if (sw.ElapsedTicks - targetTicks > 2 * _pollingRateMs * ticksPerMs)
+                        targetTicks = sw.ElapsedTicks;
+                }
             }
         }
         finally

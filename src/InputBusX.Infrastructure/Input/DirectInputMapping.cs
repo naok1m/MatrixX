@@ -116,7 +116,7 @@ public sealed record DirectInputSnapshot(
 
 public sealed class DirectInputMappingSession
 {
-    private const int RequiredCalibrationSamples = 8;
+    private const int RequiredCalibrationSamples = 4;
     private const int AxisUnstableRange = 8192;
     private const int TriggerUnstableRange = 4096;
     private const int StickDeadzone = 2500;
@@ -128,6 +128,7 @@ public sealed class DirectInputMappingSession
     private readonly AxisCalibration[] _axes = Enumerable.Range(0, 8)
         .Select(_ => new AxisCalibration())
         .ToArray();
+    private readonly int[] _raw = new int[8];
     private int _sampleCount;
     private bool _finalized;
     private GamepadState _previous = GamepadState.Empty;
@@ -141,12 +142,12 @@ public sealed class DirectInputMappingSession
 
     public GamepadState? TryMap(DirectInputSnapshot snapshot)
     {
-        var raw = ReadAxes(snapshot);
+        ReadAxes(snapshot, _raw);
 
         if (!_finalized)
         {
             for (var i = 0; i < _axes.Length; i++)
-                _axes[i].Observe(raw[i]);
+                _axes[i].Observe(_raw[i]);
 
             _sampleCount++;
             if (_sampleCount < RequiredCalibrationSamples)
@@ -155,7 +156,7 @@ public sealed class DirectInputMappingSession
             FinalizeCalibration();
         }
 
-        var state = MapState(snapshot, raw);
+        var state = MapState(snapshot, _raw);
         _previous = state;
         return state;
     }
@@ -181,51 +182,41 @@ public sealed class DirectInputMappingSession
 
         int rightXRaw;
         int rightYRaw;
-        int leftTriggerRaw;
-        int rightTriggerRaw;
         AxisCalibration rightXCalibration;
         AxisCalibration rightYCalibration;
-        AxisCalibration leftTriggerCalibration;
-        AxisCalibration rightTriggerCalibration;
+        byte leftTrigger;
+        byte rightTrigger;
 
         if (_profile.Layout == DirectInputAxisLayout.SonyHid)
         {
             rightXRaw = raw[2];
             rightYRaw = raw[5];
-            leftTriggerRaw = raw[3];
-            rightTriggerRaw = raw[4];
             rightXCalibration = _axes[2];
             rightYCalibration = _axes[5];
-            leftTriggerCalibration = _axes[3];
-            rightTriggerCalibration = _axes[4];
+            leftTrigger = NormalizeTriggerCandidates(raw, 3, 6, snapshot, 6, _previous.LeftTrigger.Value);
+            rightTrigger = NormalizeTriggerCandidates(raw, 4, 7, snapshot, 7, _previous.RightTrigger.Value);
         }
         else if (_profile.Layout == DirectInputAxisLayout.Modern)
         {
             rightXRaw = raw[2];
             rightYRaw = raw[3];
-            leftTriggerRaw = raw[4];
-            rightTriggerRaw = raw[5];
             rightXCalibration = _axes[2];
             rightYCalibration = _axes[3];
-            leftTriggerCalibration = _axes[4];
-            rightTriggerCalibration = _axes[5];
+            leftTrigger = NormalizeTriggerCandidates(raw, 4, -1, snapshot, null, _previous.LeftTrigger.Value);
+            rightTrigger = NormalizeTriggerCandidates(raw, 5, -1, snapshot, null, _previous.RightTrigger.Value);
         }
         else
         {
-            leftTriggerRaw = raw[2];
             rightXRaw = raw[3];
             rightYRaw = raw[4];
-            rightTriggerRaw = raw[5];
-            leftTriggerCalibration = _axes[2];
             rightXCalibration = _axes[3];
             rightYCalibration = _axes[4];
-            rightTriggerCalibration = _axes[5];
+            leftTrigger = NormalizeTriggerCandidates(raw, 2, -1, snapshot, null, _previous.LeftTrigger.Value);
+            rightTrigger = NormalizeTriggerCandidates(raw, 5, -1, snapshot, null, _previous.RightTrigger.Value);
         }
 
         var rightX = NormalizeStick(rightXRaw, rightXCalibration, _previous.RightStick.X);
         var rightY = (short)-NormalizeStick(rightYRaw, rightYCalibration, (short)-_previous.RightStick.Y);
-        var leftTrigger = NormalizeTrigger(leftTriggerRaw, leftTriggerCalibration, _previous.LeftTrigger.Value);
-        var rightTrigger = NormalizeTrigger(rightTriggerRaw, rightTriggerCalibration, _previous.RightTrigger.Value);
 
         return new GamepadState
         {
@@ -251,17 +242,17 @@ public sealed class DirectInputMappingSession
         _finalized = true;
     }
 
-    private static int[] ReadAxes(DirectInputSnapshot snapshot) =>
-    [
-        ClampAxis(snapshot.X),
-        ClampAxis(snapshot.Y),
-        ClampAxis(snapshot.Z),
-        ClampAxis(snapshot.RotationX),
-        ClampAxis(snapshot.RotationY),
-        ClampAxis(snapshot.RotationZ),
-        ClampOptionalAxis(snapshot.Sliders, 0),
-        ClampOptionalAxis(snapshot.Sliders, 1),
-    ];
+    private static void ReadAxes(DirectInputSnapshot snapshot, int[] raw)
+    {
+        raw[0] = ClampAxis(snapshot.X);
+        raw[1] = ClampAxis(snapshot.Y);
+        raw[2] = ClampAxis(snapshot.Z);
+        raw[3] = ClampAxis(snapshot.RotationX);
+        raw[4] = ClampAxis(snapshot.RotationY);
+        raw[5] = ClampAxis(snapshot.RotationZ);
+        raw[6] = ClampOptionalAxis(snapshot.Sliders, 0);
+        raw[7] = ClampOptionalAxis(snapshot.Sliders, 1);
+    }
 
     private static GamepadButton MapButtons(DirectInputSnapshot snapshot)
     {
@@ -339,8 +330,35 @@ public sealed class DirectInputMappingSession
 
     private bool IsTriggerAxis(int index) =>
         _profile.Layout == DirectInputAxisLayout.SonyHid
-            ? index is 3 or 4
+            ? index is 3 or 4 or 6 or 7
             : index >= 4;
+
+    private byte NormalizeTriggerCandidates(
+        int[] raw,
+        int primaryAxis,
+        int secondaryAxis,
+        DirectInputSnapshot snapshot,
+        int? digitalButton,
+        byte previous)
+    {
+        var value = NormalizeTriggerCandidate(raw, primaryAxis, previous);
+        value = Math.Max(value, NormalizeTriggerCandidate(raw, secondaryAxis, previous));
+
+        if (digitalButton.HasValue &&
+            digitalButton.Value < snapshot.Buttons.Count &&
+            snapshot.Buttons[digitalButton.Value])
+            value = byte.MaxValue;
+
+        return (byte)value;
+    }
+
+    private int NormalizeTriggerCandidate(int[] raw, int axisIndex, byte previous)
+    {
+        if (axisIndex < 0 || axisIndex >= raw.Length)
+            return 0;
+
+        return NormalizeTrigger(raw[axisIndex], _axes[axisIndex], previous);
+    }
 
     private sealed class AxisCalibration
     {

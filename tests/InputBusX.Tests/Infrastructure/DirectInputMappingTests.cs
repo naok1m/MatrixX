@@ -59,6 +59,32 @@ public class DirectInputMappingTests
         state.RightTrigger.Value.Should().Be(0);
     }
 
+    [Fact]
+    public void DualSense_TriggerButtons_ShouldDriveTriggersWhenAxesDoNotMove()
+    {
+        var profile = DirectInputProfile.For(Identity(0x054C, 0x0CE6, "DualSense Wireless Controller"));
+        var rest = Snapshot(rx: 32767, ry: 32767, rz: 32767);
+        var pressed = Snapshot(rx: 32767, ry: 32767, rz: 32767, buttons: Buttons(6, 7));
+
+        var state = DirectInputMappingSession.MapAfterCalibration(profile, Repeat(rest), pressed);
+
+        state.LeftTrigger.Value.Should().Be(255);
+        state.RightTrigger.Value.Should().Be(255);
+    }
+
+    [Fact]
+    public void DualSense_TriggerSliders_ShouldDriveTriggersWhenDriverUsesSliders()
+    {
+        var profile = DirectInputProfile.For(Identity(0x054C, 0x0CE6, "DualSense Wireless Controller"));
+        var rest = Snapshot(rx: 32767, ry: 32767, rz: 32767, lt: 32767, rt: 32767);
+        var pressed = Snapshot(rx: 32767, ry: 32767, rz: 32767, lt: 65535, rt: 65535);
+
+        var state = DirectInputMappingSession.MapAfterCalibration(profile, Repeat(rest), pressed);
+
+        state.LeftTrigger.Value.Should().Be(255);
+        state.RightTrigger.Value.Should().Be(255);
+    }
+
     [Theory]
     [InlineData(0, 65535)]
     [InlineData(32767, 65535)]
@@ -123,7 +149,7 @@ public class DirectInputMappingTests
     }
 
     private static IEnumerable<DirectInputSnapshot> Repeat(DirectInputSnapshot snapshot) =>
-        Enumerable.Repeat(snapshot, 8);
+        Enumerable.Repeat(snapshot, 4);
 
     private static bool[] Buttons(params int[] pressed)
     {
